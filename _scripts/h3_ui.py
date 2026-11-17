@@ -433,41 +433,44 @@ def restore_page():
 
 # ------------------------------------------------------------------ resultats
 def loss_svg(job):
-    """Courbe de perte en SVG : echelle resserree sur les valeurs utiles, courbe
-    lissee, reperes verticaux aux pas des checkpoints, legende toujours visible."""
+    """Courbe de perte lissee en SVG, echelle Y recalee sur son minimum et son maximum,
+    reperes verticaux aux pas des checkpoints."""
     rows = core.LossLog.read(os.path.join(core.OUTPUT, job, "pertes.csv")) if job else []
     if len(rows) < 2:
         return "<div style='opacity:.7;font-size:13px'>Courbe de perte : pas encore de donnees.</div>"
-    W, H, L, R, T, B = 1000, 300, 46, 12, 30, 34
+    W, H, L, R, T, B = 1000, 300, 52, 12, 30, 34
     steps = [r[0] for r in rows]
-    raw = [r[1] for r in rows]
-    ema, smooth = None, []
-    for v in raw:
-        ema = v if ema is None else ema + 0.04 * (v - ema)
+    # moyenne exponentielle demarree sur la moyenne des 20 premiers pas (ni collee au premier
+    # pas, ni nerveuse au debut : le debut n'ecrase pas l'echelle)
+    head = [r[1] for r in rows[:20]]
+    alpha, ema, smooth = 0.04, sum(head) / len(head), []
+    for _st, v in rows:
+        ema += alpha * (v - ema)
         smooth.append(ema)
-    # echelle Y : ignore les 2 % de pics les plus hauts, qui ecrasent la courbe
-    ordered = sorted(raw)
-    ymax = max(ordered[int(0.98 * (len(ordered) - 1))] * 1.15, smooth[-1] * 1.5, 1e-6)
+    lo, hi = min(smooth), max(smooth)
+    pad = max((hi - lo) * 0.08, abs(hi) * 0.002, 1e-6)
+    ymin, ymax = lo - pad, hi + pad
     x0, x1 = steps[0], max(steps[-1], steps[0] + 1)
 
     def X(st):
         return L + (st - x0) / (x1 - x0) * (W - L - R)
 
     def Y(v):
-        return T + (1 - min(v, ymax) / ymax) * (H - T - B)
+        return T + (ymax - v) / (ymax - ymin) * (H - T - B)
 
+    span_y = ymax - ymin
+    dec = 2 if span_y >= 0.2 else 3 if span_y >= 0.02 else 4
     k = len(rows) // 1500 + 1  # allege les longs entrainements
-    raw_pts = " ".join(f"{X(st):.1f},{Y(v):.1f}" for st, v in list(zip(steps, raw))[::k])
-    sm_pts = " ".join(f"{X(st):.1f},{Y(v):.1f}" for st, v in list(zip(steps, smooth))[::k])
+    pts = " ".join(f"{X(st):.1f},{Y(v):.1f}" for st, v in list(zip(steps, smooth))[::k])
     out = [f"<svg viewBox='0 0 {W} {H}' style='width:100%;height:auto;font-family:sans-serif' "
            "xmlns='http://www.w3.org/2000/svg'>"]
     for i in range(5):  # grille + graduations Y
-        v = ymax * i / 4
+        v = ymin + span_y * i / 4
         out.append(f"<line x1='{L}' x2='{W - R}' y1='{Y(v):.1f}' y2='{Y(v):.1f}' stroke='currentColor' "
                    f"stroke-opacity='.15'/><text x='{L - 6}' y='{Y(v) + 4:.1f}' font-size='11' "
-                   f"text-anchor='end' fill='currentColor'>{v:.2f}</text>")
+                   f"text-anchor='end' fill='currentColor'>{v:.{dec}f}</text>")
     span = x1 - x0
-    tick = next(t for t in (50, 100, 250, 500, 1000, 2500, 5000, 10000) if span / t <= 12)
+    tick = next(t for t in (50, 100, 250, 500, 1000, 2500, 5000, 10000, 10 ** 9) if span / t <= 12)
     st = (x0 // tick + 1) * tick
     while st <= x1:  # graduations X
         out.append(f"<text x='{X(st):.1f}' y='{H - B + 15}' font-size='11' text-anchor='middle' "
@@ -477,18 +480,14 @@ def loss_svg(job):
         out.append(f"<line x1='{X(cs):.1f}' x2='{X(cs):.1f}' y1='{T}' y2='{H - B}' stroke='#43a047' "
                    f"stroke-dasharray='4 3'/><text x='{X(cs):.1f}' y='{T - 4 - (i % 2) * 11}' font-size='10' "
                    f"text-anchor='middle' fill='#43a047'>{cs}</text>")
-    out.append(f"<polyline points='{raw_pts}' fill='none' stroke='#5c8fd6' stroke-width='1' stroke-opacity='.55'/>")
-    out.append(f"<polyline points='{sm_pts}' fill='none' stroke='#ff8f00' stroke-width='2.5'/>")
+    out.append(f"<polyline points='{pts}' fill='none' stroke='#ff8f00' stroke-width='2.5'/>")
     out.append(f"<text x='{(L + W - R) / 2}' y='{H - 4}' font-size='11' text-anchor='middle' "
                "fill='currentColor'>pas</text></svg>")
-    clipped = sum(1 for v in raw if v > ymax)
-    last = smooth[-1]
     legend = ("<div style='font-size:12px;margin-top:2px'>"
-              "<span style='color:#5c8fd6'>&#9472;&#9472;</span> perte brute &nbsp; "
               "<span style='color:#ff8f00'>&#9472;&#9472;</span> perte lissee &nbsp; "
               "<span style='color:#43a047'>&#9482;</span> checkpoints disponibles &nbsp;|&nbsp; "
-              f"lissee au pas {steps[-1]} : <b>{last:.3f}</b>"
-              + (f" &nbsp;|&nbsp; {clipped} pic(s) au-dela de l'echelle" if clipped else "") + "</div>")
+              f"lissee au pas {steps[-1]} : <b>{smooth[-1]:.3f}</b> &nbsp;|&nbsp; "
+              f"min {lo:.3f} - max {hi:.3f}</div>")
     return "<div><b style='font-size:13px'>Perte</b>" + "".join(out) + legend + "</div>"
 
 
