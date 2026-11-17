@@ -320,5 +320,10 @@
 "Monnaie": "Monnaie",
 "Le montant de votre facture d'electricite, abonnement exclu. 0 = afficher seulement les kWh.": "Le montant de votre facture d'électricité, abonnement exclu. 0 = afficher seulement les kWh.",
 "Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son cout et le cout projete a la fin s'affichent a cote du temps ecoule, du temps restant et de la vitesse. Seule la carte graphique est comptee : processeur, ecran et reste du PC s'y ajoutent. Enregistrez avec le bouton Enregistrer ci-dessous.": "Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son coût et le coût projeté à la fin s'affichent à côté du temps écoulé, du temps restant et de la vitesse. Seule la carte graphique est comptée : processeur, écran et reste du PC s'y ajoutent. Enregistrez avec le bouton Enregistrer ci-dessous.",
-"min {0} - max {1}": "min {0} - max {1}"
+"min {0} - max {1}": "min {0} - max {1}",
+"les prompts d'apercu contiennent '{0}', proche du mot declencheur '{1}' : ancien nom ou faute de frappe ? Le LoRA n'est appele que par son mot exact.": "les prompts d'aperçu contiennent « {0} », proche du mot déclencheur « {1} » : ancien nom ou faute de frappe ? Le LoRA n'est appelé que par son mot exact.",
+"aucun prompt d'apercu ne contient le mot declencheur '{0}' : les apercus ne montreront pas l'effet du LoRA appele par son mot.": "aucun prompt d'aperçu ne contient le mot déclencheur « {0} » : les aperçus ne montreront pas l'effet du LoRA appelé par son mot.",
+"Les prompts d'apercu contiennent '{0}', proche du mot declencheur '{1}' : ancien nom ou faute de frappe ? Le LoRA n'est appele que par son mot exact.": "Les prompts d'aperçu contiennent « {0} », proche du mot déclencheur « {1} » : ancien nom ou faute de frappe ? Le LoRA n'est appelé que par son mot exact.",
+"Aucun prompt d'apercu ne contient le mot declencheur '{0}' : les apercus ne montreront pas l'effet du LoRA appele par son mot.": "Aucun prompt d'aperçu ne contient le mot déclencheur « {0} » : les aperçus ne montreront pas l'effet du LoRA appelé par son mot.",
+"ATTENTION": "ATTENTION"
 }

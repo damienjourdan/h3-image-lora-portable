@@ -469,5 +469,10 @@
 "Monnaie": "通貨",
 "Le montant de votre facture d'electricite, abonnement exclu. 0 = afficher seulement les kWh.": "電気料金の従量単価（基本料金を除く）。0 = kWh のみ表示。",
 "Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son cout et le cout projete a la fin s'affichent a cote du temps ecoule, du temps restant et de la vitesse. Seule la carte graphique est comptee : processeur, ecran et reste du PC s'y ajoutent. Enregistrez avec le bouton Enregistrer ci-dessous.": "ジョブ中は、GPU の消費電力量（nvidia-smi で 2 秒ごとに取得）、その料金、終了時の予想料金が、経過時間・残り時間・速度の横に表示されます。数えるのはグラフィックカードだけで、CPU、画面、PC の他の部分の消費は含みません。下の「保存」ボタンで保存してください。",
-"min {0} - max {1}": "最小 {0} - 最大 {1}"
+"min {0} - max {1}": "最小 {0} - 最大 {1}",
+"les prompts d'apercu contiennent '{0}', proche du mot declencheur '{1}' : ancien nom ou faute de frappe ? Le LoRA n'est appele que par son mot exact.": "プレビュー用プロンプトに、トリガーワード「{1}」に似た「{0}」があります：古い名前か入力ミスでは？LoRA は正確な単語でしか呼び出されません。",
+"aucun prompt d'apercu ne contient le mot declencheur '{0}' : les apercus ne montreront pas l'effet du LoRA appele par son mot.": "トリガーワード「{0}」を含むプレビュー用プロンプトがありません：単語で呼び出した LoRA の効果はプレビューに表れません。",
+"Les prompts d'apercu contiennent '{0}', proche du mot declencheur '{1}' : ancien nom ou faute de frappe ? Le LoRA n'est appele que par son mot exact.": "プレビュー用プロンプトに、トリガーワード「{1}」に似た「{0}」があります：古い名前か入力ミスでは？LoRA は正確な単語でしか呼び出されません。",
+"Aucun prompt d'apercu ne contient le mot declencheur '{0}' : les apercus ne montreront pas l'effet du LoRA appele par son mot.": "トリガーワード「{0}」を含むプレビュー用プロンプトがありません：単語で呼び出した LoRA の効果はプレビューに表れません。",
+"ATTENTION": "注意"
 }

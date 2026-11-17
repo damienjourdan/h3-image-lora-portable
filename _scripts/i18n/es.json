@@ -469,5 +469,10 @@
 "Monnaie": "Moneda",
 "Le montant de votre facture d'electricite, abonnement exclu. 0 = afficher seulement les kWh.": "El precio de su factura de la luz, sin el término fijo. 0 = mostrar solo los kWh.",
 "Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son cout et le cout projete a la fin s'affichent a cote du temps ecoule, du temps restant et de la vitesse. Seule la carte graphique est comptee : processeur, ecran et reste du PC s'y ajoutent. Enregistrez avec le bouton Enregistrer ci-dessous.": "Durante un job, el consumo de la GPU (leído por nvidia-smi cada 2 s), su coste y el coste previsto al final se muestran junto al tiempo transcurrido, el tiempo restante y la velocidad. Solo se cuenta la tarjeta gráfica: el procesador, la pantalla y el resto del PC se suman. Guarde con el botón Guardar de abajo.",
-"min {0} - max {1}": "mín. {0} - máx. {1}"
+"min {0} - max {1}": "mín. {0} - máx. {1}",
+"les prompts d'apercu contiennent '{0}', proche du mot declencheur '{1}' : ancien nom ou faute de frappe ? Le LoRA n'est appele que par son mot exact.": "los prompts de vista previa contienen '{0}', parecido a la palabra clave '{1}': ¿nombre antiguo o errata? El LoRA solo se activa con su palabra exacta.",
+"aucun prompt d'apercu ne contient le mot declencheur '{0}' : les apercus ne montreront pas l'effet du LoRA appele par son mot.": "ningún prompt de vista previa contiene la palabra clave '{0}': las vistas previas no mostrarán el efecto del LoRA activado por su palabra.",
+"Les prompts d'apercu contiennent '{0}', proche du mot declencheur '{1}' : ancien nom ou faute de frappe ? Le LoRA n'est appele que par son mot exact.": "Los prompts de vista previa contienen '{0}', parecido a la palabra clave '{1}': ¿nombre antiguo o errata? El LoRA solo se activa con su palabra exacta.",
+"Aucun prompt d'apercu ne contient le mot declencheur '{0}' : les apercus ne montreront pas l'effet du LoRA appele par son mot.": "Ningún prompt de vista previa contiene la palabra clave '{0}': las vistas previas no mostrarán el efecto del LoRA activado por su palabra.",
+"ATTENTION": "ATENCIÓN"
 }

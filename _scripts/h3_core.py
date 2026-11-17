@@ -1279,6 +1279,52 @@ def _job_env(cfg, P=None, start_step=0):
     return env
 
 
+def _prompt_lines(prompts):
+    if isinstance(prompts, (list, tuple)):
+        return [str(x).strip() for x in prompts if str(x).strip()]
+    return [x.strip() for x in str(prompts or "").splitlines() if x.strip()]
+
+
+def prompt_trigger_issues(trigger, prompts):
+    """Ecarts entre le mot declencheur et les prompts : liste de messages (vide = tout va bien).
+    - aucun prompt ne contient le mot declencheur ;
+    - un prompt contient un mot proche (ancien nom, faute de frappe : Maine_1 pour Maine_2)."""
+    trigger = (trigger or "").strip()
+    lines = _prompt_lines(prompts)
+    if not trigger or not lines:
+        return []
+    import difflib
+
+    trig = trigger.lower()
+    stem = re.sub(r"[\d_\-]+$", "", trig)
+    found, near, plain = False, [], []
+    for line in lines:
+        for word in re.findall(r"[\w\-]+", line):
+            tok = word.lower()
+            if tok == trig:
+                found = True
+            elif len(tok) >= 4 and word not in near and (
+                    (stem and len(stem) >= 3 and re.sub(r"[\d_\-]+$", "", tok) == stem)
+                    or (re.search(r"[\d_]", tok) and difflib.SequenceMatcher(None, tok, trig).ratio() >= 0.75)):
+                (near if re.search(r"[\d_\-]", tok) else plain).append(word)
+    if not found:   # un mot ordinaire proche (Maine) n'est suspect que si le vrai mot est absent
+        near += plain
+    issues = []
+    if near:
+        issues.append(f"les prompts d'apercu contiennent '{', '.join(near)}', proche du mot declencheur "
+                      f"'{trigger}' : ancien nom ou faute de frappe ? Le LoRA n'est appele que par son mot exact.")
+    if not found:
+        issues.append(f"aucun prompt d'apercu ne contient le mot declencheur '{trigger}' : les apercus "
+                      "ne montreront pas l'effet du LoRA appele par son mot.")
+    return issues
+
+
+def prompt_warning(P):
+    if P.get("no_sample"):
+        return ""
+    return "".join("\nATTENTION : " + x for x in prompt_trigger_issues(P.get("trigger"), P.get("prompts")))
+
+
 def ram_warning(P):
     """Sous Windows, la memoire de la carte est adossee a la RAM : si la RAM
     sature, la carte refuse des allocations meme avec de la place libre. Repere
@@ -1588,10 +1634,11 @@ def start_training(P, queue=False):
     done = checkpoint_steps(name)
     item = {"kind": "train", "name": name, "cfg_path": cfg_path, "label": f"Entrainement {name}",
             "env": _job_env(cfg, P, start_step=done[-1] if done else 0)}
-    note_ram = ram_warning(P)
+    ram = ram_warning(P).strip()
+    note_ram = ("\n" + ram if ram else "") + prompt_warning(P)
     if queue:
         pos = ORCH.enqueue(item)
-        return f"'{name}' ajoute a la file d'attente (position {pos}).", None
+        return f"'{name}' ajoute a la file d'attente (position {pos}).{note_ram}", None
     if RUN.running():
         return ("Un processus tourne deja : mettez-le en pause, ou utilisez "
                 "'Ajouter a la file d'attente'."), None

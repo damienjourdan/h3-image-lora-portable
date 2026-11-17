@@ -405,6 +405,14 @@ def load_settings_now(name):
     return [P.get(k, gr.update()) for k in core.PARAM_KEYS] + [f"Reglages charges : {name}"]
 
 
+def prompt_check(trigger, prompts, no_sample=False):
+    """Avertissement sous les prompts d'apercu si le mot declencheur n'y est pas, ou mal ecrit."""
+    if no_sample:
+        return ""
+    issues = core.prompt_trigger_issues(trigger, prompts)
+    return "\n".join(f"<span style='color:#e65100'>&#9888; {x[0].upper() + x[1:]}</span>  " for x in issues)
+
+
 def _newest(paths):
     paths = [p for p in paths if os.path.exists(p)]
     return max(paths, key=os.path.getmtime) if paths else None
@@ -789,6 +797,7 @@ def build(code):
                                  info="Preconise : 2 a 4 prompts detailles, avec votre mot declencheur, dont "
                                       "un proche du dataset et un tres different (teste la generalisation). "
                                       "Chaque prompt rallonge la pause d'apercu.")
+            prompt_note = gr.Markdown("")
             with gr.Accordion("Aide : valeurs preconisees et diagnostic", open=False):
                 gr.Markdown(AIDE_REGLAGES)
 
@@ -984,6 +993,8 @@ def build(code):
             dataset_info, [ds_folder] + ds_extra, [ds_msg, ds_gallery])
         for comp in (lora_type, trigger, cap_extra):
             comp.change(core.caption_prompt, [lora_type, trigger, cap_extra], cap_prompt)
+        for comp in (trigger, prompts, no_sample):
+            comp.change(prompt_check, [trigger, prompts, no_sample], prompt_note)
         cap_btn.click(fill_captions, [ds_folder, cap_text], [ds_msg, ds_gallery])
         # retour immediat : le panneau passe a "Lancement" des le clic, sans attendre le minuteur
         cap_auto_btn.click(lambda f, m, r, p, t: core.start_captioning(f, m, r, p, t),
