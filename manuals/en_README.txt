@@ -190,6 +190,15 @@ GPU TEMPERATURE AND POWER (Tools tab)
     FanControl.
   - The monitor also shows fan speed and power draw.
 
+ELECTRICITY COST (Tools tab)
+  Enter the price per kWh (from your bill, excluding the standing charge)
+  and the currency (EUR, USD, GBP, BRL, JPY, CNY), then Save. During a job,
+  next to the elapsed time, time left and speed, the UI shows the kWh used
+  by the GPU, their cost and the projected cost at the end (based on the
+  average power of the last 5 minutes). The total stays visible when the
+  job ends. Only the graphics card is counted (nvidia-smi): the rest of the
+  PC comes on top. Price at 0: only kWh are shown.
+
 AI-TOOLKIT VERSION
   By default: latest version of the main branch. This package was audited
   on commit 4a7f285 (10 Nov 2026). "Pin current version" button in the

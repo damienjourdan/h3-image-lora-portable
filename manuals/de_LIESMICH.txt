@@ -202,6 +202,15 @@ GPU-TEMPERATUR UND -LEISTUNG (Tab Werkzeuge)
     MSI Afterburner oder FanControl fest.
   - Die Anzeige zeigt auch Lüfterdrehzahl und Leistungsaufnahme.
 
+STROMKOSTEN (Tab Werkzeuge)
+  Geben Sie den Preis pro kWh (laut Rechnung, ohne Grundgebühr) und die
+  Währung (EUR, USD, GBP, BRL, JPY, CNY) ein, dann Speichern. Während eines
+  Jobs zeigt die UI neben vergangener Zeit, Restzeit und Tempo die von der
+  GPU verbrauchten kWh, ihre Kosten und die voraussichtlichen Kosten am
+  Ende (nach der mittleren Leistung der letzten 5 Minuten). Die Summe bleibt
+  nach dem Job sichtbar. Nur die Grafikkarte wird gezählt (nvidia-smi): der
+  Rest des PCs kommt hinzu. Preis 0: nur kWh werden angezeigt.
+
 AI-TOOLKIT-VERSION
   Standard: neueste Version des main-Zweigs. Dieses Paket wurde auf Commit
   4a7f285 (10. Nov. 2026) geprüft. Schaltfläche „Aktuelle Version fixieren"

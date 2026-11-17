@@ -101,7 +101,7 @@ def _thumbs(items, size=384):
     return out
 
 
-def _bar_html(title, d, color):
+def _bar_html(title, d, color, energy=False):
     pct = int(d["pct"]) if d else 0
     detail = ""
     if d:
@@ -112,6 +112,10 @@ def _bar_html(title, d, color):
             detail += f" &nbsp;|&nbsp; reste {d['eta']}"
         if d.get("rate"):
             detail += f" &nbsp;|&nbsp; {d['rate']}"
+    if energy:
+        cost = core.energy_text((d or {}).get("eta"), i18n.lang_now())
+        if cost:
+            detail += f" &nbsp;|&nbsp; {cost}"
     name = (d or {}).get("desc") or ""
     return f"""
 <div style="margin:6px 0">
@@ -175,7 +179,8 @@ def render_status():
             html += (f"<div style='font-size:13px;opacity:.85'>ai-toolkit : {st['info']}"
                      f"{' &nbsp;|&nbsp; ' + st['speed'] if st['speed'] else ''}</div>")
     if s["running"] and (s["train_bar"] or s["bar"]):
-        html += _bar_html("Progression", s["train_bar"] or s["bar"], "#4caf50" if s["train_bar"] else "#2196f3")
+        html += _bar_html("Progression", s["train_bar"] or s["bar"], "#4caf50" if s["train_bar"] else "#2196f3",
+                          energy=s["kind"] != "download")
     html += _monitor_html()
     extra = []
     if ORCH.thermal_message:
@@ -237,6 +242,9 @@ def panel(kinds, idle_text):
         html = (f"<div style='font-size:13px'><b style='color:{color}'>{icon}</b> <b>{v['label']}</b> "
                 f"&nbsp;-&nbsp; {v['phase']} &nbsp;<span style='opacity:.75'>(fin a {when}, "
                 f"duree {_dur(v['duration'])})</span></div>")
+        spent = core.energy_summary(v.get("wh"), i18n.lang_now())
+        if spent:
+            html += f"<div style='font-size:12px;opacity:.8;margin-top:2px'>Consommation : {spent}</div>"
         return PANEL_CSS + html, v["log"]
     html = (f"<div style='font-size:14px'><span class='h3-spin'></span><b>{v['label']}</b> "
             f"&nbsp;<span style='opacity:.75'>en cours depuis {_dur(v['elapsed'])}</span></div>")
@@ -251,14 +259,18 @@ def panel(kinds, idle_text):
         html += "<div class='h3-steps'>" + "".join(chips) + "</div>"
     html += f"<div style='font-size:13px'>{v['phase']}</div>"
     if v["train_bar"]:
-        html += _bar_html("Progression (pas)", v["train_bar"], "#4caf50")
+        html += _bar_html("Progression (pas)", v["train_bar"], "#4caf50", energy=True)
     if v["bar"]:
         title = v["bar"].get("desc") or v["stage"] or "Etape en cours"
-        html += _bar_html(title, v["bar"], "#2196f3")
+        html += _bar_html(title, v["bar"], "#2196f3", energy=not v["train_bar"] and v.get("kind") != "download")
     if not v["train_bar"] and not v["bar"]:
         detail = f"etape en cours depuis {_dur(v['stage_elapsed'])}"
         if v["stage"] == "Legendage" and v["total"]:
             detail = f"0 / {v['total']} images - {detail}"
+        if v.get("kind") != "download":
+            cost = core.energy_text(None, i18n.lang_now())
+            if cost:
+                detail += f" &nbsp;|&nbsp; {cost}"
         html += (f"<div style='margin:6px 0'><div class='h3-indet'></div>"
                  f"<div style='font-size:12px;opacity:.8;margin-top:2px'>{detail} "
                  "(duree non mesurable a ce stade)</div></div>")
@@ -516,7 +528,8 @@ def auto_test_results(job, last_sig):
 
 
 # ------------------------------------------------------------------ outils
-def save_tools(sound, topic, comfy, awake, t_alert, t_pause, watts, th_on=False, th_target=72, th_min=150):
+def save_tools(sound, topic, comfy, awake, t_alert, t_pause, watts, th_on=False, th_target=72, th_min=150,
+               kwh_price=0, currency=""):
     t_alert, t_pause, watts = int(t_alert or 0), int(t_pause or 0), int(watts or 0)
     th_target, th_min = int(th_target or 72), int(th_min or 150)
     if th_on:
@@ -536,7 +549,8 @@ def save_tools(sound, topic, comfy, awake, t_alert, t_pause, watts, th_on=False,
     core.save_settings(sound=bool(sound), ntfy_topic=(topic or "").strip(),
                        comfy_loras_dir=(comfy or "").strip(), keep_awake=bool(awake),
                        temp_alert=t_alert, temp_pause=t_pause, power_limit_w=watts,
-                       thermo_on=bool(th_on), thermo_target=th_target, thermo_min_w=th_min)
+                       thermo_on=bool(th_on), thermo_target=th_target, thermo_min_w=th_min,
+                       kwh_price=max(0.0, float(kwh_price or 0)), currency=currency or "")
     if th_on:
         return ("Reglages enregistres. Thermostat actif : il regule pendant les jobs"
                 + ("." if core.is_admin() else
@@ -899,6 +913,17 @@ def build(code):
                         "reglez une courbe dans MSI Afterburner ou FanControl. Sans droits administrateur, la limite "
                         "de puissance reste en place apres le job : utilisez 'Retablir la limite d'origine' "
                         "ou redemarrez le PC.")
+            gr.Markdown("### Cout de l'electricite (GPU)")
+            with gr.Row():
+                opt_price = gr.Number(label="Prix du kWh", value=lambda: core.load_settings().get("kwh_price") or 0, minimum=0,
+                                      info="Le montant de votre facture d'electricite, abonnement exclu. "
+                                           "0 = afficher seulement les kWh.")
+                opt_cur = gr.Dropdown([(f"{c} ({v[0]})", c) for c, v in core.CURRENCIES.items()],
+                                      value=lambda: core.currency_for(code), label="Monnaie")
+            gr.Markdown("Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son cout "
+                        "et le cout projete a la fin s'affichent a cote du temps ecoule, du temps restant et de "
+                        "la vitesse. Seule la carte graphique est comptee : processeur, ecran et reste du PC "
+                        "s'y ajoutent. Enregistrez avec le bouton Enregistrer ci-dessous.")
             gr.Markdown("### ComfyUI")
             opt_comfy = gr.Textbox(label="Dossier 'loras' de ComfyUI", value=_cfg["comfy_loras_dir"],
                                    placeholder="D:\\ComfyUI\\models\\loras",
@@ -970,7 +995,7 @@ def build(code):
         dl_btn.click(core.start_download, dl_choice, msg).then(render_download_panel, None, [dl_panel, dl_log])
         dl_refresh.click(core.models_state, None, dl_state)
         tools_inputs = [opt_sound, opt_ntfy, opt_comfy, opt_awake, opt_talert, opt_tpause, opt_watts,
-                        opt_thermo, opt_thtarget, opt_thmin]
+                        opt_thermo, opt_thtarget, opt_thmin, opt_price, opt_cur]
         # trois facons d'enregistrer, meme effet : bouton general, bouton de la section, case thermostat
         for trigger_event in (tools_save.click, temp_save.click, opt_thermo.input):
             trigger_event(save_tools, tools_inputs, msg).then(

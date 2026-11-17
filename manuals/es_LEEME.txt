@@ -195,6 +195,15 @@ TEMPERATURA Y POTENCIA DE LA GPU (pestaña Herramientas)
     Afterburner o FanControl.
   - El monitor muestra también la velocidad del ventilador y la potencia.
 
+COSTE DE LA ELECTRICIDAD (pestaña Herramientas)
+  Introduzca el precio del kWh (el de su factura, sin el término fijo) y la
+  moneda (EUR, USD, GBP, BRL, JPY, CNY), y luego Guardar. Durante un job,
+  junto al tiempo transcurrido, el tiempo restante y la velocidad, se
+  muestran los kWh consumidos por la GPU, su coste y el coste previsto al
+  final (según la potencia media de los últimos 5 minutos). El total sigue
+  visible al terminar el job. Solo se cuenta la tarjeta gráfica (nvidia-smi):
+  el resto del PC se suma. Precio a 0: solo se muestran los kWh.
+
 VERSIÓN DE AI-TOOLKIT
   Por defecto: última versión de la rama main. Este paquete se auditó en el
   commit 4a7f285 (10 nov. 2026). Botón «Fijar la versión actual» en la

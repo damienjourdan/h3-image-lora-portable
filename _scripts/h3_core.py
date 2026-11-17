@@ -241,7 +241,73 @@ DEFAULT_SETTINGS = {"sound": True, "ntfy_topic": "", "comfy_loras_dir": "", "kee
                     # limite de puissance appliquee pendant les jobs, en watts (0 = ne pas toucher)
                     "power_limit_w": 0,
                     # thermostat : ajuste la limite de puissance pour tenir une temperature cible
-                    "thermo_on": False, "thermo_target": 72, "thermo_min_w": 150}
+                    "thermo_on": False, "thermo_target": 72, "thermo_min_w": 150,
+                    # cout de l'electricite consommee par le GPU (0 = kWh seulement ; "" = devise selon la langue)
+                    "kwh_price": 0.0, "currency": ""}
+
+# devises des langues de l'interface : code -> (symbole, decimales, symbole devant)
+CURRENCIES = {"EUR": ("€", 2, False), "USD": ("$", 2, True), "GBP": ("£", 2, True),
+              "BRL": ("R$", 2, True), "JPY": ("¥", 0, True), "CNY": ("¥", 2, True)}
+LANG_CURRENCY = {"en": "USD", "fr": "EUR", "de": "EUR", "es": "EUR", "pt": "EUR", "ja": "JPY", "zh": "CNY"}
+
+
+def currency_for(lang, cfg=None):
+    cur = ((cfg or load_settings()).get("currency") or "").upper()
+    return cur if cur in CURRENCIES else LANG_CURRENCY.get(lang, "EUR")
+
+
+def fmt_money(amount, cur):
+    sym, dec, before = CURRENCIES.get(cur, CURRENCIES["EUR"])
+    if dec and amount < 0.1:
+        dec = 3   # quelques centimes : un chiffre de plus pour voir le compteur bouger
+    txt = f"{amount:.{dec}f}"
+    return f"{sym}{txt}" if before else f"{txt} {sym}"
+
+
+def _hms_seconds(text):
+    """'05:12', '1:02:03' ou '1 day, 2:03:04' (format tqdm) -> secondes."""
+    try:
+        days = 0
+        if "day" in text:
+            d, text = text.split(",", 1)
+            days = int(d.split()[0])
+        parts = [float(x) for x in text.strip().split(":")]
+        sec = 0.0
+        for x in parts:
+            sec = sec * 60 + x
+        return days * 86400 + sec
+    except (ValueError, AttributeError, IndexError):
+        return None
+
+
+def energy_text(eta=None, lang=None):
+    """Consommation du GPU depuis le debut du job, son cout, et le cout projete a la fin."""
+    wh = MON.job_wh
+    if wh <= 0:
+        return ""
+    cfg = load_settings()
+    price = float(cfg.get("kwh_price") or 0)
+    kwh = wh / 1000
+    if price <= 0:
+        return f"GPU {kwh:.2f} kWh"
+    cur = currency_for(lang, cfg)
+    spent = fmt_money(kwh * price, cur)
+    left = _hms_seconds(eta) if eta else None
+    if left and MON.avg_w:
+        proj = fmt_money((wh + MON.avg_w * left / 3600) / 1000 * price, cur)
+        return f"GPU {kwh:.2f} kWh = {spent}, ~{proj} a la fin"
+    return f"GPU {kwh:.2f} kWh = {spent}"
+
+
+def energy_summary(wh, lang=None):
+    if not wh:
+        return ""
+    cfg = load_settings()
+    price = float(cfg.get("kwh_price") or 0)
+    txt = f"GPU {wh / 1000:.2f} kWh"
+    if price > 0:
+        txt += f" = {fmt_money(wh / 1000 * price, currency_for(lang, cfg))}"
+    return txt
 THERMO_PERIOD = 45     # secondes entre deux ajustements (inertie thermique de la carte)
 THERMO_STEP = 10       # watts par ajustement
 THERMO_BAND_HIGH = 2   # degres au-dessus de la cible avant de baisser la puissance
@@ -517,6 +583,14 @@ class SysMon:
         self.peak_train = 0.0
         self.in_train_phase = lambda: False
         self._started = False
+        # energie du job en cours : integration de power.draw ; moyenne glissante pour la projection
+        self.is_busy = lambda: False
+        self.job_wh = 0.0
+        self.avg_w = None
+        self._t_last = None
+
+    def reset_energy(self):
+        self.job_wh, self.avg_w, self._t_last = 0.0, None, None
 
     def reset_peaks(self):
         self.peak_all = self.peak_train = 0.0
@@ -547,6 +621,16 @@ class SysMon:
         while True:
             self._query()
             self.ram_used, self.ram_total = _ram_gb()
+            now = time.time()
+            if self.is_busy() and self.power_draw:
+                if self._t_last is not None:
+                    dt = min(10.0, now - self._t_last)
+                    self.job_wh += self.power_draw * dt / 3600
+                    a = min(1.0, dt / 300)   # moyenne sur ~5 min : suit le regime de l'entrainement
+                    self.avg_w = self.power_draw if self.avg_w is None else self.avg_w + a * (self.power_draw - self.avg_w)
+                self._t_last = now
+            else:
+                self._t_last = None
             if self.vram_used is not None:
                 self.peak_all = max(self.peak_all, self.vram_used)
                 if self.in_train_phase():
@@ -724,6 +808,7 @@ class Runner:
         if kind in self.CONTROLLED:
             env["AITK_JOB_ID"] = job_name
         env.update(extra_env or {})
+        MON.reset_energy()
         with self.lock:
             self.lines.clear()
             self.partial = ""
@@ -801,7 +886,8 @@ class Runner:
             self.history[self.kind] = {
                 "label": self.label, "phase": self.phase, "exit_code": self.exit_code,
                 "ended": time.time(), "duration": time.time() - (self.started or time.time()),
-                "log": "\n".join(lines[-120:]), "stopped": bool(self.stop_phase)}
+                "log": "\n".join(lines[-120:]), "stopped": bool(self.stop_phase),
+                "wh": MON.job_wh if self.kind != "download" else 0}
         for callback in list(self.on_exit):
             try:
                 callback(self)
@@ -944,6 +1030,7 @@ class Runner:
 RUN = Runner()
 MON = SysMon()
 MON.in_train_phase = lambda: RUN.running() and RUN.train_bar is not None
+MON.is_busy = lambda: RUN.running() and RUN.kind != "download"
 
 
 def rate_to_seconds(rate):

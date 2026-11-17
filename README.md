@@ -27,7 +27,8 @@ is replaced by a Gradio interface.
 - **Seven languages**: a selector next to the title switches the interface between English, French,
   German, Spanish, Portuguese, Japanese and Mandarin; every `.bat` script starts with the same choice.
 - **Hardware**: VRAM / RAM / temperature monitor, sleep prevention, thermal alert and pause,
-  adjustable GPU power limit and thermostat, notifications (sound, phone via ntfy.sh).
+  adjustable GPU power limit and thermostat, GPU electricity cost (spent so far and projected at the
+  end of the job, in the currency of your choice), notifications (sound, phone via ntfy.sh).
 
 ## Requirements
 

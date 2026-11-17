@@ -461,5 +461,12 @@
 "{0} termine": "{0} finished",
 "Test {0}": "Test {0}",
 "absent    {0}": "missing   {0}",
-"inconnue": "unknown"
+"inconnue": "unknown",
+"GPU {0} kWh = {1}, ~{2} a la fin": "GPU {0} kWh = {1}, ~{2} at the end",
+"Consommation : {0}": "Consumption: {0}",
+"### Cout de l'electricite (GPU)": "### Electricity cost (GPU)",
+"Prix du kWh": "Price per kWh",
+"Monnaie": "Currency",
+"Le montant de votre facture d'electricite, abonnement exclu. 0 = afficher seulement les kWh.": "The price on your electricity bill, excluding the standing charge. 0 = show kWh only.",
+"Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son cout et le cout projete a la fin s'affichent a cote du temps ecoule, du temps restant et de la vitesse. Seule la carte graphique est comptee : processeur, ecran et reste du PC s'y ajoutent. Enregistrez avec le bouton Enregistrer ci-dessous.": "During a job, the GPU's consumption (read by nvidia-smi every 2 s), its cost and the projected cost at the end are shown next to the elapsed time, the time left and the speed. Only the graphics card is counted: the processor, screen and rest of the PC come on top. Save with the Save button below."
 }
