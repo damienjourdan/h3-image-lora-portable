@@ -199,6 +199,16 @@ COÛT DE L'ÉLECTRICITÉ (onglet Outils)
   la fin du job. Seule la carte graphique est comptée (nvidia-smi) : le
   reste du PC s'y ajoute. Prix à 0 : seuls les kWh s'affichent.
 
+TROUVER LA BONNE LIMITE DE PUISSANCE (onglet Résultats)
+  L'onglet « Puissance, vitesse et température », à côté de la courbe de
+  perte, relève pendant l'entraînement la puissance du GPU, sa limite, la
+  température et le temps par pas (par tranches de 5 pas, aperçus et
+  sauvegardes exclus). Un tableau regroupe les mesures par paliers de 10 W
+  et désigne le seuil conseillé : la puissance la plus basse qui reste à
+  moins de 3 % de la vitesse maximale. La colonne « Wh par pas » donne
+  l'énergie pour un même travail. Pour comparer, faites varier la limite
+  pendant un entraînement (onglet Outils) ou laissez le thermostat agir.
+
 VERSION D'AI-TOOLKIT
   Par défaut : dernière version de la branche main. Ce paquet a été audité
   sur le commit 4a7f285 (10 nov. 2026). Bouton « Figer la version actuelle »

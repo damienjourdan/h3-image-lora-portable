@@ -499,31 +499,148 @@ def loss_svg(job):
     return "<div><b style='font-size:13px'>Perte</b>" + "".join(out) + legend + "</div>"
 
 
+def _axis(lo, hi, rel=0.08):
+    pad = max((hi - lo) * rel, abs(hi) * 0.01, 1e-6)
+    return lo - pad, hi + pad
+
+
+def perf_svg(job):
+    """Puissance (et limite), temperature et vitesse au fil des pas, puis un tableau par palier
+    de puissance pour reperer la limite la plus basse qui ne ralentit pas l'entrainement."""
+    rows = core.PerfLog.read(job) if job else []
+    if len(rows) < 3:
+        return ("<div style='opacity:.7;font-size:13px'>Puissance et vitesse : pas encore de mesures "
+                "(relevees pendant l'entrainement, par tranches de 5 pas sans apercu ni sauvegarde).</div>")
+    steps = [r[1] for r in rows]
+    watts, temps, limits, spi = [r[2] for r in rows], [r[3] for r in rows], [r[4] for r in rows], [r[5] for r in rows]
+    W, L, R = 1000, 52, 52
+    T1, H1 = 26, 150          # panneau haut : puissance + temperature
+    T2, H2 = T1 + H1 + 34, 110  # panneau bas : vitesse
+    H = T2 + H2 + 34
+    x0, x1 = steps[0], max(steps[-1], steps[0] + 1)
+
+    def X(st):
+        return L + (st - x0) / (x1 - x0) * (W - L - R)
+
+    lim_ok = [v for v in limits if v > 0]
+    w_lo, w_hi = _axis(min(watts + lim_ok), max(watts + lim_ok))
+    t_lo, t_hi = _axis(min(temps), max(temps))
+    s_lo, s_hi = _axis(min(spi), max(spi))
+
+    def Y(v, lo, hi, top, h):
+        return top + (hi - v) / (hi - lo) * h
+
+    def line(vals, lo, hi, top, h, color, width=2.0, dash=""):
+        pts = " ".join(f"{X(st):.1f},{Y(v, lo, hi, top, h):.1f}" for st, v in zip(steps, vals))
+        return (f"<polyline points='{pts}' fill='none' stroke='{color}' stroke-width='{width}'"
+                + (f" stroke-dasharray='{dash}'" if dash else "") + "/>")
+
+    out = [f"<svg viewBox='0 0 {W} {H}' style='width:100%;height:auto;font-family:sans-serif' "
+           "xmlns='http://www.w3.org/2000/svg'>"]
+    for top, h, lo, hi, color, unit, dec, side in (
+            (T1, H1, w_lo, w_hi, "#e65100", "W", 0, "l"), (T1, H1, t_lo, t_hi, "#c62828", "°C", 0, "r"),
+            (T2, H2, s_lo, s_hi, "#1e88e5", "s", 2, "l")):
+        for i in range(4):
+            v = lo + (hi - lo) * i / 3
+            y = Y(v, lo, hi, top, h)
+            if side == "l":
+                out.append(f"<line x1='{L}' x2='{W - R}' y1='{y:.1f}' y2='{y:.1f}' stroke='currentColor' "
+                           "stroke-opacity='.12'/>")
+            xt, anchor = (L - 6, "end") if side == "l" else (W - R + 6, "start")
+            out.append(f"<text x='{xt}' y='{y + 4:.1f}' font-size='11' text-anchor='{anchor}' "
+                       f"fill='{color}'>{v:.{dec}f} {unit}</text>")
+    if lim_ok:
+        out.append(line([v if v > 0 else w_hi for v in limits], w_lo, w_hi, T1, H1, "#9e9e9e", 1.5, "6 4"))
+    out.append(line(watts, w_lo, w_hi, T1, H1, "#e65100"))
+    out.append(line(temps, t_lo, t_hi, T1, H1, "#c62828", 1.5))
+    out.append(line(spi, s_lo, s_hi, T2, H2, "#1e88e5"))
+    span = x1 - x0
+    tick = next(t for t in (25, 50, 100, 250, 500, 1000, 2500, 5000, 10 ** 9) if span / t <= 12)
+    st = (x0 // tick + 1) * tick
+    while st <= x1:
+        out.append(f"<text x='{X(st):.1f}' y='{H - 18}' font-size='11' text-anchor='middle' "
+                   f"fill='currentColor'>{st}</text>")
+        st += tick
+    out.append(f"<text x='{(L + W - R) / 2}' y='{H - 3}' font-size='11' text-anchor='middle' "
+               "fill='currentColor'>pas</text></svg>")
+    legend = ("<div style='font-size:12px;margin:2px 0 8px'>"
+              "<span style='color:#e65100'>&#9472;&#9472;</span> puissance du GPU &nbsp; "
+              "<span style='color:#9e9e9e'>&#9476;&#9476;</span> limite de puissance &nbsp; "
+              "<span style='color:#c62828'>&#9472;&#9472;</span> temperature &nbsp; "
+              "<span style='color:#1e88e5'>&#9472;&#9472;</span> secondes par pas (plus bas = plus rapide)</div>")
+
+    # paliers de 10 W de puissance mesuree
+    bins = {}
+    for w, t, sp in zip(watts, temps, spi):
+        bins.setdefault(int(round(w / 10.0)) * 10, []).append((w, t, sp))
+    stats = []
+    for b, vals in sorted(bins.items()):
+        n = len(vals)
+        mw, mt = sum(v[0] for v in vals) / n, sum(v[1] for v in vals) / n
+        ms = sorted(v[2] for v in vals)[n // 2]   # mediane : insensible aux pas lents isoles
+        stats.append((b, mw, mt, ms, mw * ms / 3600, n))
+    solid = [x for x in stats if x[5] >= 3] or stats
+    best = min(solid, key=lambda x: x[3])
+    pick = min((x for x in solid if x[3] <= best[3] * 1.03), key=lambda x: x[1])
+    price = float(core.load_settings().get("kwh_price") or 0)
+    cur = core.currency_for(i18n.lang_now())
+    head = ("<tr><th>Puissance mesuree</th><th>s/pas</th><th>Temperature</th><th>Wh par pas</th>"
+            + ("<th>Cout pour 1000 pas</th>" if price > 0 else "") + "<th>Mesures</th><th></th></tr>")
+    body = []
+    # un palier mesure une seule fois chevauche en general un changement de limite : on l'ecarte
+    shown = [x for x in stats if x[5] >= 2 or x in (best, pick)] if len(stats) > 2 else stats
+    for b, mw, mt, ms, wh, n in shown:
+        mark = []
+        if (b, n) == (best[0], best[5]):
+            mark.append("le plus rapide")
+        if (b, n) == (pick[0], pick[5]):
+            mark.append("seuil conseille")
+        style = " style='background:rgba(67,160,71,.18);font-weight:600'" if (b, n) == (pick[0], pick[5]) else ""
+        body.append(f"<tr{style}><td>{mw:.0f} W</td><td>{ms:.2f}</td><td>{mt:.0f} °C</td><td>{wh:.3f}</td>"
+                    + (f"<td>{core.fmt_money(wh * price, cur)}</td>" if price > 0 else "")
+                    + f"<td>{n}</td><td>{', '.join(mark)}</td></tr>")
+    table = ("<table style='font-size:12px;border-collapse:collapse;width:100%' cellpadding='4'>"
+             + head + "".join(body) + "</table>")
+    if len(stats) < 2:
+        verdict = ("Une seule puissance mesuree pour l'instant : faites varier la limite (onglet Outils, "
+                   "ou le thermostat) pendant l'entrainement pour comparer.")
+    elif pick is best:
+        verdict = (f"Seuil conseille : environ {pick[1]:.0f} W, la puissance la plus rapide mesuree ({pick[2]:.0f} °C). "
+                   "Essayez une limite plus basse pour voir si la vitesse tient.")
+    else:
+        slower = (pick[3] / best[3] - 1) * 100
+        verdict = (f"Seuil conseille : environ {pick[1]:.0f} W, soit {slower:.0f} % plus lent que le plus rapide "
+                   f"pour {best[1] - pick[1]:.0f} W de moins, a {pick[2]:.0f} °C.")
+    return ("<div><b style='font-size:13px'>Puissance, vitesse et temperature</b>" + "".join(out) + legend
+            + table + f"<div style='font-size:13px;margin-top:6px'><b>{verdict}</b></div></div>")
+
+
 def _results_sig(job):
     files = core.job_samples(job) + core.job_checkpoints(job)
-    loss = os.path.join(core.OUTPUT, job, "pertes.csv")
-    if os.path.isfile(loss):
-        files.append(loss)
+    for extra in ("pertes.csv", "gpu_perf.csv"):
+        path = os.path.join(core.OUTPUT, job, extra)
+        if os.path.isfile(path):
+            files.append(path)
     return "|".join(f"{os.path.basename(p)}:{os.path.getmtime(p):.0f}" for p in files)
 
 
 def job_results(job):
     if not job:
-        return [], "", gr.update(choices=[], value=None), loss_svg("")
+        return [], "", gr.update(choices=[], value=None), loss_svg(""), perf_svg("")
     cks = core.job_checkpoints(job)
     listing = "\n".join(f"{p}   ({os.path.getsize(p) / 1e6:.0f} Mo)" for p in cks)
     names = [os.path.basename(p) for p in cks]
     return (_thumbs(core.job_samples(job), 1024), listing or "Aucun checkpoint pour l'instant.",
-            gr.update(choices=names, value=names[0] if names else None), loss_svg(job))
+            gr.update(choices=names, value=names[0] if names else None), loss_svg(job), perf_svg(job))
 
 
 def auto_results(job, last_sig):
     """Toutes les 5 s : ne recharge que si un fichier du job a change."""
     if not job:
-        return gr.update(), gr.update(), gr.update(), gr.update(), last_sig
+        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), last_sig
     sig = _results_sig(job)
     if sig == last_sig:
-        return gr.update(), gr.update(), gr.update(), gr.update(), last_sig
+        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), last_sig
     return (*job_results(job), sig)
 
 
@@ -841,10 +958,20 @@ def build(code):
             gr.Markdown("Apercus, courbe et checkpoints du job selectionne se mettent a jour tout seuls (5 s).")
             res_sig = gr.State("")
             res_gallery = gr.Gallery(label="Apercus (plus recents d'abord)", columns=4, height=460)
-            loss_plot = gr.HTML()
-            gr.Markdown("*Lecture : la courbe lissee qui devient plate indique que les pas suivants apportent "
-                        "peu ; comparez les checkpoints reperes en vert dans l'onglet Tester un LoRA. "
-                        "La courbe ne detecte pas le sur-apprentissage : seuls des apercus varies le montrent.*")
+            with gr.Tabs():
+                with gr.Tab("Perte"):
+                    loss_plot = gr.HTML()
+                    gr.Markdown("*Lecture : la courbe lissee qui devient plate indique que les pas suivants "
+                                "apportent peu ; comparez les checkpoints reperes en vert dans l'onglet Tester un "
+                                "LoRA. La courbe ne detecte pas le sur-apprentissage : seuls des apercus varies "
+                                "le montrent.*")
+                with gr.Tab("Puissance, vitesse et temperature"):
+                    perf_plot = gr.HTML()
+                    gr.Markdown("*Releve pendant l'entrainement, par tranches de 5 pas (les apercus et sauvegardes "
+                                "sont exclus). Pour trouver la bonne limite : faites varier la limite de puissance "
+                                "(onglet Outils) ou laissez le thermostat la faire bouger, puis lisez le tableau. Le "
+                                "seuil conseille est la puissance la plus basse qui reste a moins de 3 % de la "
+                                "vitesse maximale ; Wh par pas indique l'energie pour un meme travail.*")
             res_files = gr.Textbox(label="Checkpoints LoRA (.safetensors) - chemins sur le disque",
                                    lines=5, interactive=False)
             with gr.Row():
@@ -1020,7 +1147,7 @@ def build(code):
         sample_btn.click(core.sample_now, None, msg)
         # resultats
         refresh_btn.click(lambda: gr.update(choices=core.list_jobs()), None, job_sel)
-        job_sel.change(job_results, job_sel, [res_gallery, res_files, ck_sel, loss_plot])
+        job_sel.change(job_results, job_sel, [res_gallery, res_files, ck_sel, loss_plot, perf_plot])
         open_btn.click(open_job_folder, job_sel, msg)
         comfy_btn.click(copy_to_comfy, [job_sel, ck_sel], msg)
         # tests
@@ -1048,7 +1175,7 @@ def build(code):
                           test_panel, test_log, dl_panel, dl_log]
         gr.Timer(1.0).tick(render_status, None, status_outputs)
         gr.Timer(5.0).tick(auto_results, [job_sel, res_sig],
-                           [res_gallery, res_files, ck_sel, loss_plot, res_sig])
+                           [res_gallery, res_files, ck_sel, loss_plot, perf_plot, res_sig])
         gr.Timer(5.0).tick(auto_test_results, [test_job, test_sig], [test_gallery, test_sig])
         demo.load(render_status, None, status_outputs)
         demo.load(lambda: i18n.save_lang(code), None, None)

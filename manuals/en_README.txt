@@ -199,6 +199,15 @@ ELECTRICITY COST (Tools tab)
   job ends. Only the graphics card is counted (nvidia-smi): the rest of the
   PC comes on top. Price at 0: only kWh are shown.
 
+FINDING THE RIGHT POWER LIMIT (Results tab)
+  The "Power, speed and temperature" tab, next to the loss curve, records
+  during training the GPU power, its limit, the temperature and the time
+  per step (in blocks of 5 steps, previews and saves excluded). A table
+  groups the measurements in 10 W levels and points out the recommended
+  threshold: the lowest power that stays within 3 % of the top speed. The
+  "Wh per step" column gives the energy for the same work. To compare, vary
+  the limit during a training (Tools tab) or let the thermostat act.
+
 AI-TOOLKIT VERSION
   By default: latest version of the main branch. This package was audited
   on commit 4a7f285 (10 Nov 2026). "Pin current version" button in the

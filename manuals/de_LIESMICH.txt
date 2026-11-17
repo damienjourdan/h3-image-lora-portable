@@ -211,6 +211,16 @@ STROMKOSTEN (Tab Werkzeuge)
   nach dem Job sichtbar. Nur die Grafikkarte wird gezählt (nvidia-smi): der
   Rest des PCs kommt hinzu. Preis 0: nur kWh werden angezeigt.
 
+DAS RICHTIGE LEISTUNGSLIMIT FINDEN (Tab Ergebnisse)
+  Der Tab „Leistung, Tempo und Temperatur" neben der Loss-Kurve erfasst
+  während des Trainings GPU-Leistung, Limit, Temperatur und Zeit pro Schritt
+  (in Blöcken von 5 Schritten, ohne Vorschauen und Speichern). Eine Tabelle
+  fasst die Messungen in 10-W-Stufen zusammen und nennt die empfohlene
+  Schwelle: die niedrigste Leistung, die höchstens 3 % unter dem Höchsttempo
+  bleibt. Die Spalte „Wh pro Schritt" zeigt die Energie für dieselbe Arbeit.
+  Zum Vergleichen das Limit während eines Trainings ändern (Tab Werkzeuge)
+  oder das Thermostat arbeiten lassen.
+
 AI-TOOLKIT-VERSION
   Standard: neueste Version des main-Zweigs. Dieses Paket wurde auf Commit
   4a7f285 (10. Nov. 2026) geprüft. Schaltfläche „Aktuelle Version fixieren"

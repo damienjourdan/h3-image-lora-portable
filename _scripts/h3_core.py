@@ -631,6 +631,10 @@ class SysMon:
                 self._t_last = now
             else:
                 self._t_last = None
+            try:
+                PERF.tick()
+            except Exception:  # noqa: BLE001 - la mesure ne doit jamais gener le moniteur
+                pass
             if self.vram_used is not None:
                 self.peak_all = max(self.peak_all, self.vram_used)
                 if self.in_train_phase():
@@ -779,6 +783,7 @@ class Runner:
         self.lines = collections.deque(maxlen=400)
         self.partial = ""
         self.bar = self.train_bar = None
+        self.aside = 0
         self.phase = "En attente"
         self.started = None
         self.exit_code = None
@@ -901,9 +906,14 @@ class Runner:
             hint = STAGE_HINTS.get(stage)
             self.phase = stage + (" : " + hint if hint else "")
 
+    ASIDE = ("generating samples", "saving at step", "saved checkpoint", "unloading assistant",
+             "loading assistant")
+
     def _parse(self, line):
         low = line.lower()
         self._parse_stage(line, low)
+        if any(k in low for k in self.ASIDE):
+            self.aside += 1   # apercu ou sauvegarde : ces pas ne servent pas a mesurer la vitesse
         m = self.BAR.search(line)
         if m:
             d = {k: (v or "").strip() for k, v in m.groupdict().items()}
@@ -1029,6 +1039,72 @@ class Runner:
 
 RUN = Runner()
 MON = SysMon()
+
+
+class PerfLog:
+    """Puissance, temperature et vitesse pendant l'entrainement, par intervalles d'au moins 5 pas
+    sans apercu ni sauvegarde : output/<job>/gpu_perf.csv
+    (heure, pas, puissance W, temperature C, limite W, s/pas). Sert a trouver la limite de puissance
+    la plus basse qui ne ralentit pas l'entrainement."""
+    MIN_STEPS = 5
+    HEADER = "heure,pas,puissance_w,temperature_c,limite_w,s_par_pas\n"
+
+    def __init__(self):
+        self._reset(None, None)
+
+    def _reset(self, job, step):
+        self.job, self.step0, self.t0, self.acc, self.aside0 = job, step, None, [], RUN.aside
+
+    def tick(self):
+        bar = RUN.train_bar if RUN.running() and RUN.kind == "train" else None
+        try:
+            step = int(bar["n"]) if bar else None
+        except (KeyError, TypeError, ValueError):
+            step = None
+        if step is None:
+            self._reset(None, None)
+            return
+        now = time.time()
+        if RUN.job_name != self.job or RUN.aside != self.aside0:
+            self._reset(RUN.job_name, step)   # nouvel intervalle des que les pas reprennent
+            return
+        if self.t0 is None:
+            if step != self.step0:
+                self.t0, self.step0, self.acc = now, step, []
+            return
+        if MON.power_draw:
+            self.acc.append((MON.power_draw, MON.gpu_temp, MON.power_limit))
+        if step - self.step0 >= self.MIN_STEPS and self.acc:
+            n = len(self.acc)
+            watts = sum(a[0] for a in self.acc) / n
+            temps = [a[1] for a in self.acc if a[1] is not None]
+            limit = self.acc[-1][2]
+            row = (f"{now:.0f},{step},{watts:.1f},{(sum(temps) / len(temps)) if temps else 0:.1f},"
+                   f"{limit or 0:.0f},{(now - self.t0) / (step - self.step0):.3f}\n")
+            path = os.path.join(OUTPUT, self.job, "gpu_perf.csv")
+            try:
+                new = not os.path.isfile(path)
+                with open(path, "a", encoding="utf-8") as f:
+                    f.write((self.HEADER if new else "") + row)
+            except OSError:
+                pass
+            self.t0, self.step0, self.acc = now, step, []
+
+    @staticmethod
+    def read(job):
+        rows = []
+        try:
+            with open(os.path.join(OUTPUT, job, "gpu_perf.csv"), encoding="utf-8") as f:
+                for line in f.read().splitlines()[1:]:
+                    p = line.split(",")
+                    if len(p) == 6:
+                        rows.append((float(p[0]), int(p[1]), float(p[2]), float(p[3]), float(p[4]), float(p[5])))
+        except (OSError, ValueError):
+            pass
+        return rows
+
+
+PERF = PerfLog()
 MON.in_train_phase = lambda: RUN.running() and RUN.train_bar is not None
 MON.is_busy = lambda: RUN.running() and RUN.kind != "download"
 

@@ -27,7 +27,7 @@ DEFAULT = "en"
 
 current_lang = contextvars.ContextVar("h3_lang", default=None)
 
-TAG = r"</?(?:div|span|b|i|br|svg|text|line|polyline|style|a|p|small|code)\b[^>]*>"
+TAG = r"</?(?:div|span|b|i|br|svg|text|line|polyline|style|a|p|small|code|table|tr|th|td)\b[^>]*>"
 SPLIT = re.compile("(" + TAG + r"|(?:&nbsp;|\s)*(?:&nbsp;)+(?:\s|&nbsp;|\|)*|&#\d+;)")
 STYLE_BLOCK = re.compile(r"(<style>.*?</style>)", re.S)
 UNITS = re.compile(r"(\d\s?)(Go|Mo)\b")
