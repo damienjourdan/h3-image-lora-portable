@@ -405,6 +405,32 @@ def load_settings_now(name):
     return [P.get(k, gr.update()) for k in core.PARAM_KEYS] + [f"Reglages charges : {name}"]
 
 
+def _newest(paths):
+    paths = [p for p in paths if os.path.exists(p)]
+    return max(paths, key=os.path.getmtime) if paths else None
+
+
+def restore_page():
+    """A l'ouverture d'une page (changement de langue, actualisation) : formulaire
+    d'entrainement rempli avec le job en cours (sinon le dernier lance ou enregistre),
+    et ce job selectionne dans Resultats et Tester un LoRA."""
+    running = (RUN.job_name if RUN.running() and RUN.kind == "train" and RUN.job_name
+               and not RUN.job_name.startswith("_") else "")
+    saved = core.list_job_settings()
+    form_job = running
+    if not form_job and saved:
+        newest = _newest([core.job_settings_path(n) for n in saved])
+        form_job = next((n for n in saved if core.job_settings_path(n) == newest), "")
+    fields = load_settings_now(form_job)[:-1] if form_job else [gr.update()] * len(core.PARAM_KEYS)
+    jobs = core.list_jobs()
+    pick = running if running in jobs else None
+    if not pick and jobs:
+        newest = _newest([os.path.join(core.OUTPUT, j) for j in jobs])
+        pick = os.path.basename(newest) if newest else None
+    return fields + [gr.update(choices=saved, value=form_job if form_job in saved else None),
+                     gr.update(choices=jobs, value=pick), gr.update(choices=jobs, value=pick)]
+
+
 # ------------------------------------------------------------------ resultats
 def loss_svg(job):
     """Courbe de perte en SVG : echelle resserree sur les valeurs utiles, courbe
@@ -965,7 +991,8 @@ def build(code):
                            [ds_folder, cap_model, cap_redo, cap_prompt, cap_tokens], msg,
                            show_progress="minimal").then(render_caption_panel, None, [cap_panel, cap_log])
         # entrainement
-        preset.change(lambda p: 0.35 if p == core.PRESET_INT8 else 0.0, preset, offload)
+        # .input : seulement quand l'utilisateur change le preset, pas quand des reglages sont recharges
+        preset.input(lambda p: 0.35 if p == core.PRESET_INT8 else 0.0, preset, offload)
         prev_btn.click(preview, cfg_inputs, yaml_box)
         go_btn.click(start_training, cfg_inputs, [msg, job_sel]).then(
             render_train_panel, None, [train_panel, train_log])
@@ -1015,6 +1042,7 @@ def build(code):
         gr.Timer(5.0).tick(auto_test_results, [test_job, test_sig], [test_gallery, test_sig])
         demo.load(render_status, None, status_outputs)
         demo.load(lambda: i18n.save_lang(code), None, None)
+        demo.load(restore_page, None, cfg_inputs + [preset_sel, job_sel, test_job])
 
     # champs dont le contenu appartient a l'utilisateur (chemins, prompts, legendes, journaux)
     keep = [ds_folder, cap_text, cap_extra, cap_prompt, cap_log, job_name, trigger, ctrl, prompts,
