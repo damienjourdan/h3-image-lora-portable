@@ -1,0 +1,21 @@
+# Tout ce que l'installation et l'usage creent dans le dossier portable
+/ai-toolkit/
+/_outils/
+/models/
+/datasets/
+/output/
+/configs/
+/cache/
+
+# Fichiers personnels de l'interface
+/h3_ui.db
+/reglages_ui.json
+/_scripts/version_figee.txt
+
+# Divers
+__pycache__/
+*.pyc
+*.part
+*_originaux/
+Thumbs.db
+desktop.ini

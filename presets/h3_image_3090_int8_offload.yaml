@@ -1,0 +1,81 @@
+# ============================================================================
+# MiniMax-H3-Image - LoRA - RTX 3090 24 Go - preset "int8 + offload" (defaut)
+# Transformer int8 (~20 Go), plus fidele ; une partie des couches vit en RAM
+# (64 Go) et transite vers le GPU a chaque pas : plus lent (non mesure).
+# L UI (2_LANCER_UI.bat) genere cette config. Usage direct en ligne de commande :
+#   ai-toolkit\.venv\Scripts\python.exe ai-toolkit\run.py presets\<ce fichier>.yaml
+# (adapter name + folder_path avant)
+# ============================================================================
+job: extension
+config:
+  name: "h3img_mon_lora_int8_v1"
+  process:
+    - type: "sd_trainer"
+      training_folder: "output"
+      device: cuda:0
+      # trigger_word: "m0nstyl3"   # inutile si les captions sont deja en cache
+      network:
+        type: "lora"
+        linear: 16
+        linear_alpha: 16
+        network_kwargs:
+          ignore_if_contains:
+            - "adaln_proj"
+      save:
+        dtype: bf16
+        save_every: 250
+        max_step_saves_to_keep: 6
+      datasets:
+        # Images + .txt de meme nom. Sous Windows, doubler les antislashs.
+        - folder_path: "D:\\AI\\H3-LoRA\\datasets\\mon_dataset"
+          caption_ext: "txt"
+          cache_latents_to_disk: true
+          # Le modele vise 4 MP+ ; 1024/1536 = compromis memoire sur 24 Go.
+          # Si OOM : retirer 1536. Si de la marge : ajouter 2048.
+          resolution: [1024, 1536]
+          # Pour un LoRA d'edition : ajouter des images de reference
+          # multi_control_paths: ["D:\\AI\\H3-LoRA\\datasets\\mon_dataset_ref"]
+      train:
+        batch_size: 1
+        steps: 2000
+        gradient_accumulation: 1
+        train_unet: true
+        train_text_encoder: false
+        gradient_checkpointing: true
+        # Qwen3-VL-32B : on calcule les embeddings une fois puis on le decharge
+        cache_text_embeddings: true
+        noise_scheduler: "flowmatch"
+        timestep_type: "shift"   # sans effet ici : le modele tire ses 6 sigmas fixes
+        optimizer: "adamw8bit"
+        lr: 1e-4
+        dtype: bf16
+      model:
+        name_or_path: "Comfy-Org/MiniMax-H3-Image"
+        arch: "minimax_h3_image"
+        quantize: true
+        qtype: "convrot8"             # charge minimax_h3_image_pruned_int8_convrot
+        quantize_te: true
+        qtype_te: "nvfp4"             # NVFP4 emule sur Ampere : OK, juste plus lent
+        low_vram: true                # VAE/TE sortent du GPU quand inutiles
+        layer_offloading: true
+        # part du transformer gardee en RAM : monter a 0.5 si OOM, baisser si marge
+        layer_offloading_transformer_percent: 0.35
+        layer_offloading_text_encoder_percent: 1.0
+        # Modele distille 6 pas : l'adaptateur est obligatoire a l'entrainement
+        assistant_lora_path: "ostris/minimax_h3_training_adapter/minimax_h3_image_training_adapter_v1.safetensors"
+      sample:
+        sampler: "flowmatch"
+        sample_every: 250
+        width: 2048
+        height: 2048
+        prompts:
+          - "photo detaillee d'un chat roux assis sur un rebord de fenetre, lumiere du matin"
+          - "affiche retro d'un TGV traversant un viaduc au coucher du soleil"
+        neg: ""
+        seed: 42
+        walk_seed: true
+        guidance_scale: 1   # ne pas changer : modele sans CFG
+        sample_steps: 6     # ne pas changer : 1 tete par pas
+meta:
+  name: "[name]"
+  version: "1.0"

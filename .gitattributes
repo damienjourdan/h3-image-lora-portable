@@ -1,0 +1,9 @@
+# Les scripts Windows exigent des fins de ligne CRLF, quel que soit le mode de recuperation
+# (clone sur Linux ou macOS, ZIP telecharge depuis GitHub)
+*.bat   text eol=crlf
+*.txt   text eol=crlf
+
+# Le reste en LF
+*.py    text eol=lf
+*.yaml  text eol=lf
+*.md    text eol=lf
