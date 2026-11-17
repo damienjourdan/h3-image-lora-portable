@@ -1,11 +1,13 @@
 @echo off
 chcp 65001 >nul
+setlocal EnableDelayedExpansion
 cd /d "%~dp0"
-title H3-Image LoRA - UI (http://127.0.0.1:7860)
+call "%~dp0_scripts\lang.bat"
+title !M_L_TITLE!
 call "%~dp0_scripts\env.bat"
 
 if not exist "%AITK%\.venv\Scripts\python.exe" (
-    echo [ERREUR] Environnement absent. Lancez d'abord 1_INSTALLER.bat
+    echo !M_E_NOENV!
     pause & exit /b 1
 )
 
@@ -14,9 +16,10 @@ if exist "%AITK%\.ffmpeg\bin" set "PATH=%AITK%\.ffmpeg\bin;%PATH%"
 set "PATH=%AITK%\.venv\Scripts;%PATH%"
 
 echo.
-echo  UI : http://127.0.0.1:7860
-echo  Fermer cette fenetre arrete l'UI ET l'entrainement en cours
-echo  (relancer avec le meme nom de job reprend au dernier checkpoint).
+echo  !M_L_1!
+echo  !M_L_2!
+echo  !M_L_3!
+echo  !M_L_4!
 echo.
 "%AITK%\.venv\Scripts\python.exe" "%ROOT%\_scripts\h3_ui.py"
 pause

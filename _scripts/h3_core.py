@@ -574,6 +574,11 @@ def _keep_awake_loop(is_busy):
 
 # =========================================================== notifications
 def notify(title, text):
+    try:  # notifications dans la langue de l'interface
+        import h3_i18n
+        title, text = h3_i18n.tr(title), h3_i18n.tr(text)
+    except Exception:
+        pass
     cfg = load_settings()
     if cfg.get("sound") and IS_WIN:
         try:
@@ -652,6 +657,24 @@ def loss_points(job, alpha=0.04):
 
 
 # =========================================================== processus
+# etapes affichees dans l'onglet de chaque type de job
+STAGES = {
+    "caption": ["Lancement", "Chargement du modele", "Quantification", "Legendage"],
+    "download": ["Lancement", "Telechargement"],
+    "train": ["Lancement", "Chargement du modele", "Preparation du dataset", "Entrainement"],
+    "calib": ["Lancement", "Chargement du modele", "Preparation du dataset", "Mesure (20 pas)"],
+    "test": ["Lancement", "Chargement du modele", "Generation des images"],
+}
+# ce qu'on sait de la duree de l'etape en cours, affiche tant qu'aucune barre ne la mesure
+STAGE_HINTS = {
+    "Lancement": "demarrage de Python et import de PyTorch : 20 s a 1 min",
+    "Chargement du modele": ("lecture des poids : 1 a 3 min ; au premier usage, telechargement "
+                             "du modele avant (barre de progression ci-dessous)"),
+    "Quantification": "compression du modele en int8 a chaque lancement : 1 a 3 min",
+    "Preparation du dataset": "mise en cache des images et des legendes",
+}
+
+
 class Runner:
     """Un sous-processus a la fois ; stdout/stderr fusionnes lus en direct.
 
@@ -680,6 +703,10 @@ class Runner:
         self.saw_oom = self.saw_compile_error = False
         self.log_file = None
         self.loss = LossLog()
+        self.stage = ""
+        self.stage_started = None
+        self.items_total = 0
+        self.history = {}  # type de job -> etat final du dernier job de ce type
         self.on_exit = []  # callbacks(runner)
         self.lock = threading.Lock()
 
@@ -701,7 +728,8 @@ class Runner:
             self.lines.clear()
             self.partial = ""
             self.bar = self.train_bar = None
-            self.phase = "Demarrage..."
+            self.phase = "Lancement : " + STAGE_HINTS["Lancement"]
+            self.stage, self.stage_started, self.items_total = "Lancement", time.time(), 0
             self.kind, self.label = kind, label
             self.job_name, self.job_dir = job_name, job_dir
             self.started, self.exit_code = time.time(), None
@@ -769,14 +797,27 @@ class Runner:
             if self.log_file:
                 self.log_file.close()
                 self.log_file = None
+            lines = list(self.lines)
+            self.history[self.kind] = {
+                "label": self.label, "phase": self.phase, "exit_code": self.exit_code,
+                "ended": time.time(), "duration": time.time() - (self.started or time.time()),
+                "log": "\n".join(lines[-120:]), "stopped": bool(self.stop_phase)}
         for callback in list(self.on_exit):
             try:
                 callback(self)
             except Exception as exc:  # un callback ne doit jamais bloquer la suite
                 print("callback de fin en erreur :", exc)
 
+    def _set_stage(self, stage):
+        if stage != self.stage:
+            self.stage, self.stage_started = stage, time.time()
+            self.bar = None   # la barre de l'etape precedente n'a plus de sens
+            hint = STAGE_HINTS.get(stage)
+            self.phase = stage + (" : " + hint if hint else "")
+
     def _parse(self, line):
         low = line.lower()
+        self._parse_stage(line, low)
         m = self.BAR.search(line)
         if m:
             d = {k: (v or "").strip() for k, v in m.groupdict().items()}
@@ -802,8 +843,9 @@ class Runner:
                 elif "embedding" in low or "text" in low:
                     self.phase = "Mise en cache des embeddings de texte"
                 elif self.kind == "caption":
-                    self.phase = "Legendage des images"
-        elif "loading" in low and ("model" in low or "transformer" in low):
+                    self.phase = ("Legendage des images" if "captioning" in low else
+                                  "Chargement des poids du modele" if "loading" in low else self.phase)
+        elif "loading" in low and ("model" in low or "transformer" in low) and self.kind != "caption":
             self.phase = "Chargement du modele"
         elif "generating images" in low or "sampling" in low or "generating baseline" in low:
             self.phase = "Generation des apercus"
@@ -816,6 +858,56 @@ class Runner:
         elif "out of memory" in low:
             self.saw_oom = True
             self.phase = "MEMOIRE GPU INSUFFISANTE - voir l'aide (erreur memoire)"
+
+    def _parse_stage(self, line, low):
+        """Etape en cours, d'apres les messages connus d'ai-toolkit et de huggingface_hub."""
+        kind = self.kind
+        is_download = ("b/s" in low or "fetching" in low or "downloading" in low) and "%|" in line
+        if kind == "caption":
+            if "captioning files" in low:
+                self._set_stage("Legendage")
+            elif "quantiz" in low:
+                self._set_stage("Quantification")
+            elif ("loading" in low or is_download) and self.stage == "Lancement":
+                self._set_stage("Chargement du modele")
+            m = re.search(r"found (\d+) files to caption", low)
+            if m:
+                self.items_total = int(m.group(1))
+                self._set_stage("Legendage")
+            if "captioning complete" in low:
+                self.phase = "Legendage termine"
+        elif kind == "download":
+            if is_download or ".safetensors" in low:
+                self._set_stage("Telechargement")
+        elif kind in ("train", "calib", "test"):
+            if "loading" in low and ("model" in low or "transformer" in low):
+                self._set_stage("Chargement du modele")
+            elif "caching" in low or "bucket" in low or "preprocessing image" in low:
+                self._set_stage("Preparation du dataset")
+            elif kind == "test" and ("generating" in low or "sampling" in low):
+                self._set_stage("Generation des images")
+            elif self.job_name and line.lstrip().startswith(self.job_name + ":") and "%|" in line:
+                self._set_stage(STAGES[kind][-1])
+
+    def view(self, kinds):
+        """Etat a afficher dans l'onglet d'un type de job : le job en cours s'il est de
+        ce type, sinon le dernier termine de ce type, sinon None."""
+        with self.lock:
+            if self.running() and self.kind in kinds:
+                lines = list(self.lines)
+                if self.partial:
+                    lines.append(self.partial)
+                return {"live": True, "kind": self.kind, "label": self.label, "phase": self.phase,
+                        "stage": self.stage, "stages": STAGES.get(self.kind, []),
+                        "stage_elapsed": time.time() - (self.stage_started or time.time()),
+                        "elapsed": time.time() - (self.started or time.time()),
+                        "bar": self.bar, "train_bar": self.train_bar, "total": self.items_total,
+                        "pausing": self.pausing, "log": "\n".join(lines[-150:])}
+            done = [(h["ended"], k, h) for k, h in self.history.items() if k in kinds]
+            if not done:
+                return None
+            _, kind, h = max(done)
+            return dict(h, live=False, kind=kind)
 
     def kill(self):
         if not self.running():
@@ -1594,7 +1686,7 @@ def build_calibration_report(run, P):
 # =========================================================== actions : legendage
 def start_captioning(folder, model, recaption, prompt, max_tokens=256):
     if RUN.running():
-        return "Un processus tourne deja."
+        return f"Un autre job tourne deja ({RUN.label}) : attendez sa fin ou arretez-le."
     if not folder or not os.path.isdir(folder):
         return "Dossier introuvable."
     cfg = {"job": "extension", "config": {"name": "_legendes", "process": [{
@@ -1611,7 +1703,8 @@ def start_captioning(folder, model, recaption, prompt, max_tokens=256):
             "max_res": 768, "max_new_tokens": int(max_tokens), "batch_size": 1,
         }}]}}
     cfg_path = write_config("_legendes", cfg)
-    ok = RUN.start([PY, RUN_JOB, cfg_path], "caption", "Legendage automatique",
+    ok = RUN.start([PY, RUN_JOB, cfg_path], "caption",
+                   f"Legendage automatique ({count_images(folder)} images, {(model or CAPTION_MODELS[0]).split('/')[-1]})",
                    os.path.join(CACHE, "journal_legendes.txt"))
     return ("Legendage lance (le modele est telecharge au premier usage). "
             "Relisez ensuite les .txt : une legende fausse s'apprend aussi."

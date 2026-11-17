@@ -1,0 +1,249 @@
+AI Toolkit portabel - MiniMax-H3-Image-LoRA - OHNE Node.js und npm
+Ziel: Windows 10/11, RTX 3090 24 GB, 64 GB RAM
+=============================================================================
+
+SPRACHE
+  Jede .bat-Datei fragt zuerst nach der Sprache (Englisch, Französisch,
+  Deutsch, Spanisch, Portugiesisch, Japanisch, Mandarin). Ohne Antwort
+  innerhalb von 10 s bleibt die zuletzt gewählte Sprache. In der Oberfläche
+  ändert die Auswahl oben rechts die Sprache jederzeit; die Wahl wird
+  zwischen Oberfläche und .bat-Dateien geteilt (language.txt).
+  Für Japanisch und Mandarin im schwarzen Konsolenfenster zeigt Windows
+  Terminal (Standard unter Windows 11) die Zeichen korrekt an.
+
+SPEICHERORT
+  Entpacken Sie in einen Pfad OHNE Leerzeichen, auf eine SSD, mit mindestens
+  80 GB freiem Platz. Beispiel: D:\AI\H3-LoRA\
+
+REIHENFOLGE
+  1_INSTALLER.bat          Einmalig (10 bis 30 min). MinGit, uv, Python 3.12,
+                           torch, FFmpeg... alles in diesem Ordner.
+                           Nichts wird im System installiert, und weder
+                           Node.js noch npm werden installiert oder genutzt.
+  2_LANCER_UI.bat          Öffnet die Python-UI (Gradio): http://127.0.0.1:7860
+  3_METTRE_A_JOUR.bat      git pull + Abgleich der Abhängigkeiten
+  4_TELECHARGER_MODELE.bat Optional: lädt die Gewichte vorab herunter (auch im
+                           Tab „Modelle" der UI möglich)
+  2_LANCER_UI_ADMIN.bat    Optional: dieselbe UI mit Administratorrechten, um
+                           das GPU-Leistungslimit ohne Windows-Bestätigung zu
+                           ändern.
+  DIAGNOSTIC.bat           Bei Problemen: GPU, torch, int8-Test, gradio
+  (Die .bat-Namen sind französisch: INSTALLER = installieren, LANCER =
+  starten, METTRE_A_JOUR = aktualisieren, TELECHARGER_MODELE = Modell laden.)
+
+FORTSCHRITT UND FORTSETZEN VON DOWNLOADS
+  - MinGit (SHA-256 geprüft) / uv: curl-Fortschrittsbalken; eine .part-Datei
+    wird dort fortgesetzt, wo sie stoppte (automatisch BITS, wenn curl
+    scheitert).
+  - git-Repository: Fortschritt angezeigt; ein abgebrochenes Klonen wird
+    fortgesetzt.
+  - Python, torch, Abhängigkeiten: Fortschritt von uv angezeigt; bereits
+    Geladenes bleibt in cache\uv.
+  - Modellgewichte (~30 GB): ein Balken pro Datei (Größe, Rate, Restzeit),
+    5 automatische Versuche; eine .incomplete-Datei wird fortgesetzt.
+  - In jedem Fall: nach Abbruch, Schließen oder Neustart dasselbe Skript
+    ERNEUT STARTEN. Fertige Schritte werden übersprungen, der Rest läuft weiter.
+
+WAS WO LIEGT
+  ai-toolkit\   das ostris-Repository (Code, .venv, .uv, .mingit, .ffmpeg)
+  models\       MiniMax-H3-Image-Gewichte (MODELS_PATH)
+  datasets\     Ihre Bildersätze
+  output\       trainierte LoRAs, Vorschauen, journal_ui.txt pro Job
+  configs\      von der UI erzeugte YAML-Dateien
+  cache\        Caches von Hugging Face, triton, uv
+  manuals\      dieses Handbuch in 7 Sprachen
+  Installation verschieben: den ganzen Ordner verschieben, ai-toolkit\.venv
+  löschen, dann 1_INSTALLER.bat erneut starten (das venv enthält absolute
+  Pfade; Modelle und uv-Cache ersparen das erneute Herunterladen).
+
+DIE UI (Tabs)
+  1. Dataset        Ordner, Bilder hinzufügen, Prüfung der Beschreibungen,
+                    AUTOMATISCHE BESCHREIBUNG (Qwen3-VL) von Bildern ohne
+                    .txt, Wegschneiden von Wasserzeichen und Texten.
+  2. Training       Einstellungen mit Hilfe und Empfehlungen;
+                    Trainingsverfahren; SCHNELLTEST (20 Schritte): misst
+                    Tempo und Speicher, schlägt Einstellungen und Dauer vor;
+                    Einstellungen pro Job gespeichert; Warteschlange;
+                    automatische Pause bei einem Schritt oder einer Uhrzeit.
+  3. Ergebnisse     Vorschauen, LOSS-KURVE, Checkpoints, Kopie nach ComfyUI.
+                    Automatische Aktualisierung alle 5 s.
+  4. LoRA testen    gleiche Prompts und gleicher Seed auf mehreren
+                    Checkpoints, um den besten zu wählen (experimentell).
+  Modelle           Vorab-Download + Dateistatus.
+  Werkzeuge         Benachrichtigungen (Ton, Telefon über ntfy.sh),
+                    Ruhezustand verhindern, GPU-Temperatur und -Leistung,
+                    ComfyUI-Ordner, ai-toolkit-Version fixieren / freigeben.
+  Oben: aktueller Job, Phase, Fortschritt, Anzeige von VRAM / RAM /
+  GPU-Temperatur und die Schaltflächen Pause, Vorschau jetzt, Stoppen.
+  Jeder Tab hat eigene Verfolgung und eigenes Protokoll: Beschreibung in
+  Dataset, Training und Schnelltest in Training, Tests in LoRA testen,
+  Downloads in Modelle. Die Verfolgung zeigt die Schritte, eine Animation,
+  solange die Dauer nicht messbar ist, dann einen Balken mit Restzeit.
+
+TRAININGSVERFAHREN (Tab Training)
+  Die Wahl eines Verfahrens füllt die Felder aus; alles bleibt änderbar.
+  - ai-toolkit Standard: Ihre Einstellungen, unverändert.
+  - Schnell 512: Auflösung 512, Rang 32, Optimierer automagic4
+    (selbstregelnde Rate, Start und Obergrenze 2,5e-4), EMA 0,98,
+    30 Epochen über das Dataset. Das sind die Einstellungen, die Fizgig
+    nach vielen Versuchen für H3-Image gewählt hat; hier mit den
+    Komponenten von ai-toolkit.
+  - Vollständiges Fizgig-Rezept (experimentell): dasselbe, plus
+      . Fizgigs Trainingsadapter, beim ersten Job heruntergeladen und ins
+        ai-toolkit-Format konvertiert;
+      . Ähnlichkeitsoptimierung: die schärfste Rauschstufe wird häufiger
+        gezogen (17, 33, 50 % in den Epochen 1, 3, 5; 75 % in den Epochen
+        2, 4, 6 und danach);
+      . LCM-Vorschauen statt Euler.
+  Diese drei Punkte passen ai-toolkit im Speicher an, ohne seine Dateien zu
+  ändern. Hat sich sein Code geändert, verzichtet die Anpassung und schreibt
+  das ins Protokoll (Zeilen [H3-UI]). Beim ersten Job mit dem Fizgig-Adapter
+  im Protokoll prüfen: „Adaptateur Fizgig converti : 200 modules".
+  Ändern Sie den Jobnamen, wenn Sie Verfahren oder Adapter wechseln.
+  RAM-Schutz: eine Warnung erscheint beim Start und während des Jobs, wenn
+  RAM knapp wird (unter Windows hängt der Kartenspeicher davon ab).
+
+BESCHREIBUNGEN: DIE WICHTIGSTE REGEL
+  Beschreiben, was variiert, verschweigen, was dauerhaft ist. Was beschrieben
+  wird, bindet sich an die Wörter der Beschreibung; was verschwiegen wird,
+  an das Triggerwort.
+  - Figur: keine Haare, kein Bart, keine Statur, keine Narben in den
+    Beschreibungen. Nur Ausschnitt, Blickwinkel, Pose, Kleidung, Hintergrund,
+    Licht.
+  - Stil: umgekehrt, der ganze Inhalt, aber nicht der Stil.
+  - Triggerwort erfunden mit Ziffern (m41ne), nie ein echtes Wort.
+  - Ein Bild = ein Motiv, eine Ansicht: Blätter mit mehreren Ansichten teilen.
+  Im Tab Dataset: „LoRA-Typ" vor der automatischen Beschreibung wählen (die
+  Anweisung passt sich an), dann listet „Ordner analysieren" Beschreibungen
+  mit dauerhaften Merkmalen oder mehreren Ansichten.
+  Die Beschreibungen bleiben auf Englisch, egal welche Sprache die UI hat.
+
+WASSERZEICHEN UND TEXTE WEGSCHNEIDEN (Tab Dataset)
+  Eine Texterkennung findet Wasserzeichen, Signaturen, Webadressen und
+  Bildunterschriften und schlägt pro Bild den größten Ausschnitt ohne Text
+  vor. Das Bild wird nur beschnitten, nichts wird übermalt.
+  - „Bilder analysieren": Vorschaubilder mit Text in Rot, vorgeschlagenem
+    Ausschnitt in Grün, entferntem Bereich abgedunkelt.
+  - Bilder abhaken, bei denen der Text zur Szene gehört, dann „Beschneiden".
+  - Originale werden nach <dataset>_originaux NEBEN das Dataset kopiert
+    (ai-toolkit liest Unterordner); „Alle Originale wiederherstellen" holt
+    sie zurück.
+  - Ein Bild mit zu zentralem Text wird als nicht beschneidbar gemeldet.
+  - Nicht erkannt: Logos ohne Text, über das ganze Bild wiederholte
+    Wasserzeichen.
+  Der Detektor (PP-OCRv3, 2,4 MB) wird bei der ersten Nutzung nach
+  models\outils geladen; ohne Netz dient ein weniger zuverlässiger Ersatz.
+
+EMPFOHLENES VORGEHEN
+  1. Dataset + Beschreibungen (automatisch, dann gelesen).
+  2. Schnelltest und seine Empfehlungen übernehmen.
+  3. Training (nachts: der PC geht während eines Jobs nicht in den
+     Ruhezustand).
+  4. LoRA testen mit 2 bis 4 Checkpoints, den besten nach ComfyUI kopieren.
+  5. ai-toolkit-Version fixieren, sobald alles funktioniert.
+
+PRESETS 3090
+  int8 + Offload (Standard) int8-Transformer, 35 % der Schichten im RAM.
+                           Das ist der ai-toolkit-Standard für dieses Modell,
+                           und int8-Rechnen ist auf der 3090 nativ.
+                           Gemessen auf einer 3090: etwa 4 bis 7 s pro
+                           Schritt bei 1024 + 1536.
+  w4a8 (EXPERIMENTELL)     4-Bit-Transformer, leichter und ohne Offload.
+                           Sein Triton-Kernel nutzt einen FP8-Typ, der vor
+                           RTX 40 nicht kompilierbar ist; das Kästchen
+                           „w4a8-Korrektur" (standardmäßig angehakt) erzwingt
+                           das Entpacken in reinem torch. Gemessen auf einer
+                           3090: etwa 15 s pro Schritt, also deutlich
+                           langsamer als int8.
+  Dieselben Einstellungen gibt es als YAML in presets\ (Kommandozeile).
+
+TRAINING PAUSIEREN, STOPPEN UND FORTSETZEN
+  - „Pause (Zustand speichern)": am Ende des aktuellen Schritts schreibt
+    ai-toolkit einen Checkpoint (LoRA + Optimierer + Schrittnummer) und
+    stoppt sauber. Beim Fortsetzen werden höchstens ein oder zwei Schritte
+    wiederholt. Der VRAM wird während der Pause freigegeben.
+  - Fortsetzen: gleicher Jobname, Schaltfläche „Starten / Fortsetzen". Das
+    Modell wird neu geladen (einige Minuten), Latent-/Text-Caches werden
+    wiederverwendet. Funktioniert auch nach Schließen der UI oder PC-Neustart.
+  - „Stoppen ohne Speichern": sauberer Stopp, Fortsetzung ab dem letzten
+    automatischen Checkpoint (alle N Schritte).
+  - „Vorschau jetzt": erzeugt Vorschauen am Ende des aktuellen Schritts.
+  - Tab Ergebnisse: Vorschauen und Checkpoints des gewählten Jobs
+    aktualisieren sich selbst (5 s); der gestartete Job ist vorausgewählt.
+  - Das Schließen des schwarzen Fensters bricht hart ab: ein Checkpoint, der
+    gerade geschrieben wird, kann abgeschnitten sein. Beim Fortsetzen benennt
+    die UI abgeschnittene Dateien in .corrompu um und startet vom vorherigen
+    gültigen Checkpoint.
+  Technik: die UI steuert ai-toolkit über seinen eigenen Mechanismus
+  (SQLite-Tabelle h3_ui.db: save_now / sample_now / stop), den auch seine
+  offizielle UI nutzt.
+
+GPU-TEMPERATUR UND -LEISTUNG (Tab Werkzeuge)
+  - Warnung (standardmäßig 78 °C): Benachrichtigung, Temperatur in Rot.
+  - Automatische Pause (standardmäßig 88 °C, für 60 s): Pause mit Speichern.
+    Ein Sicherheitsnetz, keine Regelung.
+  - Leistungslimit in Watt (0 = unverändert): weniger Wärme bei meist
+    geringem Tempoverlust (auf einer 3090 ergaben 240 W etwa 60 °C ohne
+    messbaren Tempoverlust). „Speichern" wendet es sofort an, wenn ein Job
+    läuft (ohne ihn zu unterbrechen), sonst beim nächsten Start.
+    „Eingegebenen Wert jetzt anwenden" und „Ursprüngliches Limit
+    wiederherstellen" wirken jederzeit. Ohne Administratorrechte verlangt
+    Windows bei jeder Änderung eine Bestätigung, Jobs aus der Warteschlange
+    ändern das Limit nicht, und es bleibt nach dem Job bestehen.
+  - Thermostat (Kästchen): alle 45 s während eines Jobs wird die mittlere
+    Temperatur mit dem Ziel verglichen (72 °C empfohlen). Zu heiß: Limit um
+    10 bis 30 W senken. Mehr als 3 °C darunter: um 10 W anheben.
+    Einstellbare Untergrenze (150 W), Obergrenze = eingegebenes
+    Leistungslimit oder das ursprüngliche, wenn 0. Erfordert
+    2_LANCER_UI_ADMIN.bat. Status und letzte Anpassungen erscheinen im Tab
+    Werkzeuge und im Banner. „Untergrenze erreicht" heißt: die Kühlung
+    reicht nicht.
+  - Die Lüfter werden von der UI NICHT gesteuert: legen Sie eine Kurve in
+    MSI Afterburner oder FanControl fest.
+  - Die Anzeige zeigt auch Lüfterdrehzahl und Leistungsaufnahme.
+
+AI-TOOLKIT-VERSION
+  Standard: neueste Version des main-Zweigs. Dieses Paket wurde auf Commit
+  4a7f285 (10. Nov. 2026) geprüft. Schaltfläche „Aktuelle Version fixieren"
+  im Tab Werkzeuge: 3_METTRE_A_JOUR.bat ändert den Code dann nicht mehr.
+
+BEKANNTE GRENZEN
+  - LoRA testen: beruht auf einem ai-toolkit-Job mit 0 Trainingsschritten.
+  - Automatische Beschreibung: Modell wird bei der ersten Nutzung geladen
+    (10 bis 20 GB).
+  - Vorschauen in 2048x2048: die Dekodierung kann 24 GB übersteigen; auf
+    1536 senken.
+  - Das Modell zielt auf 4 MP+ Ausgabe; Fizgig trainiert trotzdem mit 512 px
+    und guten Ergebnissen, und die Schrittdauer hängt vor allem von der
+    Auflösung ab.
+  - Lizenz der MiniMax-H3-Image-Gewichte: vor kommerzieller Nutzung auf der
+    Hugging-Face-Seite lesen; hier nicht geprüft.
+
+MODELLBESONDERHEITEN (nicht ändern)
+  - Auf 6 Schritte ohne CFG destilliert: sample_steps 6, guidance_scale 1.
+  - Training mit aktivem Trainingsadapter (Assistenz-LoRA); er wird für
+    Vorschauen automatisch abgeschaltet.
+  - Für 4 bis 20 MP Ausgabe gedacht: Vorschauen in 1024 zeigen mehr
+    Artefakte, das ist normal. Standardmäßig sampelt die UI in 2048.
+  - Mit einem Ordner mit Referenzbildern lernt es im Bearbeitungsmodus
+    (Referenzen im Prompt als <Picture 1>, <Picture 2>... benannt).
+
+RTX 3090 (Ampere) - WAS SIE WISSEN SOLLTEN
+  - int8 (convrot8 / w4a8): natives int8-matmul, OK.
+  - NVFP4-Textencoder: kein Hardware-FP4 auf Ampere, er wird on the fly
+    entpackt. Das funktioniert, nur langsamer; und da die Embeddings
+    zwischengespeichert werden, wird er nur am Anfang gebraucht.
+  - Schnelle FP8-Triton-Kernel brauchen Ada+: automatischer torch-Ersatz.
+  - Über 83 °C senkt die Karte ihren Takt: auf die Gehäuselüftung achten,
+    oder Leistungslimit und Thermostat nutzen.
+
+BEI SPEICHERMANGEL (CUDA out of memory)
+  In dieser Reihenfolge:
+  1. Auflösungen: nur 1024 (oder 512)
+  2. Vorschauen in 1536 oder „Vorschauen deaktivieren"
+  3. Regler „Transformer-Anteil im RAM": 0.35 -> 0.5 -> 0.7
+     - 64 GB RAM verkraften das locker
+  4. LoRA-Rang 16 -> 8
+  Schwere Browser und Spiele schließen: Windows reserviert bereits ~1 GB
+  VRAM. Windows-Auslagerungsdatei: „vom System verwaltet" lassen (RAM-Spitze
+  beim Laden der ~30 GB Gewichte).

@@ -5,7 +5,9 @@ LoRAs with [ostris/ai-toolkit](https://github.com/ostris/ai-toolkit), tuned for 
 **RTX 3090 24 GB** and **64 GB of RAM**. No Node.js or npm: ai-toolkit's official Next.js interface
 is replaced by a Gradio interface.
 
-> **Note:** the interface and the detailed manual ([LISEZMOI.txt](LISEZMOI.txt)) are in French.
+> **Languages:** the interface, the `.bat` scripts and the manual are available in English (default),
+> French, German, Spanish, Portuguese, Japanese and Mandarin. Manuals are in [manuals/](manuals/)
+> ([English](manuals/en_README.txt)).
 
 > **Status: experimental.** Validated only on an RTX 3090 under Windows 11, with the "Standard"
 > process (int8 base, 35 % of the layers offloaded to RAM). Options marked "experimental" in the
@@ -22,6 +24,8 @@ is replaced by a Gradio interface.
 - **Dataset tools**: automatic captioning (Qwen3-VL) adapted to the LoRA type, caption and image
   size checks, automatic cropping of watermarks and text.
 - **Monitoring**: live previews and loss curve, checkpoint comparison, copy to ComfyUI.
+- **Seven languages**: a selector next to the title switches the interface between English, French,
+  German, Spanish, Portuguese, Japanese and Mandarin; every `.bat` script starts with the same choice.
 - **Hardware**: VRAM / RAM / temperature monitor, sleep prevention, thermal alert and pause,
   adjustable GPU power limit and thermostat, notifications (sound, phone via ntfy.sh).
 

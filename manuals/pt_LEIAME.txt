@@ -1,0 +1,243 @@
+AI Toolkit portátil - LoRA MiniMax-H3-Image - SEM Node.js nem npm
+Alvo: Windows 10/11, RTX 3090 24 GB, 64 GB de RAM
+=============================================================================
+
+IDIOMA
+  Cada arquivo .bat começa pedindo o idioma (inglês, francês, alemão,
+  espanhol, português, japonês, mandarim). Sem resposta em 10 s, o último
+  idioma escolhido é mantido. Na interface, o seletor no canto superior
+  direito troca o idioma a qualquer momento; a escolha é compartilhada entre
+  a interface e os .bat (language.txt).
+  Para japonês e mandarim na janela preta, o Windows Terminal (padrão no
+  Windows 11) exibe os caracteres corretamente.
+
+LOCAL
+  Descompacte num caminho SEM espaços, num SSD, com pelo menos 80 GB livres.
+  Exemplo: D:\AI\H3-LoRA\
+
+ORDEM DE USO
+  1_INSTALLER.bat          Uma única vez (10 a 30 min). MinGit, uv, Python
+                           3.12, torch, FFmpeg... tudo dentro desta pasta.
+                           Nada é instalado no sistema, e nem Node.js nem
+                           npm são instalados ou usados.
+  2_LANCER_UI.bat          Abre a UI Python (Gradio): http://127.0.0.1:7860
+  3_METTRE_A_JOUR.bat      git pull + ressincronização das dependências
+  4_TELECHARGER_MODELE.bat Opcional: baixa os pesos antecipadamente (também
+                           possível na aba "Modelos" da UI)
+  2_LANCER_UI_ADMIN.bat    Opcional: a mesma UI com direitos de administrador,
+                           para mudar o limite de potência da GPU sem janela
+                           de confirmação do Windows.
+  DIAGNOSTIC.bat           Em caso de problema: GPU, torch, teste int8, gradio
+  (Os nomes dos .bat estão em francês: INSTALLER = instalar, LANCER =
+  iniciar, METTRE_A_JOUR = atualizar, TELECHARGER_MODELE = baixar modelo.)
+
+PROGRESSO E RETOMADA DOS DOWNLOADS
+  - MinGit (SHA-256 verificado) / uv: barra de progresso do curl; um arquivo
+    .part é retomado de onde parou (recurso automático ao BITS se o curl
+    falhar).
+  - Repositório git: progresso exibido; uma clonagem interrompida é retomada.
+  - Python, torch, dependências: progresso exibido pelo uv; o que já foi
+    baixado fica em cache\uv.
+  - Pesos do modelo (~30 GB): uma barra por arquivo (tamanho, velocidade,
+    tempo restante), 5 tentativas automáticas; um arquivo .incomplete é
+    retomado.
+  - Em todos os casos: após uma interrupção, fechamento ou reinício, EXECUTE
+    DE NOVO o mesmo script. As etapas concluídas são puladas, o resto é
+    retomado.
+
+O QUE FICA ONDE
+  ai-toolkit\   o repositório do ostris (código, .venv, .uv, .mingit, .ffmpeg)
+  models\       pesos do MiniMax-H3-Image (MODELS_PATH)
+  datasets\     seus conjuntos de imagens
+  output\       LoRAs treinados, prévias, journal_ui.txt por job
+  configs\      YAML gerados pela UI
+  cache\        caches do Hugging Face, triton, uv
+  manuals\      este manual, em 7 idiomas
+  Para mover a instalação: mova a pasta inteira, apague ai-toolkit\.venv e
+  execute 1_INSTALLER.bat de novo (o venv contém caminhos absolutos; os
+  modelos e o cache do uv evitam baixar tudo de novo).
+
+A UI (abas)
+  1. Dataset        pasta, adição de imagens, verificação das legendas,
+                    LEGENDAGEM AUTOMÁTICA (Qwen3-VL) das imagens sem .txt,
+                    recorte de marcas d'água e textos.
+  2. Treinamento    ajustes com ajuda e valores recomendados; processos de
+                    treinamento; TESTE RÁPIDO (20 passos): mede velocidade e
+                    memória, propõe ajustes e uma duração; ajustes salvos por
+                    job; fila; pausa automática num passo ou numa hora.
+  3. Resultados     prévias, CURVA DE PERDA, checkpoints, cópia para o
+                    ComfyUI. Atualização automática a cada 5 s.
+  4. Testar um LoRA mesmos prompts e mesma semente em vários checkpoints,
+                    para escolher o melhor (experimental).
+  Modelos           download antecipado + estado dos arquivos.
+  Ferramentas       notificações (som, celular via ntfy.sh), impedir a
+                    suspensão, temperatura e potência da GPU, pasta do
+                    ComfyUI, fixar / liberar a versão do ai-toolkit.
+  No topo: job em andamento, fase, progresso, monitor de VRAM / RAM /
+  temperatura da GPU, e os botões Pausar, Prévia agora, Parar.
+  Cada aba tem seu próprio acompanhamento e registro: legendagem em Dataset,
+  treinamento e Teste rápido em Treinamento, testes em Testar um LoRA,
+  downloads em Modelos. O acompanhamento mostra as etapas, uma animação
+  enquanto a duração não é mensurável, depois uma barra com o tempo
+  restante.
+
+PROCESSOS DE TREINAMENTO (aba Treinamento)
+  Escolher um processo preenche os campos; tudo continua editável.
+  - Padrão ai-toolkit: seus ajustes, inalterados.
+  - Rápido 512: resolução 512, rank 32, otimizador automagic4 (taxa
+    autoajustada, início e teto 2,5e-4), EMA 0,98, 30 épocas sobre o
+    dataset. São os ajustes que o Fizgig escolheu para o H3-Image após
+    muitos testes; aqui com os componentes do ai-toolkit.
+  - Receita Fizgig completa (experimental): a mesma, mais
+      . o adaptador de treinamento do Fizgig, baixado e convertido para o
+        formato do ai-toolkit no primeiro job;
+      . a otimização de semelhança: o nível de ruído mais nítido é sorteado
+        com mais frequência (17, 33, 50 % nas épocas 1, 3, 5; 75 % nas
+        épocas 2, 4, 6 e seguintes);
+      . prévias em LCM em vez de Euler.
+  Estes três últimos pontos ajustam o ai-toolkit na memória, sem modificar
+  seus arquivos. Se o código dele mudou, o ajuste se abstém e registra isso
+  no log (linhas [H3-UI]). No primeiro job com o adaptador Fizgig, verifique
+  no registro "Adaptateur Fizgig converti : 200 modules".
+  Mude o nome do job quando trocar de processo ou de adaptador.
+  Proteção de RAM: um aviso aparece no lançamento e durante o job se faltar
+  RAM (no Windows, a memória da placa depende dela).
+
+LEGENDAS: A REGRA QUE MAIS IMPORTA
+  Descrever o que varia, calar o que é permanente. O que é descrito se
+  associa às palavras da legenda; o que é calado se associa à
+  palavra-gatilho.
+  - Personagem: nada de cabelo, barba, porte físico ou cicatrizes nas
+    legendas. Só enquadramento, ângulo, pose, roupa, fundo, iluminação.
+  - Estilo: o inverso, todo o conteúdo mas não o estilo.
+  - Palavra-gatilho inventada com números (m41ne), nunca uma palavra real.
+  - Uma imagem = um sujeito, uma vista: divida as pranchas com várias vistas.
+  Na aba Dataset: escolha o "Tipo de LoRA" antes da legendagem automática
+  (a instrução se adapta), depois "Analisar a pasta" lista as legendas que
+  descrevem traços permanentes ou várias vistas.
+  As legendas continuam em inglês, qualquer que seja o idioma da interface.
+
+RECORTAR MARCAS D'ÁGUA E TEXTOS (aba Dataset)
+  Um detector de texto localiza marcas d'água, assinaturas, endereços de
+  site e legendas, e propõe para cada imagem o maior enquadramento sem
+  nenhum deles. A imagem é apenas recortada, nada é repintado.
+  - "Analisar as imagens": miniaturas com o texto em vermelho, o
+    enquadramento proposto em verde, a área retirada escurecida.
+  - Desmarque as imagens em que o texto faz parte da cena, depois
+    "Recortar".
+  - Originais copiados em <dataset>_originaux, AO LADO do dataset
+    (o ai-toolkit lê as subpastas); "Restaurar todos os originais" os traz de
+    volta.
+  - Uma imagem com texto central demais é declarada não recortável.
+  - Não detectados: logotipos sem texto, marcas d'água repetidas na imagem
+    inteira.
+  O detector (PP-OCRv3, 2,4 MB) é baixado no primeiro uso em models\outils;
+  sem rede, um detector de reserva menos confiável é usado.
+
+MÉTODO ACONSELHADO
+  1. Dataset + legendas (automáticas, depois revisadas).
+  2. Teste rápido, e aplicar suas recomendações.
+  3. Treinamento (à noite: o PC não entra em suspensão durante um job).
+  4. Testar um LoRA em 2 a 4 checkpoints, copiar o melhor para o ComfyUI.
+  5. Fixar a versão do ai-toolkit quando tudo funcionar.
+
+PRESETS 3090
+  int8 + offload (padrão)  transformer int8, 35 % das camadas na RAM.
+                           É o ajuste padrão do ai-toolkit para este modelo e
+                           o cálculo int8 é nativo na 3090.
+                           Medido numa 3090: cerca de 4 a 7 s por passo em
+                           1024 + 1536.
+  w4a8 (EXPERIMENTAL)      transformer de 4 bits, mais leve e sem offload.
+                           Seu kernel triton usa um tipo FP8 que não compila
+                           antes das RTX 40; a caixa "Correção w4a8" (marcada
+                           por padrão) força a descompactação em torch puro.
+                           Medido numa 3090: cerca de 15 s por passo, ou seja,
+                           bem mais lento que o int8.
+  Os mesmos ajustes existem em YAML em presets\ (linha de comando).
+
+PAUSAR, PARAR E RETOMAR UM TREINAMENTO
+  - "Pausar (salvar o estado)": ao fim do passo atual, o ai-toolkit grava um
+    checkpoint (LoRA + otimizador + número do passo) e para de forma limpa.
+    No máximo um ou dois passos são refeitos na retomada. A VRAM é liberada
+    durante a pausa.
+  - Retomar: mesmo nome de job, botão "Lançar / Retomar". O modelo é
+    recarregado (alguns minutos), os caches de latentes/texto são
+    reutilizados. Funciona também após fechar a UI ou reiniciar o PC.
+  - "Parar sem salvar": parada limpa, retomada a partir do último checkpoint
+    automático (a cada N passos).
+  - "Prévia agora": gera as prévias ao fim do passo atual.
+  - Aba Resultados: prévias e checkpoints do job selecionado se atualizam
+    sozinhos (5 s); o job lançado fica selecionado automaticamente.
+  - Fechar a janela preta corta na hora: um checkpoint sendo gravado pode
+    ficar truncado. Na retomada, a UI renomeia os arquivos truncados para
+    .corrompu e parte do checkpoint válido anterior.
+  Técnica: a UI controla o ai-toolkit pelo mecanismo nativo dele (tabela
+  SQLite h3_ui.db: save_now / sample_now / stop), o da UI oficial.
+
+TEMPERATURA E POTÊNCIA DA GPU (aba Ferramentas)
+  - Alerta (78 °C por padrão): notificação, temperatura em vermelho.
+  - Pausa automática (88 °C por padrão, durante 60 s): pausa com salvamento.
+    Rede de segurança, não uma regulação.
+  - Limite de potência em watts (0 = inalterado): reduz o calor com uma
+    perda de velocidade geralmente pequena (numa 3090, 240 W deram cerca de
+    60 °C sem perda de velocidade mensurável). "Salvar" o aplica na hora se
+    houver um job rodando (sem interrompê-lo), senão no próximo lançamento.
+    "Aplicar agora o valor digitado" e "Restaurar o limite original" agem a
+    qualquer momento. Sem direitos de administrador, o Windows pede
+    confirmação a cada mudança, os jobs da fila não alteram o limite, e ele
+    continua aplicado após o job.
+  - Termostato (caixa de seleção): a cada 45 s durante um job, compara a
+    temperatura média com o alvo (72 °C recomendado). Quente demais: baixa o
+    limite em 10 a 30 W. Mais de 3 °C abaixo: sobe 10 W. Piso ajustável
+    (150 W), teto = o limite de potência digitado, ou o original se 0.
+    Requer 2_LANCER_UI_ADMIN.bat. O estado e os últimos ajustes aparecem na
+    aba Ferramentas e no banner. "Piso atingido" significa que a ventilação
+    não é suficiente.
+  - As ventoinhas NÃO são controladas pela UI: ajuste uma curva no MSI
+    Afterburner ou no FanControl.
+  - O monitor mostra também a velocidade da ventoinha e a potência.
+
+VERSÃO DO AI-TOOLKIT
+  Padrão: última versão do branch main. Este pacote foi auditado no commit
+  4a7f285 (10 nov. 2026). Botão "Fixar a versão atual" na aba Ferramentas:
+  o 3_METTRE_A_JOUR.bat então não muda mais o código.
+
+LIMITES CONHECIDOS
+  - Testar um LoRA: baseia-se num job do ai-toolkit com 0 passo de
+    treinamento.
+  - Legendagem automática: modelo baixado no primeiro uso (10 a 20 GB).
+  - Prévias em 2048x2048: a decodificação pode passar de 24 GB; baixe para
+    1536.
+  - O modelo visa saída de 4 MP+; mesmo assim o Fizgig treina em 512 px com
+    bons resultados, e a duração de um passo depende sobretudo da resolução.
+  - Licença dos pesos do MiniMax-H3-Image: leia na página do Hugging Face
+    antes de qualquer uso comercial; não verificada aqui.
+
+PARTICULARIDADES DO MODELO (não alterar)
+  - Destilado em 6 passos sem CFG: sample_steps 6, guidance_scale 1.
+  - Treinamento com o adaptador de treinamento (LoRA assistente) ativo; ele
+    é desligado automaticamente para as prévias.
+  - Pensado para saída de 4 a 20 MP: prévias em 1024 mostram mais
+    artefatos, é normal. Por padrão a UI gera em 2048.
+  - Com uma pasta de imagens de referência, ele aprende em modo de edição
+    (referências chamadas <Picture 1>, <Picture 2>... no prompt).
+
+RTX 3090 (Ampere) - O QUE É PRECISO SABER
+  - int8 (convrot8 / w4a8): matmul int8 nativo, OK.
+  - Codificador de texto NVFP4: sem FP4 em hardware na Ampere, ele é
+    descompactado em tempo real. Funciona, só que mais devagar; e como os
+    embeddings ficam em cache, ele só é usado no início.
+  - Os kernels triton FP8 rápidos exigem Ada+: recurso automático ao torch.
+  - Acima de 83 °C a placa reduz a frequência: cuide da ventilação do
+    gabinete, ou use o limite de potência e o termostato.
+
+SE FALTAR MEMÓRIA (CUDA out of memory)
+  Nesta ordem:
+  1. resoluções: só 1024 (ou 512)
+  2. prévias em 1536, ou "Desativar as prévias"
+  3. controle "Parte do transformer na RAM": 0.35 -> 0.5 -> 0.7
+     - 64 GB de RAM aguentam com folga
+  4. rank LoRA 16 -> 8
+  Feche navegadores pesados e jogos: o Windows já reserva ~1 GB de VRAM.
+  Arquivo de paginação do Windows: deixe-o "gerenciado pelo sistema" (pico
+  de RAM ao carregar os ~30 GB de pesos).

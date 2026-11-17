@@ -12,7 +12,7 @@ set "OUT=%~2"
 set "PART=%~2.part"
 
 if exist "%OUT%" goto :deja
-if exist "%PART%" echo   reprise du telechargement partiel : %~nx2
+if exist "%PART%" echo   %M_DL_RESUME% %~nx2
 
 where curl.exe >nul 2>&1
 if errorlevel 1 goto :bits
@@ -27,12 +27,12 @@ REM 33 / 22 avec un .part : reprise refusee par le serveur, on repart de zero
 if "%RC%"=="33" del "%PART%" >nul 2>&1
 if "%RC%"=="22" del "%PART%" >nul 2>&1
 if %TRY% GEQ 5 goto :bits
-echo   echec curl code %RC%, nouvelle tentative %TRY%/5 dans 5 s...
+echo   %M_DL_RETRY1% %RC%, %M_DL_RETRY2% %TRY%/5
 timeout /t 5 /nobreak >nul
 goto :retry
 
 :bits
-echo   repli sur BITS...
+echo   %M_DL_BITS%
 del "%PART%" >nul 2>&1
 powershell -NoProfile -ExecutionPolicy Bypass -Command "try { Start-BitsTransfer -Source '%URL%' -Destination '%PART%' -ErrorAction Stop; exit 0 } catch { Write-Host $_; exit 1 }"
 if errorlevel 1 goto :echec
@@ -42,10 +42,10 @@ move /y "%PART%" "%OUT%" >nul
 exit /b 0
 
 :deja
-echo   deja present : %~nx2
+echo   %M_DL_HAVE% %~nx2
 exit /b 0
 
 :echec
-echo   [ERREUR] echec du telechargement de %~nx2
-echo            relancez le script : il reprendra.
+echo   %M_DL_FAIL1% %~nx2
+echo            %M_DL_FAIL2%
 exit /b 1

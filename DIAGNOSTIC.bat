@@ -1,12 +1,14 @@
 @echo off
 chcp 65001 >nul
+setlocal EnableDelayedExpansion
 cd /d "%~dp0"
+call "%~dp0_scripts\lang.bat"
 call "%~dp0_scripts\env.bat"
 cd /d "%AITK%"
 echo ===== nvidia-smi =====
 nvidia-smi
 echo.
-echo ===== materiel / spec detectee =====
+echo ===== !M_G_HW! =====
 "%AITK%\.venv\Scripts\python.exe" -m manager detect
 echo.
 echo ===== torch / CUDA / int8 =====
@@ -15,5 +17,5 @@ echo.
 echo ===== gradio / triton =====
 "%AITK%\.venv\Scripts\python.exe" -c "import gradio,triton;print('gradio',gradio.__version__,'triton',triton.__version__)"
 echo.
-echo (Rappel : cette installation n'utilise volontairement ni Node.js ni npm.)
+echo !M_G_REMIND!
 pause

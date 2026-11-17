@@ -197,12 +197,14 @@ def _preview(img, boxes, crop, size=420):
     return im
 
 
-def analyze_folder(folder, models_dir, min_keep=0.65, margin_pct=1.5, min_conf=0.5):
+def analyze_folder(folder, models_dir, min_keep=0.65, margin_pct=1.5, min_conf=0.5, progress=None):
     """Retourne (rapport texte, [(vignette, legende)], noms rognables).
 
     min_keep : part minimale de l'image a conserver pour proposer le rognage."""
     if not folder or not os.path.isdir(folder):
         return "Dossier introuvable.", [], []
+    if progress:
+        progress(0, 1, "Chargement du detecteur de texte (telecharge au premier usage)")
     _load_detector(models_dir)
     if _detector["kind"] == "indisponible":
         return "Detection impossible : OpenCV n'est pas installe dans cet environnement.", [], []
@@ -210,7 +212,9 @@ def analyze_folder(folder, models_dir, min_keep=0.65, margin_pct=1.5, min_conf=0
     items, gallery = {}, []
     clean = croppable = hopeless = 0
     small_after = []
-    for name in names:
+    for index, name in enumerate(names):
+        if progress:
+            progress(index, len(names), name)
         try:
             with Image.open(os.path.join(folder, name)) as im:
                 im.load()
