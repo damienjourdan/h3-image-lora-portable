@@ -284,6 +284,21 @@ DÉBORDEMENT : LES DEUX PROTECTIONS
   Comparez la colonne Débordement de Résultats > Ressemblance avec et
   sans protection pour choisir.
 
+GÉNÉRER AVEC VOS LORA (onglet 5. Générer)
+  Pilote le générateur MiniMaxH3-Portable, installé à part (son propre
+  install.bat et prepare.bat, environ 39 Go de modèles convertis : les
+  fichiers de l'entraîneur sont dans un autre format et ne peuvent pas
+  servir). Placé à côté de ce dossier, il est détecté tout seul ; sinon
+  indiquez son dossier. Acceptez sa licence (rappel affiché : aucun droit
+  dans l'UE, au Royaume-Uni, en Corée du Sud ni aux États-Unis), puis
+  « Démarrer le générateur » : il s'affiche dans l'onglet après 1 à 3 min
+  (ou dans un onglet du navigateur). Sa langue suit celle de l'interface.
+  « Envoyer au générateur » (ici ou dans Résultats) copie un checkpoint
+  dans son dossier loras, présélectionné sur le conseil de l'onglet
+  Ressemblance ; dans le générateur, rafraîchissez la liste des LoRA.
+  Il garde environ 20 Go de VRAM : tout job de l'entraîneur l'arrête
+  d'abord automatiquement, et il ne démarre pas pendant un job.
+
 VERSION D'AI-TOOLKIT
   Par défaut : dernière version de la branche main. Ce paquet a été audité
   sur le commit 4a7f285 (10 nov. 2026). Bouton « Figer la version actuelle »

@@ -20,6 +20,7 @@ import h3_i18n as i18n  # noqa: E402
 import h3_likeness as likeness  # noqa: E402
 import h3_audit as audit  # noqa: E402
 import h3_captionfix as capfix  # noqa: E402
+import h3_generator as gen  # noqa: E402
 from h3_core import MON, ORCH, RUN  # noqa: E402
 
 # ------------------------------------------------------------------ textes d'aide
@@ -807,6 +808,76 @@ def open_job_folder(job):
     return d
 
 
+def send_to_generator(job, ck_name):
+    if not job or not ck_name:
+        return "Selectionnez un job et un checkpoint."
+    return gen.GEN.send_lora(os.path.join(core.OUTPUT, job, ck_name))
+
+
+# ------------------------------------------------------------ generateur
+def gen_state_text(folder):
+    folder = (folder or "").strip()
+    if not gen.is_generator(folder):
+        return ("Generateur introuvable : indiquez le dossier MiniMaxH3-Portable (celui qui contient run.bat "
+                "et le dossier app).")
+    st = gen.state(folder)
+    lines = [f"Dossier : {folder}",
+             "Environnement Python : installe" if st["installed"] else
+             "Environnement Python : absent (lancez install.bat du generateur)",
+             "Modeles convertis : presents" if st["prepared"] else
+             "Modeles convertis : absents (lancez prepare.bat du generateur, environ 39 Go)",
+             "Licence : acceptee" if st["license"] else "Licence : a accepter (case ci-dessous)",
+             f"Port : {st['port']}"]
+    return "\n".join(lines)
+
+
+def gen_frame_html(ready):
+    if not ready:
+        return ("<div style='padding:24px;opacity:.7'>Le generateur s'affichera ici une fois demarre et "
+                "pret.</div>")
+    url = f"http://127.0.0.1:{gen.GEN.port}/"
+    return (f"<div style='text-align:right;margin-bottom:4px'><a href='{url}' target='_blank'>Ouvrir dans un "
+            f"onglet</a></div><iframe src='{url}' style='width:100%;height:1250px;border:1px solid "
+            f"var(--border-color-primary);border-radius:8px' allow='clipboard-write'></iframe>")
+
+
+def gen_is_ready():
+    return bool(gen.GEN.ready and gen.GEN.status().startswith("Pret"))
+
+
+def gen_tick(last):
+    ready = gen_is_ready()
+    frame = gr.update(value=gen_frame_html(ready)) if ready != last else gr.update()
+    return gen.GEN.status(), gen.GEN.log_text(), frame, ready
+
+
+def gen_start(folder):
+    return gen.GEN.start(folder, i18n.lang_now())
+
+
+def gen_license(folder, accepted):
+    folder = (folder or "").strip()
+    if not gen.is_generator(folder):
+        return "Generateur introuvable : indiquez le dossier MiniMaxH3-Portable (celui qui contient run.bat et le dossier app)."
+    gen.write_config(folder, license_ack=bool(accepted))
+    core.save_settings(gen_dir=folder)
+    return gen_state_text(folder)
+
+
+def gen_job_choices(job):
+    cks = core.job_checkpoints(job) if job else []
+    names = [os.path.basename(p) for p in cks]
+    value = names[0] if names else None
+    try:
+        best = likeness.recommend(job) if job else None
+    except Exception:  # noqa: BLE001 - conseil facultatif
+        best = None
+    if best:
+        tag = f"_{int(best[0][0]):09d}.safetensors"
+        value = next((n for n in names if n.endswith(tag)), value)
+    return gr.update(choices=names, value=value)
+
+
 def copy_to_comfy(job, ck_name):
     if not job or not ck_name:
         return "Selectionnez un job et un checkpoint."
@@ -1203,6 +1274,7 @@ def build(code):
                                      info="Le meilleur est souvent un checkpoint intermediaire : "
                                           "comparez-les dans l'onglet Tester un LoRA.")
                 comfy_btn = gr.Button("Copier dans ComfyUI")
+                gensend_btn = gr.Button("Envoyer au generateur")
 
         # ============================================================ 4. Tester un LoRA
         with gr.Tab("4. Tester un LoRA"):
@@ -1232,6 +1304,37 @@ def build(code):
             test_gallery = gr.Gallery(label="Resultats (legende : checkpoint | prompt)", columns=4, height=520)
 
         # ============================================================ Modeles
+        # ============================================================ 5. Generer
+        with gr.Tab("5. Generer") as gen_tab:
+            gr.Markdown(
+                "Genere des images avec vos LoRA grace au generateur **MiniMaxH3-Portable** (installe a part, "
+                "avec son propre environnement et ses modeles convertis). Il est demarre d'ici et affiche "
+                "ci-dessous. Il garde environ 20 Go de VRAM : tout job de l'entraineur (entrainement, test, "
+                "legendage...) l'arrete d'abord automatiquement, et il ne demarre pas pendant un job.")
+            with gr.Row():
+                gen_dir = gr.Textbox(label="Dossier du generateur", value=gen.detect, scale=3,
+                                     info="Detecte automatiquement s'il est a cote de ce dossier.")
+                gen_check = gr.Button("Verifier", scale=1)
+            gen_state = gr.Textbox(label="Etat", lines=5, interactive=False,
+                                   value=lambda: gen_state_text(gen.detect()))
+            gr.Markdown(gen.LICENSE_NOTICE)
+            gen_lic = gr.Checkbox(label="J'ai lu la licence et je l'accepte",
+                                  value=lambda: gen.state(gen.detect())["license"])
+            with gr.Row():
+                gen_start_btn = gr.Button("Demarrer le generateur", variant="primary")
+                gen_stop_btn = gr.Button("Arreter le generateur", variant="stop")
+            gen_status = gr.Textbox(label="Generateur", interactive=False)
+            with gr.Row():
+                gen_job = gr.Dropdown(choices=core.list_jobs(), value=None, label="Job", scale=2)
+                gen_ck = gr.Dropdown(choices=[], label="Checkpoint a envoyer", scale=3,
+                                     info="Preselection : le checkpoint conseille par Resultats > Ressemblance "
+                                          "s'il existe, sinon le plus recent.")
+                gen_send = gr.Button("Envoyer au generateur", scale=1)
+            with gr.Accordion("Journal du generateur", open=False):
+                gen_log = gr.Textbox(lines=12, max_lines=12, autoscroll=True, interactive=False, show_label=False)
+            gen_ready = gr.State(False)
+            gen_frame = gr.HTML(gen_frame_html(False))
+
         with gr.Tab("Modeles"):
             gr.Markdown("Optionnel : sinon les poids se telechargent au premier entrainement. "
                         "Une coupure reprend automatiquement ; relancer reprend aussi le fichier partiel.")
@@ -1405,6 +1508,17 @@ def build(code):
         job_sel.change(job_results, job_sel, [res_gallery, res_files, ck_sel, loss_plot, perf_plot, likeness_plot])
         open_btn.click(open_job_folder, job_sel, msg)
         comfy_btn.click(copy_to_comfy, [job_sel, ck_sel], msg)
+        gensend_btn.click(send_to_generator, [job_sel, ck_sel], msg)
+        # generateur
+        gen_check.click(gen_state_text, gen_dir, gen_state)
+        gen_lic.input(gen_license, [gen_dir, gen_lic], gen_state)
+        gen_start_btn.click(gen_start, gen_dir, msg).then(gen_state_text, gen_dir, gen_state)
+        gen_stop_btn.click(lambda: "Generateur arrete." if gen.GEN.stop() else "Le generateur ne tournait pas.",
+                           None, msg)
+        gen_tab.select(lambda: gr.update(choices=core.list_jobs()), None, gen_job)
+        gen_job.change(gen_job_choices, gen_job, gen_ck)
+        gen_send.click(send_to_generator, [gen_job, gen_ck], msg)
+        gr.Timer(2.0).tick(gen_tick, gen_ready, [gen_status, gen_log, gen_frame, gen_ready])
         # tests
         test_refresh.click(lambda: gr.update(choices=core.list_jobs()), None, test_job)
         test_job.change(test_choices, test_job, test_cks)
@@ -1439,7 +1553,7 @@ def build(code):
 
     # champs dont le contenu appartient a l'utilisateur (chemins, prompts, legendes, journaux)
     keep = [ds_folder, cap_text, cap_extra, cap_prompt, cap_log, job_name, trigger, ctrl, prompts, dop_class,
-            train_log, pause_time, test_prompts, test_log, dl_log, opt_ntfy, opt_comfy]
+            train_log, pause_time, test_prompts, test_log, dl_log, opt_ntfy, opt_comfy, gen_dir, gen_log]
     i18n.localize_blocks(demo, code, keep_values=keep)
     i18n.wrap_events(demo, code, keep_values=keep)
     return demo

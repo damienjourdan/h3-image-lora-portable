@@ -279,6 +279,20 @@ BLEEDING: THE TWO PROTECTIONS
   Compare the Bleeding column in Results > Likeness with and without
   protection to choose.
 
+GENERATING WITH YOUR LORAS (tab 5. Generate)
+  Drives the MiniMaxH3-Portable generator, installed separately (its own
+  install.bat and prepare.bat, about 39 GB of converted models: the
+  trainer's files are in another format and cannot be used). Placed next
+  to this folder, it is detected automatically; otherwise enter its
+  folder. Accept its license (reminder shown: no rights in the EU, the UK,
+  South Korea or the US), then "Start the generator": it shows in the tab
+  after 1 to 3 min (or in a browser tab). Its language follows the
+  interface. "Send to the generator" (here or in Results) copies a
+  checkpoint into its loras folder, preselected from the Likeness tab
+  recommendation; in the generator, refresh the LoRA list.
+  It keeps about 20 GB of VRAM: any trainer job stops it first
+  automatically, and it does not start during a job.
+
 AI-TOOLKIT VERSION
   By default: latest version of the main branch. This package was audited
   on commit 4a7f285 (10 Nov 2026). "Pin current version" button in the

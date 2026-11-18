@@ -289,6 +289,21 @@ DESBORDAMIENTO: LAS DOS PROTECCIONES
   Compare la columna Desbordamiento de Resultados > Parecido con y sin
   protección para elegir.
 
+GENERAR CON SUS LORA (pestaña 5. Generar)
+  Controla el generador MiniMaxH3-Portable, instalado aparte (su propio
+  install.bat y prepare.bat, unos 39 GB de modelos convertidos: los
+  archivos del entrenador tienen otro formato y no sirven). Si está junto
+  a esta carpeta se detecta solo; si no, indique su carpeta. Acepte su
+  licencia (recordatorio mostrado: ningún derecho en la UE, el Reino
+  Unido, Corea del Sur ni EE. UU.) y luego «Iniciar el generador»: aparece
+  en la pestaña tras 1 a 3 min (o en una pestaña del navegador). Su idioma
+  sigue el de la interfaz. «Enviar al generador» (aquí o en Resultados)
+  copia un checkpoint en su carpeta loras, preseleccionado según la
+  recomendación de la pestaña Parecido; en el generador, actualice la
+  lista de LoRA.
+  Ocupa unos 20 GB de VRAM: cualquier job del entrenador lo detiene antes
+  automáticamente, y no se inicia durante un job.
+
 VERSIÓN DE AI-TOOLKIT
   Por defecto: última versión de la rama main. Este paquete se auditó en el
   commit 4a7f285 (10 nov. 2026). Botón «Fijar la versión actual» en la
