@@ -113,6 +113,16 @@ CAPTIONS: THE RULE THAT MATTERS MOST
   describe permanent traits or several views.
   Captions stay in English whatever the interface language.
 
+FIXING CAPTIONS (Dataset tab)
+  "Suggest fixes" removes the permanent traits (hair, beard, build, scars,
+  tattoos, eye color...) and the permanent elements you entered from the
+  captions of a character LoRA. Example: "m41ne, a muscular man with short
+  spiky blond hair and a white beard, wearing a black vest" becomes "m41ne,
+  a man, wearing a black vest". Expressions and clothing stay ("eyes
+  closed", "skin-tight suit"). Each proposal can be edited in the table;
+  untick those to leave, then apply. Originals are saved in
+  <dataset>_legendes_originales and can be restored in one click.
+
 DATASET AUDIT (Dataset tab)
   "Audit the dataset" finds three flaws that go unnoticed:
   - the same plain background (white, black, gray...) on at least 30 % of

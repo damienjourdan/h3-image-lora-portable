@@ -115,6 +115,17 @@ DESCRIPCIONES: LA REGLA QUE MÁS IMPORTA
   las descripciones que mencionan rasgos permanentes o varias vistas.
   Las descripciones siguen en inglés, sea cual sea el idioma de la interfaz.
 
+CORREGIR LAS DESCRIPCIONES (pestaña Dataset)
+  «Proponer correcciones» quita de las descripciones de un LoRA de personaje
+  los rasgos permanentes (pelo, barba, complexión, cicatrices, tatuajes,
+  color de ojos...) y los elementos permanentes que haya indicado. Ejemplo:
+  «m41ne, a muscular man with short spiky blond hair and a white beard,
+  wearing a black vest» pasa a «m41ne, a man, wearing a black vest». Las
+  expresiones y la ropa se quedan («eyes closed», «skin-tight suit»). Cada
+  propuesta es modificable en la tabla; desmarque las que quiera dejar y
+  aplique. Los originales se guardan en <dataset>_legendes_originales y se
+  restauran con un clic.
+
 AUDITORÍA DEL DATASET (pestaña Dataset)
   «Auditar el dataset» detecta tres defectos que pasan desapercibidos:
   - un mismo fondo liso (blanco, negro, gris...) en al menos el 30 % de las

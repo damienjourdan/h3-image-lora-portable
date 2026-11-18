@@ -113,6 +113,17 @@ LÉGENDES : LA RÈGLE QUI COMPTE LE PLUS
   légendes qui décrivent des traits permanents ou plusieurs vues.
   Les légendes restent en anglais, quelle que soit la langue de l'interface.
 
+CORRIGER LES LÉGENDES (onglet Dataset)
+  « Proposer les corrections » retire des légendes d'un LoRA de personnage
+  les traits permanents (cheveux, barbe, carrure, cicatrices, tatouages,
+  couleur des yeux...) et les éléments permanents que vous avez saisis.
+  Exemple : « m41ne, a muscular man with short spiky blond hair and a white
+  beard, wearing a black vest » devient « m41ne, a man, wearing a black
+  vest ». Les expressions et vêtements restent (« eyes closed »,
+  « skin-tight suit »). Chaque proposition est modifiable dans le tableau ;
+  décochez celles à laisser, puis appliquez. Les originales sont
+  sauvegardées dans <dataset>_legendes_originales, restaurables d'un clic.
+
 AUDIT DU DATASET (onglet Dataset)
   « Auditer le dataset » repère trois défauts qui passent inaperçus :
   - un même fond uni (blanc, noir, gris...) sur au moins 30 % des images et

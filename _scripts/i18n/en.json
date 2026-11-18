@@ -553,5 +553,20 @@
 "{0} images : {1}{2}": "{0} images: {1}{2}",
 "- {0} paire(s) d'images tres semblables, sans groupe important : acceptable.": "- {0} pair(s) of very similar images, no large group: acceptable.",
 "- Pas de groupe d'images trop semblables : bonne variete.": "- No group of overly similar images: good variety.",
-"{0} legende(s) completee(s) avec la description du fond.": "{0} caption(s) completed with the background description."
+"{0} legende(s) completee(s) avec la description du fond.": "{0} caption(s) completed with the background description.",
+"Corriger les legendes : retirer les traits permanents": "Fix captions: remove permanent traits",
+"Pour un LoRA de personnage, retire des legendes les traits permanents du sujet (cheveux, barbe, carrure, cicatrices, tatouages...) et les elements permanents saisis plus haut. Les expressions et vetements restent ('eyes closed', 'skin-tight suit'). Chaque proposition est modifiable : decochez celles a laisser. Les originales sont sauvegardees a cote du dataset (`<dataset>_legendes_originales`).": "For a character LoRA, removes the subject's permanent traits from the captions (hair, beard, build, scars, tattoos...) and the permanent elements entered above. Expressions and clothing stay ('eyes closed', 'skin-tight suit'). Each proposal can be edited: untick those to leave as they are. Originals are saved next to the dataset (`<dataset>_legendes_originales`).",
+"Proposer les corrections": "Suggest fixes",
+"Restaurer les legendes d'origine": "Restore original captions",
+"Appliquer": "Apply",
+"Fichier": "File",
+"Actuelle": "Current",
+"Proposee": "Suggested",
+"Appliquer les corrections cochees": "Apply the ticked fixes",
+"La correction automatique ne concerne que les LoRA de personnage / sujet : pour un style, les traits du contenu doivent rester decrits.": "Automatic fixing only concerns character / subject LoRAs: for a style, the content's traits must stay described.",
+"Aucune legende a corriger : aucune ne decrit de trait permanent reconnu.": "No caption to fix: none describes a recognized permanent trait.",
+"{0} legende(s) a corriger. Relisez la colonne 'Proposee' (modifiable), decochez celles a laisser, puis appliquez. Les originales sont sauvegardees a cote du dataset.": "{0} caption(s) to fix. Review the 'Suggested' column (editable), untick those to leave, then apply. Originals are saved next to the dataset.",
+"{0} legende(s) corrigee(s). Originales dans : {1}": "{0} caption(s) fixed. Originals in: {1}",
+"Aucune sauvegarde de legendes pour ce dossier.": "No caption backup for this folder.",
+"{0} legende(s) d'origine restauree(s).": "{0} original caption(s) restored."
 }

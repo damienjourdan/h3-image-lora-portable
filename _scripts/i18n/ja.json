@@ -553,5 +553,20 @@
 "{0} images : {1}{2}": "{0} 枚：{1}{2}",
 "- {0} paire(s) d'images tres semblables, sans groupe important : acceptable.": "- よく似た画像のペアが {0} 組ありますが、大きなグループはありません：許容範囲です。",
 "- Pas de groupe d'images trop semblables : bonne variete.": "- 似すぎた画像のグループはありません：多様性は良好です。",
-"{0} legende(s) completee(s) avec la description du fond.": "{0} 件のキャプションに背景の説明を追加しました。"
+"{0} legende(s) completee(s) avec la description du fond.": "{0} 件のキャプションに背景の説明を追加しました。",
+"Corriger les legendes : retirer les traits permanents": "キャプションを修正：恒久的な特徴を削除",
+"Pour un LoRA de personnage, retire des legendes les traits permanents du sujet (cheveux, barbe, carrure, cicatrices, tatouages...) et les elements permanents saisis plus haut. Les expressions et vetements restent ('eyes closed', 'skin-tight suit'). Chaque proposition est modifiable : decochez celles a laisser. Les originales sont sauvegardees a cote du dataset (`<dataset>_legendes_originales`).": "キャラクター LoRA の場合、キャプションから被写体の恒久的な特徴（髪、ひげ、体格、傷跡、タトゥーなど）と、上で入力した恒久的な要素を削除します。表情や服装は残します（'eyes closed'、'skin-tight suit'）。各提案は編集でき、残したいものはチェックを外します。元のキャプションはデータセットの隣（`<dataset>_legendes_originales`）に保存されます。",
+"Proposer les corrections": "修正を提案",
+"Restaurer les legendes d'origine": "元のキャプションを復元",
+"Appliquer": "適用",
+"Fichier": "ファイル",
+"Actuelle": "現在",
+"Proposee": "提案",
+"Appliquer les corrections cochees": "チェックした修正を適用",
+"La correction automatique ne concerne que les LoRA de personnage / sujet : pour un style, les traits du contenu doivent rester decrits.": "自動修正はキャラクター / 被写体 LoRA のみが対象です：スタイルの場合、内容の特徴は書いたままにする必要があります。",
+"Aucune legende a corriger : aucune ne decrit de trait permanent reconnu.": "修正するキャプションはありません：認識できる恒久的な特徴を書いたものはありません。",
+"{0} legende(s) a corriger. Relisez la colonne 'Proposee' (modifiable), decochez celles a laisser, puis appliquez. Les originales sont sauvegardees a cote du dataset.": "修正するキャプションが {0} 件あります。「提案」列（編集可）を確認し、残したいものはチェックを外してから適用してください。元のキャプションはデータセットの隣に保存されます。",
+"{0} legende(s) corrigee(s). Originales dans : {1}": "{0} 件のキャプションを修正しました。元のキャプション：{1}",
+"Aucune sauvegarde de legendes pour ce dossier.": "このフォルダのキャプションのバックアップはありません。",
+"{0} legende(s) d'origine restauree(s).": "元のキャプションを {0} 件復元しました。"
 }

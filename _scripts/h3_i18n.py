@@ -194,6 +194,10 @@ def localize_blocks(demo, code, keep_values=()):
         elif isinstance(block, gr.Textbox):  # valeurs par defaut connues seulement
             if isinstance(getattr(block, "value", None), str):
                 block.value = tr_exact(block.value, code)
+        if isinstance(block, gr.Dataframe) and isinstance(getattr(block, "headers", None), list):
+            block.headers = [tr(h, code) if isinstance(h, str) else h for h in block.headers]
+            if isinstance(getattr(block, "value", None), dict) and isinstance(block.value.get("headers"), list):
+                block.value["headers"] = list(block.headers)
         if getattr(block, "choices", None):
             try:
                 block.choices = _translate_choices(block.choices, code)

@@ -404,5 +404,20 @@
 "{0} images : {1}{2}": "{0} images : {1}{2}",
 "- {0} paire(s) d'images tres semblables, sans groupe important : acceptable.": "- {0} paire(s) d'images très semblables, sans groupe important : acceptable.",
 "- Pas de groupe d'images trop semblables : bonne variete.": "- Pas de groupe d'images trop semblables : bonne variété.",
-"{0} legende(s) completee(s) avec la description du fond.": "{0} légende(s) complétée(s) avec la description du fond."
+"{0} legende(s) completee(s) avec la description du fond.": "{0} légende(s) complétée(s) avec la description du fond.",
+"Corriger les legendes : retirer les traits permanents": "Corriger les légendes : retirer les traits permanents",
+"Pour un LoRA de personnage, retire des legendes les traits permanents du sujet (cheveux, barbe, carrure, cicatrices, tatouages...) et les elements permanents saisis plus haut. Les expressions et vetements restent ('eyes closed', 'skin-tight suit'). Chaque proposition est modifiable : decochez celles a laisser. Les originales sont sauvegardees a cote du dataset (`<dataset>_legendes_originales`).": "Pour un LoRA de personnage, retire des légendes les traits permanents du sujet (cheveux, barbe, carrure, cicatrices, tatouages...) et les éléments permanents saisis plus haut. Les expressions et vêtements restent ('eyes closed', 'skin-tight suit'). Chaque proposition est modifiable : décochez celles à laisser. Les originales sont sauvegardées à côté du dataset (`<dataset>_legendes_originales`).",
+"Proposer les corrections": "Proposer les corrections",
+"Restaurer les legendes d'origine": "Restaurer les légendes d'origine",
+"Appliquer": "Appliquer",
+"Fichier": "Fichier",
+"Actuelle": "Actuelle",
+"Proposee": "Proposée",
+"Appliquer les corrections cochees": "Appliquer les corrections cochées",
+"La correction automatique ne concerne que les LoRA de personnage / sujet : pour un style, les traits du contenu doivent rester decrits.": "La correction automatique ne concerne que les LoRA de personnage / sujet : pour un style, les traits du contenu doivent rester décrits.",
+"Aucune legende a corriger : aucune ne decrit de trait permanent reconnu.": "Aucune légende à corriger : aucune ne décrit de trait permanent reconnu.",
+"{0} legende(s) a corriger. Relisez la colonne 'Proposee' (modifiable), decochez celles a laisser, puis appliquez. Les originales sont sauvegardees a cote du dataset.": "{0} légende(s) à corriger. Relisez la colonne « Proposée » (modifiable), décochez celles à laisser, puis appliquez. Les originales sont sauvegardées à côté du dataset.",
+"{0} legende(s) corrigee(s). Originales dans : {1}": "{0} légende(s) corrigée(s). Originales dans : {1}",
+"Aucune sauvegarde de legendes pour ce dossier.": "Aucune sauvegarde de légendes pour ce dossier.",
+"{0} legende(s) d'origine restauree(s).": "{0} légende(s) d'origine restaurée(s)."
 }

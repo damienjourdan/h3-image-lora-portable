@@ -553,5 +553,20 @@
 "{0} images : {1}{2}": "{0} 张图片：{1}{2}",
 "- {0} paire(s) d'images tres semblables, sans groupe important : acceptable.": "- 有 {0} 对非常相似的图片，但没有大的分组：可以接受。",
 "- Pas de groupe d'images trop semblables : bonne variete.": "- 没有过于相似的图片组：多样性良好。",
-"{0} legende(s) completee(s) avec la description du fond.": "已为 {0} 个描述补充背景说明。"
+"{0} legende(s) completee(s) avec la description du fond.": "已为 {0} 个描述补充背景说明。",
+"Corriger les legendes : retirer les traits permanents": "修正描述：删除永久特征",
+"Pour un LoRA de personnage, retire des legendes les traits permanents du sujet (cheveux, barbe, carrure, cicatrices, tatouages...) et les elements permanents saisis plus haut. Les expressions et vetements restent ('eyes closed', 'skin-tight suit'). Chaque proposition est modifiable : decochez celles a laisser. Les originales sont sauvegardees a cote du dataset (`<dataset>_legendes_originales`).": "对于角色 LoRA，从描述中删除主体的永久特征（头发、胡子、体型、伤疤、纹身等）以及上方输入的永久元素。表情和服装会保留（'eyes closed'、'skin-tight suit'）。每条建议都可编辑：取消勾选要保留原样的描述。原始描述会保存在数据集旁边（`<dataset>_legendes_originales`）。",
+"Proposer les corrections": "生成修正建议",
+"Restaurer les legendes d'origine": "恢复原始描述",
+"Appliquer": "应用",
+"Fichier": "文件",
+"Actuelle": "当前",
+"Proposee": "建议",
+"Appliquer les corrections cochees": "应用勾选的修正",
+"La correction automatique ne concerne que les LoRA de personnage / sujet : pour un style, les traits du contenu doivent rester decrits.": "自动修正只适用于角色 / 主体 LoRA：对于风格 LoRA，内容的特征必须保留在描述中。",
+"Aucune legende a corriger : aucune ne decrit de trait permanent reconnu.": "没有需要修正的描述：没有描述包含可识别的永久特征。",
+"{0} legende(s) a corriger. Relisez la colonne 'Proposee' (modifiable), decochez celles a laisser, puis appliquez. Les originales sont sauvegardees a cote du dataset.": "有 {0} 个描述需要修正。请检查“建议”列（可编辑），取消勾选要保留的，然后应用。原始描述会保存在数据集旁边。",
+"{0} legende(s) corrigee(s). Originales dans : {1}": "已修正 {0} 个描述。原始描述位于：{1}",
+"Aucune sauvegarde de legendes pour ce dossier.": "此文件夹没有描述备份。",
+"{0} legende(s) d'origine restauree(s).": "已恢复 {0} 个原始描述。"
 }

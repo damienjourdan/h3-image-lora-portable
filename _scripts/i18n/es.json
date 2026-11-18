@@ -553,5 +553,20 @@
 "{0} images : {1}{2}": "{0} imágenes: {1}{2}",
 "- {0} paire(s) d'images tres semblables, sans groupe important : acceptable.": "- {0} par(es) de imágenes muy parecidas, sin grupo importante: aceptable.",
 "- Pas de groupe d'images trop semblables : bonne variete.": "- Ningún grupo de imágenes demasiado parecidas: buena variedad.",
-"{0} legende(s) completee(s) avec la description du fond.": "{0} descripción(es) completada(s) con la descripción del fondo."
+"{0} legende(s) completee(s) avec la description du fond.": "{0} descripción(es) completada(s) con la descripción del fondo.",
+"Corriger les legendes : retirer les traits permanents": "Corregir las descripciones: quitar los rasgos permanentes",
+"Pour un LoRA de personnage, retire des legendes les traits permanents du sujet (cheveux, barbe, carrure, cicatrices, tatouages...) et les elements permanents saisis plus haut. Les expressions et vetements restent ('eyes closed', 'skin-tight suit'). Chaque proposition est modifiable : decochez celles a laisser. Les originales sont sauvegardees a cote du dataset (`<dataset>_legendes_originales`).": "Para un LoRA de personaje, quita de las descripciones los rasgos permanentes del sujeto (pelo, barba, complexión, cicatrices, tatuajes...) y los elementos permanentes indicados arriba. Las expresiones y la ropa se quedan ('eyes closed', 'skin-tight suit'). Cada propuesta es modificable: desmarque las que quiera dejar. Los originales se guardan junto al dataset (`<dataset>_legendes_originales`).",
+"Proposer les corrections": "Proponer correcciones",
+"Restaurer les legendes d'origine": "Restaurar las descripciones originales",
+"Appliquer": "Aplicar",
+"Fichier": "Archivo",
+"Actuelle": "Actual",
+"Proposee": "Propuesta",
+"Appliquer les corrections cochees": "Aplicar las correcciones marcadas",
+"La correction automatique ne concerne que les LoRA de personnage / sujet : pour un style, les traits du contenu doivent rester decrits.": "La corrección automática solo concierne a los LoRA de personaje / sujeto: para un estilo, los rasgos del contenido deben seguir descritos.",
+"Aucune legende a corriger : aucune ne decrit de trait permanent reconnu.": "Ninguna descripción que corregir: ninguna describe un rasgo permanente reconocido.",
+"{0} legende(s) a corriger. Relisez la colonne 'Proposee' (modifiable), decochez celles a laisser, puis appliquez. Les originales sont sauvegardees a cote du dataset.": "{0} descripción(es) que corregir. Revise la columna «Propuesta» (modificable), desmarque las que quiera dejar y aplique. Los originales se guardan junto al dataset.",
+"{0} legende(s) corrigee(s). Originales dans : {1}": "{0} descripción(es) corregida(s). Originales en: {1}",
+"Aucune sauvegarde de legendes pour ce dossier.": "No hay copia de las descripciones para esta carpeta.",
+"{0} legende(s) d'origine restauree(s).": "{0} descripción(es) original(es) restaurada(s)."
 }

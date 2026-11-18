@@ -118,6 +118,17 @@ BESCHREIBUNGEN: DIE WICHTIGSTE REGEL
   mit dauerhaften Merkmalen oder mehreren Ansichten.
   Die Beschreibungen bleiben auf Englisch, egal welche Sprache die UI hat.
 
+BESCHREIBUNGEN KORRIGIEREN (Tab Dataset)
+  „Korrekturen vorschlagen" entfernt aus den Beschreibungen eines
+  Figuren-LoRA die dauerhaften Merkmale (Haare, Bart, Statur, Narben,
+  Tattoos, Augenfarbe...) und die von Ihnen eingegebenen dauerhaften
+  Elemente. Beispiel: „m41ne, a muscular man with short spiky blond hair and
+  a white beard, wearing a black vest" wird zu „m41ne, a man, wearing a black
+  vest". Ausdrücke und Kleidung bleiben („eyes closed", „skin-tight suit").
+  Jeder Vorschlag ist in der Tabelle änderbar; haken Sie ab, was bleiben
+  soll, dann anwenden. Die Originale werden in <dataset>_legendes_originales
+  gesichert und lassen sich mit einem Klick wiederherstellen.
+
 DATASET-PRÜFUNG (Tab Dataset)
   „Dataset prüfen" findet drei unauffällige Fehler:
   - derselbe einfarbige Hintergrund (weiß, schwarz, grau...) auf mindestens

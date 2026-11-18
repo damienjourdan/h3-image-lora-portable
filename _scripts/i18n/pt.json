@@ -553,5 +553,20 @@
 "{0} images : {1}{2}": "{0} imagens: {1}{2}",
 "- {0} paire(s) d'images tres semblables, sans groupe important : acceptable.": "- {0} par(es) de imagens muito parecidas, sem grupo importante: aceitável.",
 "- Pas de groupe d'images trop semblables : bonne variete.": "- Nenhum grupo de imagens parecidas demais: boa variedade.",
-"{0} legende(s) completee(s) avec la description du fond.": "{0} legenda(s) completada(s) com a descrição do fundo."
+"{0} legende(s) completee(s) avec la description du fond.": "{0} legenda(s) completada(s) com a descrição do fundo.",
+"Corriger les legendes : retirer les traits permanents": "Corrigir as legendas: tirar os traços permanentes",
+"Pour un LoRA de personnage, retire des legendes les traits permanents du sujet (cheveux, barbe, carrure, cicatrices, tatouages...) et les elements permanents saisis plus haut. Les expressions et vetements restent ('eyes closed', 'skin-tight suit'). Chaque proposition est modifiable : decochez celles a laisser. Les originales sont sauvegardees a cote du dataset (`<dataset>_legendes_originales`).": "Para um LoRA de personagem, tira das legendas os traços permanentes do sujeito (cabelo, barba, porte físico, cicatrizes, tatuagens...) e os elementos permanentes informados acima. Expressões e roupas ficam ('eyes closed', 'skin-tight suit'). Cada proposta é editável: desmarque as que quer deixar. Os originais são salvos ao lado do dataset (`<dataset>_legendes_originales`).",
+"Proposer les corrections": "Propor correções",
+"Restaurer les legendes d'origine": "Restaurar as legendas originais",
+"Appliquer": "Aplicar",
+"Fichier": "Arquivo",
+"Actuelle": "Atual",
+"Proposee": "Proposta",
+"Appliquer les corrections cochees": "Aplicar as correções marcadas",
+"La correction automatique ne concerne que les LoRA de personnage / sujet : pour un style, les traits du contenu doivent rester decrits.": "A correção automática só se aplica a LoRAs de personagem / sujeito: para um estilo, os traços do conteúdo devem continuar descritos.",
+"Aucune legende a corriger : aucune ne decrit de trait permanent reconnu.": "Nenhuma legenda a corrigir: nenhuma descreve um traço permanente reconhecido.",
+"{0} legende(s) a corriger. Relisez la colonne 'Proposee' (modifiable), decochez celles a laisser, puis appliquez. Les originales sont sauvegardees a cote du dataset.": "{0} legenda(s) a corrigir. Revise a coluna 'Proposta' (editável), desmarque as que quer deixar e aplique. Os originais são salvos ao lado do dataset.",
+"{0} legende(s) corrigee(s). Originales dans : {1}": "{0} legenda(s) corrigida(s). Originais em: {1}",
+"Aucune sauvegarde de legendes pour ce dossier.": "Nenhum backup de legendas para esta pasta.",
+"{0} legende(s) d'origine restauree(s).": "{0} legenda(s) original(is) restaurada(s)."
 }

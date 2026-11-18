@@ -117,6 +117,16 @@ LEGENDAS: A REGRA QUE MAIS IMPORTA
   descrevem traços permanentes ou várias vistas.
   As legendas continuam em inglês, qualquer que seja o idioma da interface.
 
+CORRIGIR AS LEGENDAS (aba Dataset)
+  "Propor correções" tira das legendas de um LoRA de personagem os traços
+  permanentes (cabelo, barba, porte físico, cicatrizes, tatuagens, cor dos
+  olhos...) e os elementos permanentes que você informou. Exemplo: "m41ne, a
+  muscular man with short spiky blond hair and a white beard, wearing a black
+  vest" vira "m41ne, a man, wearing a black vest". Expressões e roupas ficam
+  ("eyes closed", "skin-tight suit"). Cada proposta é editável na tabela;
+  desmarque as que quer deixar e aplique. Os originais são salvos em
+  <dataset>_legendes_originales e podem ser restaurados com um clique.
+
 AUDITORIA DO DATASET (aba Dataset)
   "Auditar o dataset" encontra três defeitos que passam despercebidos:
   - um mesmo fundo liso (branco, preto, cinza...) em pelo menos 30 % das

@@ -97,6 +97,14 @@
   “分析文件夹”会列出描述了永久特征或多个视角的描述。
   无论界面语言如何，描述都保持英文。
 
+修正描述（“数据集”标签页）
+  “生成修正建议”会从角色 LoRA 的描述中删除永久特征（头发、胡子、体型、伤疤、
+  纹身、眼睛颜色等）以及你输入的永久元素。例如：“m41ne, a muscular man with
+  short spiky blond hair and a white beard, wearing a black vest”会变成
+  “m41ne, a man, wearing a black vest”。表情和服装会保留（“eyes closed”、
+  “skin-tight suit”）。每条建议都可在表格中编辑；取消勾选要保留的，然后应用。
+  原始描述保存在 <dataset>_legendes_originales，可一键恢复。
+
 数据集审核（“数据集”标签页）
   “审核数据集”会找出三种容易被忽略的问题：
   - 至少 30 % 的图片共用、描述中却未提及的纯色背景（白、黑、灰等）：它会绑

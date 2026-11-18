@@ -19,6 +19,7 @@ import h3_crop as crop  # noqa: E402
 import h3_i18n as i18n  # noqa: E402
 import h3_likeness as likeness  # noqa: E402
 import h3_audit as audit  # noqa: E402
+import h3_captionfix as capfix  # noqa: E402
 from h3_core import MON, ORCH, RUN  # noqa: E402
 
 # ------------------------------------------------------------------ textes d'aide
@@ -338,6 +339,24 @@ def audit_fix(folder, fixes):
     if not fixes:
         return "Aucune legende a completer.", gr.update(visible=False)
     return audit.add_background(folder, fixes), gr.update(visible=False)
+
+
+# ------------------------------------------------------------------ correction des legendes
+CAPFIX_HEADERS = ["Appliquer", "Fichier", "Actuelle", "Proposee"]
+
+
+def capfix_propose(folder, lora_type, trigger, extra):
+    rows, msg = capfix.proposals(folder, lora_type or core.LORA_SUBJECT, trigger, extra)
+    headers = [i18n.tr(h) for h in CAPFIX_HEADERS]   # une mise a jour du tableau reprend ses en-tetes
+    return (gr.update(value={"headers": headers, "data": rows}, visible=bool(rows)), msg,
+            gr.update(visible=bool(rows)))
+
+
+def capfix_apply(folder, table):
+    rows = table.values.tolist() if hasattr(table, "values") else (table or [])
+    if isinstance(table, dict):
+        rows = table.get("data") or []
+    return capfix.apply(folder, rows), gr.update(visible=False), gr.update(visible=False)
 
 
 # ------------------------------------------------------------------ rognage des textes
@@ -931,6 +950,20 @@ def build(code):
             cap_panel = gr.HTML()
             cap_log = gr.Textbox(label="Journal du legendage", lines=8, max_lines=8, autoscroll=True,
                                  interactive=False)
+            with gr.Accordion("Corriger les legendes : retirer les traits permanents", open=False):
+                gr.Markdown("Pour un LoRA de personnage, retire des legendes les traits permanents du sujet "
+                            "(cheveux, barbe, carrure, cicatrices, tatouages...) et les elements permanents "
+                            "saisis plus haut. Les expressions et vetements restent ('eyes closed', 'skin-tight "
+                            "suit'). Chaque proposition est modifiable : decochez celles a laisser. Les "
+                            "originales sont sauvegardees a cote du dataset (`<dataset>_legendes_originales`).")
+                with gr.Row():
+                    capfix_btn = gr.Button("Proposer les corrections")
+                    capfix_restore_btn = gr.Button("Restaurer les legendes d'origine")
+                capfix_msg = gr.Textbox(label="Message", lines=2, interactive=False)
+                capfix_table = gr.Dataframe(headers=CAPFIX_HEADERS,
+                                            datatype=["bool", "str", "str", "str"], interactive=True,
+                                            type="array", wrap=True, visible=False, column_widths=["8%", "14%", "39%", "39%"])
+                capfix_apply_btn = gr.Button("Appliquer les corrections cochees", variant="primary", visible=False)
             with gr.Accordion("Audit du dataset : fonds unis, doublons, cadrages trop semblables", open=False):
                 gr.Markdown("Repere ce que l'oeil laisse passer : un meme fond uni sur beaucoup d'images et absent "
                             "des legendes (il s'attache au mot declencheur : le LoRA le met partout), les "
@@ -1286,6 +1319,10 @@ def build(code):
         for comp in (lora_type, trigger, cap_extra):
             comp.change(core.caption_prompt, [lora_type, trigger, cap_extra], cap_prompt)
         audit_btn.click(audit_run, ds_folder, [audit_report, audit_gallery, audit_state, audit_fix_btn])
+        capfix_btn.click(capfix_propose, [ds_folder, lora_type, trigger, cap_extra],
+                         [capfix_table, capfix_msg, capfix_apply_btn])
+        capfix_apply_btn.click(capfix_apply, [ds_folder, capfix_table], [capfix_msg, capfix_table, capfix_apply_btn])
+        capfix_restore_btn.click(capfix.restore, ds_folder, capfix_msg)
         audit_fix_btn.click(audit_fix, [ds_folder, audit_state], [audit_report, audit_fix_btn])
         for comp in (trigger, prompts, no_sample, control):
             comp.change(prompt_check, [trigger, prompts, no_sample, control], prompt_note)

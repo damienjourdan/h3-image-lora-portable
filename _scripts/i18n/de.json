@@ -553,5 +553,20 @@
 "{0} images : {1}{2}": "{0} Bilder: {1}{2}",
 "- {0} paire(s) d'images tres semblables, sans groupe important : acceptable.": "- {0} Paar(e) sehr ähnlicher Bilder, keine große Gruppe: akzeptabel.",
 "- Pas de groupe d'images trop semblables : bonne variete.": "- Keine Gruppe zu ähnlicher Bilder: gute Abwechslung.",
-"{0} legende(s) completee(s) avec la description du fond.": "{0} Beschreibung(en) um den Hintergrund ergänzt."
+"{0} legende(s) completee(s) avec la description du fond.": "{0} Beschreibung(en) um den Hintergrund ergänzt.",
+"Corriger les legendes : retirer les traits permanents": "Beschreibungen korrigieren: dauerhafte Merkmale entfernen",
+"Pour un LoRA de personnage, retire des legendes les traits permanents du sujet (cheveux, barbe, carrure, cicatrices, tatouages...) et les elements permanents saisis plus haut. Les expressions et vetements restent ('eyes closed', 'skin-tight suit'). Chaque proposition est modifiable : decochez celles a laisser. Les originales sont sauvegardees a cote du dataset (`<dataset>_legendes_originales`).": "Entfernt bei einem Figuren-LoRA die dauerhaften Merkmale des Motivs aus den Beschreibungen (Haare, Bart, Statur, Narben, Tattoos...) sowie die oben eingegebenen dauerhaften Elemente. Ausdrücke und Kleidung bleiben ('eyes closed', 'skin-tight suit'). Jeder Vorschlag ist änderbar: haken Sie ab, was bleiben soll. Die Originale werden neben dem Dataset gesichert (`<dataset>_legendes_originales`).",
+"Proposer les corrections": "Korrekturen vorschlagen",
+"Restaurer les legendes d'origine": "Original-Beschreibungen wiederherstellen",
+"Appliquer": "Anwenden",
+"Fichier": "Datei",
+"Actuelle": "Aktuell",
+"Proposee": "Vorgeschlagen",
+"Appliquer les corrections cochees": "Angehakte Korrekturen anwenden",
+"La correction automatique ne concerne que les LoRA de personnage / sujet : pour un style, les traits du contenu doivent rester decrits.": "Die automatische Korrektur betrifft nur Figuren-/Motiv-LoRAs: bei einem Stil müssen die Merkmale des Inhalts beschrieben bleiben.",
+"Aucune legende a corriger : aucune ne decrit de trait permanent reconnu.": "Keine Beschreibung zu korrigieren: keine beschreibt ein erkanntes dauerhaftes Merkmal.",
+"{0} legende(s) a corriger. Relisez la colonne 'Proposee' (modifiable), decochez celles a laisser, puis appliquez. Les originales sont sauvegardees a cote du dataset.": "{0} Beschreibung(en) zu korrigieren. Prüfen Sie die Spalte 'Vorgeschlagen' (änderbar), haken Sie ab, was bleiben soll, dann anwenden. Die Originale werden neben dem Dataset gesichert.",
+"{0} legende(s) corrigee(s). Originales dans : {1}": "{0} Beschreibung(en) korrigiert. Originale in: {1}",
+"Aucune sauvegarde de legendes pour ce dossier.": "Keine Sicherung der Beschreibungen für diesen Ordner.",
+"{0} legende(s) d'origine restauree(s).": "{0} Original-Beschreibung(en) wiederhergestellt."
 }
