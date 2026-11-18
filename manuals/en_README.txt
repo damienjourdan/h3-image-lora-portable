@@ -278,6 +278,12 @@ BLEEDING: THE TWO PROTECTIONS
     the steps: double the steps with as many images as the dataset.
   Compare the Bleeding column in Results > Likeness with and without
   protection to choose.
+  With an automagic optimizer (Fast 512 and Fizgig processes),
+  regularization images make its rate collapse (found by Fizgig): the
+  tool then switches to adamw8bit at 2e-4 and says so at launch. With DOP
+  preservation, it only warns. In every case the learning rate is shown
+  next to the speed, and an alert is sent if it stays below 1e-6: pause
+  and restart with adamw8bit.
 
 AI-TOOLKIT VERSION
   By default: latest version of the main branch. This package was audited

@@ -607,5 +607,12 @@
 "Images de regularisation : la generation a echoue (voir le journal).": "Imagens de regularização: a geração falhou (ver o registro).",
 "{0} image(s) de regularisation pretes dans {1}. Cochez 'Images de regularisation' pour les utiliser.": "{0} imagem(ns) de regularização prontas em {1}. Marque 'Imagens de regularização' para usá-las.",
 "{0} image(s) de regularisation disponibles dans {1}.": "{0} imagem(ns) de regularização disponíveis em {1}.",
-"Aucune image de regularisation pour ce dataset : generez-les d'abord.": "Nenhuma imagem de regularização para este dataset: gere-as primeiro."
+"Aucune image de regularisation pour ce dataset : generez-les d'abord.": "Nenhuma imagem de regularização para este dataset: gere-as primeiro.",
+"Optimiseur : adamw8bit a 2e-4 au lieu d'automagic, car les images de regularisation font s'effondrer son taux.": "Otimizador: adamw8bit a 2e-4 em vez de automagic, porque as imagens de regularização derrubam a taxa dele.",
+"ATTENTION : preservation DOP avec automagic. Son taux peut s'effondrer : il est surveille pendant l'entrainement (alerte si il passe sous 1e-6). En cas d'alerte, relancez avec adamw8bit.": "ATENÇÃO: preservação DOP com automagic. A taxa dele pode despencar: ela é monitorada durante o treinamento (alerta se cair abaixo de 1e-6). Em caso de alerta, reinicie com adamw8bit.",
+"preservation DOP avec automagic. Son taux peut s'effondrer : il est surveille pendant l'entrainement (alerte si il passe sous 1e-6). En cas d'alerte, relancez avec adamw8bit.": "preservação DOP com automagic. A taxa dele pode despencar: ela é monitorada durante o treinamento (alerta se cair abaixo de 1e-6). Em caso de alerta, reinicie com adamw8bit.",
+"Taux d'apprentissage": "Taxa de aprendizado",
+"Taux d'apprentissage effondre ({0}) au pas {1} : l'entrainement n'apprend presque plus. Mettez en pause et relancez avec adamw8bit.": "Taxa de aprendizado despencou ({0}) no passo {1}: o treinamento quase não aprende mais. Pause e reinicie com adamw8bit.",
+"taux {0}": "taxa {0}",
+"Taux d'apprentissage effondre : l'entrainement n'apprend presque plus. Mettez en pause et relancez avec adamw8bit.": "Taxa de aprendizado despencou: o treinamento quase não aprende mais. Pause e reinicie com adamw8bit."
 }

@@ -607,5 +607,12 @@
 "Images de regularisation : la generation a echoue (voir le journal).": "正則化画像：生成に失敗しました（ログを参照）。",
 "{0} image(s) de regularisation pretes dans {1}. Cochez 'Images de regularisation' pour les utiliser.": "正則化画像 {0} 枚の準備ができました：{1}。使うには「正則化画像」をオンにしてください。",
 "{0} image(s) de regularisation disponibles dans {1}.": "正則化画像 {0} 枚が利用可能：{1}。",
-"Aucune image de regularisation pour ce dataset : generez-les d'abord.": "このデータセットには正則化画像がありません：先に生成してください。"
+"Aucune image de regularisation pour ce dataset : generez-les d'abord.": "このデータセットには正則化画像がありません：先に生成してください。",
+"Optimiseur : adamw8bit a 2e-4 au lieu d'automagic, car les images de regularisation font s'effondrer son taux.": "オプティマイザー：正則化画像で学習率が崩れるため、automagic の代わりに adamw8bit（2e-4）を使います。",
+"ATTENTION : preservation DOP avec automagic. Son taux peut s'effondrer : il est surveille pendant l'entrainement (alerte si il passe sous 1e-6). En cas d'alerte, relancez avec adamw8bit.": "注意：automagic で保持（DOP）を使用中。学習率が崩れることがあります：学習中に監視します（1e-6 を下回ると警告）。警告が出たら adamw8bit で再開してください。",
+"preservation DOP avec automagic. Son taux peut s'effondrer : il est surveille pendant l'entrainement (alerte si il passe sous 1e-6). En cas d'alerte, relancez avec adamw8bit.": "automagic で保持（DOP）を使用中。学習率が崩れることがあります：学習中に監視します（1e-6 を下回ると警告）。警告が出たら adamw8bit で再開してください。",
+"Taux d'apprentissage": "学習率",
+"Taux d'apprentissage effondre ({0}) au pas {1} : l'entrainement n'apprend presque plus. Mettez en pause et relancez avec adamw8bit.": "ステップ {1} で学習率が崩れました（{0}）：ほとんど学習していません。一時停止して adamw8bit で再開してください。",
+"taux {0}": "学習率 {0}",
+"Taux d'apprentissage effondre : l'entrainement n'apprend presque plus. Mettez en pause et relancez avec adamw8bit.": "学習率が崩れました：ほとんど学習していません。一時停止して adamw8bit で再開してください。"
 }

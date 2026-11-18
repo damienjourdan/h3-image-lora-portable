@@ -607,5 +607,12 @@
 "Images de regularisation : la generation a echoue (voir le journal).": "Regularisierungsbilder: die Erzeugung ist fehlgeschlagen (siehe Protokoll).",
 "{0} image(s) de regularisation pretes dans {1}. Cochez 'Images de regularisation' pour les utiliser.": "{0} Regularisierungsbild(er) bereit in {1}. Haken Sie 'Regularisierungsbilder' an, um sie zu nutzen.",
 "{0} image(s) de regularisation disponibles dans {1}.": "{0} Regularisierungsbild(er) verfügbar in {1}.",
-"Aucune image de regularisation pour ce dataset : generez-les d'abord.": "Keine Regularisierungsbilder für dieses Dataset: erzeugen Sie sie zuerst."
+"Aucune image de regularisation pour ce dataset : generez-les d'abord.": "Keine Regularisierungsbilder für dieses Dataset: erzeugen Sie sie zuerst.",
+"Optimiseur : adamw8bit a 2e-4 au lieu d'automagic, car les images de regularisation font s'effondrer son taux.": "Optimierer: adamw8bit mit 2e-4 statt automagic, weil Regularisierungsbilder seine Rate einbrechen lassen.",
+"ATTENTION : preservation DOP avec automagic. Son taux peut s'effondrer : il est surveille pendant l'entrainement (alerte si il passe sous 1e-6). En cas d'alerte, relancez avec adamw8bit.": "ACHTUNG: DOP-Erhaltung mit automagic. Seine Rate kann einbrechen: sie wird während des Trainings überwacht (Alarm unter 1e-6). Bei Alarm mit adamw8bit neu starten.",
+"preservation DOP avec automagic. Son taux peut s'effondrer : il est surveille pendant l'entrainement (alerte si il passe sous 1e-6). En cas d'alerte, relancez avec adamw8bit.": "DOP-Erhaltung mit automagic. Seine Rate kann einbrechen: sie wird während des Trainings überwacht (Alarm unter 1e-6). Bei Alarm mit adamw8bit neu starten.",
+"Taux d'apprentissage": "Lernrate",
+"Taux d'apprentissage effondre ({0}) au pas {1} : l'entrainement n'apprend presque plus. Mettez en pause et relancez avec adamw8bit.": "Lernrate eingebrochen ({0}) bei Schritt {1}: das Training lernt kaum noch. Pausieren und mit adamw8bit neu starten.",
+"taux {0}": "Rate {0}",
+"Taux d'apprentissage effondre : l'entrainement n'apprend presque plus. Mettez en pause et relancez avec adamw8bit.": "Lernrate eingebrochen: das Training lernt kaum noch. Pausieren und mit adamw8bit neu starten."
 }

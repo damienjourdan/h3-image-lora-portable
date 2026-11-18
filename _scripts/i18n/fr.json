@@ -458,5 +458,12 @@
 "Images de regularisation : la generation a echoue (voir le journal).": "Images de régularisation : la génération a échoué (voir le journal).",
 "{0} image(s) de regularisation pretes dans {1}. Cochez 'Images de regularisation' pour les utiliser.": "{0} image(s) de régularisation prêtes dans {1}. Cochez « Images de régularisation » pour les utiliser.",
 "{0} image(s) de regularisation disponibles dans {1}.": "{0} image(s) de régularisation disponibles dans {1}.",
-"Aucune image de regularisation pour ce dataset : generez-les d'abord.": "Aucune image de régularisation pour ce dataset : générez-les d'abord."
+"Aucune image de regularisation pour ce dataset : generez-les d'abord.": "Aucune image de régularisation pour ce dataset : générez-les d'abord.",
+"Optimiseur : adamw8bit a 2e-4 au lieu d'automagic, car les images de regularisation font s'effondrer son taux.": "Optimiseur : adamw8bit à 2e-4 au lieu d'automagic, car les images de régularisation font s'effondrer son taux.",
+"ATTENTION : preservation DOP avec automagic. Son taux peut s'effondrer : il est surveille pendant l'entrainement (alerte si il passe sous 1e-6). En cas d'alerte, relancez avec adamw8bit.": "ATTENTION : préservation DOP avec automagic. Son taux peut s'effondrer : il est surveillé pendant l'entraînement (alerte s'il passe sous 1e-6). En cas d'alerte, relancez avec adamw8bit.",
+"preservation DOP avec automagic. Son taux peut s'effondrer : il est surveille pendant l'entrainement (alerte si il passe sous 1e-6). En cas d'alerte, relancez avec adamw8bit.": "préservation DOP avec automagic. Son taux peut s'effondrer : il est surveillé pendant l'entraînement (alerte s'il passe sous 1e-6). En cas d'alerte, relancez avec adamw8bit.",
+"Taux d'apprentissage": "Taux d'apprentissage",
+"Taux d'apprentissage effondre ({0}) au pas {1} : l'entrainement n'apprend presque plus. Mettez en pause et relancez avec adamw8bit.": "Taux d'apprentissage effondré ({0}) au pas {1} : l'entraînement n'apprend presque plus. Mettez en pause et relancez avec adamw8bit.",
+"taux {0}": "taux {0}",
+"Taux d'apprentissage effondre : l'entrainement n'apprend presque plus. Mettez en pause et relancez avec adamw8bit.": "Taux d'apprentissage effondré : l'entraînement n'apprend presque plus. Mettez en pause et relancez avec adamw8bit."
 }

@@ -607,5 +607,12 @@
 "Images de regularisation : la generation a echoue (voir le journal).": "Imágenes de regularización: la generación ha fallado (ver el registro).",
 "{0} image(s) de regularisation pretes dans {1}. Cochez 'Images de regularisation' pour les utiliser.": "{0} imagen(es) de regularización listas en {1}. Marque «Imágenes de regularización» para usarlas.",
 "{0} image(s) de regularisation disponibles dans {1}.": "{0} imagen(es) de regularización disponibles en {1}.",
-"Aucune image de regularisation pour ce dataset : generez-les d'abord.": "No hay imágenes de regularización para este dataset: genérelas primero."
+"Aucune image de regularisation pour ce dataset : generez-les d'abord.": "No hay imágenes de regularización para este dataset: genérelas primero.",
+"Optimiseur : adamw8bit a 2e-4 au lieu d'automagic, car les images de regularisation font s'effondrer son taux.": "Optimizador: adamw8bit a 2e-4 en lugar de automagic, porque las imágenes de regularización hunden su tasa.",
+"ATTENTION : preservation DOP avec automagic. Son taux peut s'effondrer : il est surveille pendant l'entrainement (alerte si il passe sous 1e-6). En cas d'alerte, relancez avec adamw8bit.": "ATENCIÓN: preservación DOP con automagic. Su tasa puede hundirse: se vigila durante el entrenamiento (alerta si baja de 1e-6). Si hay alerta, relance con adamw8bit.",
+"preservation DOP avec automagic. Son taux peut s'effondrer : il est surveille pendant l'entrainement (alerte si il passe sous 1e-6). En cas d'alerte, relancez avec adamw8bit.": "preservación DOP con automagic. Su tasa puede hundirse: se vigila durante el entrenamiento (alerta si baja de 1e-6). Si hay alerta, relance con adamw8bit.",
+"Taux d'apprentissage": "Tasa de aprendizaje",
+"Taux d'apprentissage effondre ({0}) au pas {1} : l'entrainement n'apprend presque plus. Mettez en pause et relancez avec adamw8bit.": "Tasa de aprendizaje hundida ({0}) en el paso {1}: el entrenamiento casi no aprende. Páuselo y relance con adamw8bit.",
+"taux {0}": "tasa {0}",
+"Taux d'apprentissage effondre : l'entrainement n'apprend presque plus. Mettez en pause et relancez avec adamw8bit.": "Tasa de aprendizaje hundida: el entrenamiento casi no aprende. Páuselo y relance con adamw8bit."
 }

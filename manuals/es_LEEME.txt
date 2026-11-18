@@ -288,6 +288,12 @@ DESBORDAMIENTO: LAS DOS PROTECCIONES
     pasos con tantas imágenes como el dataset.
   Compare la columna Desbordamiento de Resultados > Parecido con y sin
   protección para elegir.
+  Con un optimizador automagic (procesos Rápido 512 y Fizgig), las
+  imágenes de regularización hunden su tasa (hallazgo de Fizgig): la
+  herramienta pasa entonces a adamw8bit a 2e-4 y lo indica al lanzar. Con
+  la preservación DOP solo avisa. En todos los casos la tasa de
+  aprendizaje se muestra junto a la velocidad y salta una alerta si se
+  queda por debajo de 1e-6: pause y relance con adamw8bit.
 
 VERSIÓN DE AI-TOOLKIT
   Por defecto: última versión de la rama main. Este paquete se auditó en el

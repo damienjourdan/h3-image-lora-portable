@@ -296,6 +296,12 @@ DURCHSCHLAGEN: DIE ZWEI SCHUTZFUNKTIONEN
     vielen Bildern wie im Dataset die Schritte verdoppeln.
   Vergleichen Sie die Spalte Durchschlagen in Ergebnisse > Ähnlichkeit mit
   und ohne Schutz, um zu wählen.
+  Mit einem automagic-Optimierer (Prozesse Schnell 512 und Fizgig)
+  lassen Regularisierungsbilder seine Rate einbrechen (Befund von
+  Fizgig): das Tool wechselt dann zu adamw8bit mit 2e-4 und meldet es
+  beim Start. Mit DOP-Erhaltung warnt es nur. In jedem Fall wird die
+  Lernrate neben dem Tempo angezeigt, und ein Alarm folgt, wenn sie unter
+  1e-6 bleibt: pausieren und mit adamw8bit neu starten.
 
 AI-TOOLKIT-VERSION
   Standard: neueste Version des main-Zweigs. Dieses Paket wurde auf Commit

@@ -783,6 +783,7 @@ class Runner:
         r"\[(?P<el>[^<\]]*)<?(?P<eta>[^,\]]*),?\s*(?P<rate>[^\],]*)"
     )
     LOSS = re.compile(r"\bloss:\s*([0-9.]+(?:e[+-]?\d+)?)", re.I)
+    LR = re.compile(r"\blr:\s*([0-9.]+(?:e[+-]?\d+)?)", re.I)
     CONTROLLED = ("train", "calib", "test")  # jobs pilotes par la base de controle
 
     def __init__(self):
@@ -800,6 +801,8 @@ class Runner:
         self.saw_oom = self.saw_compile_error = False
         self.log_file = None
         self.loss = LossLog()
+        self.lr_low = 0
+        self.lr_alerted = False
         self.stage = ""
         self.stage_started = None
         self.items_total = 0
@@ -809,6 +812,26 @@ class Runner:
 
     def running(self):
         return self.proc is not None and self.proc.poll() is None
+
+    def _watch_lr(self, line, d):
+        """Taux d'apprentissage affiche par ai-toolkit ; alerte s'il reste sous LR_FLOOR."""
+        m = self.LR.search(line)
+        if not m:
+            return
+        try:
+            lr = float(m.group(1))
+        except ValueError:
+            return
+        d["lr"] = m.group(1)
+        step = int(d["n"]) if d["n"].isdigit() else 0
+        self.lr_low = self.lr_low + 1 if (step >= 30 and lr < LR_FLOOR) else 0
+        if self.lr_low >= 10:
+            d["lr_low"] = True
+            if not self.lr_alerted:
+                self.lr_alerted = True
+                notify("Taux d'apprentissage",
+                       f"Taux d'apprentissage effondre ({m.group(1)}) au pas {step} : l'entrainement n'apprend "
+                       "presque plus. Mettez en pause et relancez avec adamw8bit.")
 
     def start(self, cmd, kind, label, log_path=None, job_name="", job_dir="", extra_env=None):
         if self.running():
@@ -826,6 +849,7 @@ class Runner:
             self.lines.clear()
             self.partial = ""
             self.bar = self.train_bar = None
+            self.lr_low, self.lr_alerted = 0, False
             self.phase = "Lancement : " + STAGE_HINTS["Lancement"]
             self.stage, self.stage_started, self.items_total = "Lancement", time.time(), 0
             self.kind, self.label = kind, label
@@ -932,6 +956,7 @@ class Runner:
                 self.bar = None  # l'etape annexe (apercus, cache...) est terminee
                 self.phase = "Entrainement"
                 if self.kind == "train":
+                    self._watch_lr(line, d)
                     lm = self.LOSS.search(line)
                     if lm and d["n"].isdigit():
                         try:
@@ -1383,6 +1408,31 @@ def fill_captions(folder, text):
 
 
 # =========================================================== configuration
+ADAMW_SAFE_LR = 2e-4
+LR_FLOOR = 1e-6      # en dessous, automagic n'apprend presque plus
+
+
+def _reg_active(P):
+    return bool(P.get("reg")) and count_images(reg_folder(P.get("folder"))) > 0
+
+
+def automagic_switch(P):
+    """Images de regularisation + automagic : elles arrivent en lots separes, la mise a jour change de sens
+    d'un lot a l'autre et automagic, qui lit cela comme un depassement, descend son taux au plancher (constate
+    par Fizgig, ticket #364). On passe alors en adamw8bit a taux fixe 2e-4, la correction de Fizgig."""
+    return OPTIMIZERS.get(P.get("optimizer"), "adamw8bit").startswith("automagic") and _reg_active(P)
+
+
+def optimizer_note(P):
+    if automagic_switch(P):
+        return ("\nOptimiseur : adamw8bit a 2e-4 au lieu d'automagic, car les images de regularisation font "
+                "s'effondrer son taux.")
+    if OPTIMIZERS.get(P.get("optimizer"), "adamw8bit").startswith("automagic") and P.get("dop"):
+        return ("\nATTENTION : preservation DOP avec automagic. Son taux peut s'effondrer : il est surveille "
+                "pendant l'entrainement (alerte si il passe sous 1e-6). En cas d'alerte, relancez avec adamw8bit.")
+    return ""
+
+
 def build_config(P):
     """Parametres de l'UI -> (nom du job, config ai-toolkit en dict)."""
     name = safe_name(P.get("name"))
@@ -1401,6 +1451,8 @@ def build_config(P):
     }
     optimizer = OPTIMIZERS.get(P.get("optimizer"), "adamw8bit")
     lr = float(P.get("lr") or 1e-4)
+    if automagic_switch(P):
+        optimizer, lr = "adamw8bit", ADAMW_SAFE_LR
     # automagic regle lui-meme son taux : le champ est son point de depart, et
     # max_lr son plafond (2,5e-4, le reglage teste par Fizgig sur ce modele)
     opt_params = {"weight_decay": 1e-4} if optimizer == "adamw8bit" else {"max_lr": max(lr, 2.5e-4)}
@@ -1905,7 +1957,7 @@ def start_training(P, queue=False):
     item = {"kind": "train", "name": name, "cfg_path": cfg_path, "label": f"Entrainement {name}",
             "env": _job_env(cfg, P, start_step=done[-1] if done else 0)}
     ram = ram_warning(P).strip()
-    note_ram = ("\n" + ram if ram else "") + prompt_warning(P)
+    note_ram = ("\n" + ram if ram else "") + prompt_warning(P) + optimizer_note(P)
     if queue:
         pos = ORCH.enqueue(item)
         return f"'{name}' ajoute a la file d'attente (position {pos}).{note_ram}", None

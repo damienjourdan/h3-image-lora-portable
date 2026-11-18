@@ -22,7 +22,9 @@ The following elements were rewritten in this project after reading its code and
 - the schedule of the likeness optimization (share of steps at the sharpest noise level);
 - the LCM sampler settings (fresh noise from 1.1 to 0.9);
 - the memory benchmarks and the RAM margin rule;
-- the conversion of its H3-Image training adapter to the ai-toolkit format.
+- the conversion of its H3-Image training adapter to the ai-toolkit format;
+- the finding that automagic's learning rate collapses when updates alternate in direction (DOP,
+  regularization), and its fix: AdamW at a fixed 2e-4 (Fizgig issue #364, 17 November 2026).
 
 The Fizgig training adapter is downloaded from
 [Hugging Face](https://huggingface.co/ShootTheSound/Fizgig-MiniMax-H3-Image-Training-Adapter) under

@@ -283,6 +283,12 @@ DÉBORDEMENT : LES DEUX PROTECTIONS
     pas avec autant d'images que le dataset.
   Comparez la colonne Débordement de Résultats > Ressemblance avec et
   sans protection pour choisir.
+  Avec un optimiseur automagic (procédés Rapide 512 et Fizgig), les
+  images de régularisation font s'effondrer son taux (constat de Fizgig) :
+  l'outil passe alors en adamw8bit à 2e-4 et le dit au lancement. Avec la
+  préservation DOP, il prévient seulement. Dans tous les cas, le taux
+  d'apprentissage est affiché à côté de la vitesse et une alerte part
+  s'il reste sous 1e-6 : mettez en pause et relancez avec adamw8bit.
 
 VERSION D'AI-TOOLKIT
   Par défaut : dernière version de la branche main. Ce paquet a été audité

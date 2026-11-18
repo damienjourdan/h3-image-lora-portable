@@ -115,18 +115,23 @@ def _bar_html(title, d, color, energy=False):
             detail += f" &nbsp;|&nbsp; reste {d['eta']}"
         if d.get("rate"):
             detail += f" &nbsp;|&nbsp; {d['rate']}"
+        if d.get("lr"):
+            detail += f" &nbsp;|&nbsp; taux {d['lr']}"
     if energy:
         cost = core.energy_text((d or {}).get("eta"), i18n.lang_now())
         if cost:
             detail += f" &nbsp;|&nbsp; {cost}"
     name = (d or {}).get("desc") or ""
+    alert = ("<div style='font-size:12px;color:#e53935;margin-top:2px'>Taux d'apprentissage effondre : "
+             "l'entrainement n'apprend presque plus. Mettez en pause et relancez avec adamw8bit.</div>"
+             if (d or {}).get("lr_low") else "")
     return f"""
 <div style="margin:6px 0">
   <div style="display:flex;justify-content:space-between;font-size:13px">
     <b>{title}</b><span>{pct} %</span></div>
   <div style="background:#2a2a2a;border-radius:6px;height:16px;overflow:hidden">
     <div style="width:{pct}%;height:100%;background:{color};transition:width .5s"></div></div>
-  <div style="font-size:12px;opacity:.8;margin-top:2px">{name} {detail}</div>
+  <div style="font-size:12px;opacity:.8;margin-top:2px">{name} {detail}</div>{alert}
 </div>"""
 
 

@@ -288,6 +288,12 @@ VAZAMENTO: AS DUAS PROTEÇÕES
     quanto o dataset.
   Compare a coluna Vazamento de Resultados > Semelhança com e sem
   proteção para escolher.
+  Com um otimizador automagic (processos Rápido 512 e Fizgig), as
+  imagens de regularização derrubam a taxa dele (constatação do Fizgig):
+  a ferramenta passa então para adamw8bit a 2e-4 e avisa no lançamento.
+  Com a preservação DOP, ela só avisa. Em todos os casos a taxa de
+  aprendizado aparece ao lado da velocidade, e um alerta é enviado se ela
+  ficar abaixo de 1e-6: pause e reinicie com adamw8bit.
 
 VERSÃO DO AI-TOOLKIT
   Padrão: última versão do branch main. Este pacote foi auditado no commit

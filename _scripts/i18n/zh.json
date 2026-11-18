@@ -607,5 +607,12 @@
 "Images de regularisation : la generation a echoue (voir le journal).": "正则化图片：生成失败（见日志）。",
 "{0} image(s) de regularisation pretes dans {1}. Cochez 'Images de regularisation' pour les utiliser.": "{0} 张正则化图片已就绪：{1}。勾选“正则化图片”即可使用。",
 "{0} image(s) de regularisation disponibles dans {1}.": "可用的正则化图片 {0} 张：{1}。",
-"Aucune image de regularisation pour ce dataset : generez-les d'abord.": "此数据集没有正则化图片：请先生成。"
+"Aucune image de regularisation pour ce dataset : generez-les d'abord.": "此数据集没有正则化图片：请先生成。",
+"Optimiseur : adamw8bit a 2e-4 au lieu d'automagic, car les images de regularisation font s'effondrer son taux.": "优化器：因正则化图片会使学习率崩溃，改用 adamw8bit（2e-4）代替 automagic。",
+"ATTENTION : preservation DOP avec automagic. Son taux peut s'effondrer : il est surveille pendant l'entrainement (alerte si il passe sous 1e-6). En cas d'alerte, relancez avec adamw8bit.": "注意：automagic 搭配保持（DOP）。其学习率可能崩溃：训练期间会监控（低于 1e-6 时报警）。如有报警，请改用 adamw8bit 重新开始。",
+"preservation DOP avec automagic. Son taux peut s'effondrer : il est surveille pendant l'entrainement (alerte si il passe sous 1e-6). En cas d'alerte, relancez avec adamw8bit.": "automagic 搭配保持（DOP）。其学习率可能崩溃：训练期间会监控（低于 1e-6 时报警）。如有报警，请改用 adamw8bit 重新开始。",
+"Taux d'apprentissage": "学习率",
+"Taux d'apprentissage effondre ({0}) au pas {1} : l'entrainement n'apprend presque plus. Mettez en pause et relancez avec adamw8bit.": "第 {1} 步学习率崩溃（{0}）：训练几乎不再学习。请暂停并改用 adamw8bit 重新开始。",
+"taux {0}": "学习率 {0}",
+"Taux d'apprentissage effondre : l'entrainement n'apprend presque plus. Mettez en pause et relancez avec adamw8bit.": "学习率崩溃：训练几乎不再学习。请暂停并改用 adamw8bit 重新开始。"
 }
