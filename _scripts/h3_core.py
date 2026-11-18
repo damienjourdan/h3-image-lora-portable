@@ -251,9 +251,7 @@ DEFAULT_SETTINGS = {"sound": True, "ntfy_topic": "", "comfy_loras_dir": "", "kee
                     # pause automatique quand le personnage apparait aussi sans mot declencheur
                     "leak_pause": False,
                     # balayage de puissance au debut de l'entrainement (droits administrateur)
-                    "sweep_on": False, "sweep_min_w": 200, "sweep_step_w": 30,
-                    # generateur MiniMaxH3-Portable (dossier ; vide = detection automatique)
-                    "gen_dir": ""}
+                    "sweep_on": False, "sweep_min_w": 200, "sweep_step_w": 30}
 
 # devises des langues de l'interface : code -> (symbole, decimales, symbole devant)
 CURRENCIES = {"EUR": ("€", 2, False), "USD": ("$", 2, True), "GBP": ("£", 2, True),
@@ -1599,9 +1597,6 @@ def ram_warning(P):
 
 
 # =========================================================== orchestration
-BEFORE_GPU_JOB = []   # fonctions appelees avant chaque job GPU (ex. arret du generateur) -> note
-
-
 class Orchestrator:
     """File d'attente, pause programmee, calibrage, notifications de fin."""
 
@@ -1648,11 +1643,6 @@ class Orchestrator:
             bad = quarantine_bad_checkpoints(job_dir)
             if bad:
                 note = f" Checkpoint(s) tronque(s) ecarte(s) : {', '.join(bad)}."
-        for hook in BEFORE_GPU_JOB:
-            try:
-                note += hook()
-            except Exception as exc:  # noqa: BLE001 - jamais bloquant
-                print("avant job :", exc)
         log = os.path.join(job_dir or CACHE, "journal_ui.txt")
         if kind in ("train", "calib"):
             MON.reset_peaks()
@@ -2117,12 +2107,11 @@ def start_captioning(folder, model, recaption, prompt, max_tokens=256):
             "max_res": 768, "max_new_tokens": int(max_tokens), "batch_size": 1,
         }}]}}
     cfg_path = write_config("_legendes", cfg)
-    freed = "".join(hook() for hook in BEFORE_GPU_JOB)
     ok = RUN.start([PY, RUN_JOB, cfg_path], "caption",
                    f"Legendage automatique ({count_images(folder)} images, {(model or CAPTION_MODELS[0]).split('/')[-1]})",
                    os.path.join(CACHE, "journal_legendes.txt"))
     return ("Legendage lance (le modele est telecharge au premier usage). "
-            "Relisez ensuite les .txt : une legende fausse s'apprend aussi." + freed
+            "Relisez ensuite les .txt : une legende fausse s'apprend aussi."
             if ok else "Lancement impossible.")
 
 

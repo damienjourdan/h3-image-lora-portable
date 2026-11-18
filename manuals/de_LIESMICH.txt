@@ -297,21 +297,6 @@ DURCHSCHLAGEN: DIE ZWEI SCHUTZFUNKTIONEN
   Vergleichen Sie die Spalte Durchschlagen in Ergebnisse > Ähnlichkeit mit
   und ohne Schutz, um zu wählen.
 
-MIT IHREN LORAS GENERIEREN (Tab 5. Generieren)
-  Steuert den Generator MiniMaxH3-Portable, separat installiert (eigene
-  install.bat und prepare.bat, etwa 39 GB konvertierte Modelle: die
-  Dateien des Trainers haben ein anderes Format und sind nicht nutzbar).
-  Liegt er neben diesem Ordner, wird er automatisch erkannt; sonst seinen
-  Ordner angeben. Seine Lizenz akzeptieren (Hinweis angezeigt: keine
-  Rechte in der EU, im Vereinigten Königreich, in Südkorea oder den USA),
-  dann „Generator starten“: er erscheint nach 1 bis 3 Min. im Tab (oder
-  in einem Browser-Tab). Seine Sprache folgt der Oberfläche. „An den
-  Generator senden“ (hier oder in Ergebnisse) kopiert einen Checkpoint in
-  seinen Ordner loras, vorausgewählt nach der Empfehlung des Tabs
-  Ähnlichkeit; im Generator die LoRA-Liste aktualisieren.
-  Er belegt etwa 20 GB VRAM: jeder Job des Trainers hält ihn zuerst
-  automatisch an, und während eines Jobs startet er nicht.
-
 AI-TOOLKIT-VERSION
   Standard: neueste Version des main-Zweigs. Dieses Paket wurde auf Commit
   4a7f285 (10. Nov. 2026) geprüft. Schaltfläche „Aktuelle Version fixieren"
