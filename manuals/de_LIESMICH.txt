@@ -246,6 +246,17 @@ DAS RICHTIGE LEISTUNGSLIMIT FINDEN (Tab Ergebnisse)
   Zum Vergleichen das Limit während eines Trainings ändern (Tab Werkzeuge)
   oder das Thermostat arbeiten lassen.
 
+AUTOMATISCHER LEISTUNGSDURCHLAUF (Tab Werkzeuge)
+  Kästchen „Leistungsdurchlauf zu Beginn des Trainings" (standardmäßig aus,
+  erfordert 2_LANCER_UI_ADMIN.bat). Einmal pro Job, nach 10 Anlaufschritten,
+  sinkt das Limit in Stufen von 30 W (einstellbar), je 30 Schritte, vom
+  gespeicherten Limit (oder dem ursprünglichen) bis zur Untergrenze (200 W
+  empfohlen auf einer 3090): etwa 6 bis 8 Minuten. Das Training läuft
+  währenddessen normal weiter. Am Ende wird die niedrigste Stufe innerhalb
+  von 3 % des Höchsttempos angewendet und als Leistungslimit gespeichert;
+  eine Benachrichtigung nennt das Ergebnis. Das Thermostat wartet das Ende
+  ab und nutzt es dann als Obergrenze.
+
 DEN CHECKPOINT WÄHLEN: ÄHNLICHKEIT (Tab Ergebnisse)
   Der Tab „Ähnlichkeit" vergleicht jede Vorschau mit den Dataset-Bildern
   (Modell DINOv2) und mit ihrem Prompt ohne Triggerwort (Modell CLIP), auf

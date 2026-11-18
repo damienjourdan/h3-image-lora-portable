@@ -247,7 +247,9 @@ DEFAULT_SETTINGS = {"sound": True, "ntfy_topic": "", "comfy_loras_dir": "", "kee
                     # ressemblance / fidelite au prompt des apercus (processeur, modeles ~700 Mo)
                     "likeness_on": True,
                     # pause automatique quand le personnage apparait aussi sans mot declencheur
-                    "leak_pause": False}
+                    "leak_pause": False,
+                    # balayage de puissance au debut de l'entrainement (droits administrateur)
+                    "sweep_on": False, "sweep_min_w": 200, "sweep_step_w": 30}
 
 # devises des langues de l'interface : code -> (symbole, decimales, symbole devant)
 CURRENCIES = {"EUR": ("€", 2, False), "USD": ("$", 2, True), "GBP": ("£", 2, True),
@@ -1109,6 +1111,128 @@ class PerfLog:
 
 
 PERF = PerfLog()
+
+
+class PowerSweep:
+    """Balayage de puissance au debut d'un entrainement : la limite descend par paliers
+    (SWEEP_STEPS pas chacun), puis le seuil conseille (le palier le plus bas a moins de 3 % de la
+    vitesse maximale, mesuree par PerfLog) est applique et enregistre comme limite de puissance.
+    Une fois par job (output/<job>/balayage.json) ; necessite les droits administrateur."""
+    STEPS = 30          # pas par palier
+    WARMUP = 10         # pas avant le premier palier (fin des premiers apercus, cache chaud)
+    TOLERANCE = 0.03
+
+    def __init__(self):
+        self.note = ""
+        self._reset(None)
+
+    def _reset(self, job):
+        self.job, self.levels, self.idx, self.step0, self.t_start, self.done = job, [], -1, None, None, False
+
+    def running(self):
+        return bool(self.levels) and not self.done
+
+    def _file(self, job):
+        return os.path.join(OUTPUT, job, "balayage.json")
+
+    def tick(self):
+        cfg = load_settings()
+        bar = RUN.train_bar if RUN.running() and RUN.kind == "train" else None
+        if not cfg.get("sweep_on") or bar is None or not str(bar.get("n", "")).isdigit():
+            if self.running():
+                self.note = ""   # job arrete ou mis en pause : le balayage reprendra du debut
+            if not RUN.running():
+                self._reset(None)
+            return
+        step, job = int(bar["n"]), RUN.job_name
+        if job != self.job:
+            self._reset(job)
+            if os.path.isfile(self._file(job)):
+                try:
+                    with open(self._file(job), encoding="utf-8") as f:
+                        pick = json.load(f).get("pick")
+                    self.note = f"Balayage de puissance deja fait pour ce job : {pick} W."
+                except (OSError, ValueError):
+                    self.note = ""
+                self.done = True
+                return
+            if not is_admin():
+                self.note = ("Balayage de puissance inactif : droits administrateur requis "
+                             "(lancez 2_LANCER_UI_ADMIN.bat).")
+                self.done = True
+                return
+            info = power_info()
+            if not info:
+                self.note = "Balayage de puissance inactif : limite de puissance illisible sur cette carte."
+                self.done = True
+                return
+            top = int(cfg.get("power_limit_w") or 0) or int(info["default"])
+            top = int(max(info["min"], min(info["max"], top)))
+            floor = int(max(info["min"], min(top, int(cfg.get("sweep_min_w") or 200))))
+            stepw = max(10, int(cfg.get("sweep_step_w") or 30))
+            self.levels = list(range(top, floor - 1, -stepw))
+            if len(self.levels) < 2:
+                self.note = "Balayage de puissance : plage trop etroite (plancher proche de la limite)."
+                self.done = True
+                return
+            self.start_at = step + self.WARMUP
+            self.note = f"Balayage de puissance : debut au pas {self.start_at}."
+            return
+        if self.done:
+            return
+        if self.idx < 0:
+            if step >= self.start_at:
+                self.t_start = time.time()
+                self._set(0, step)
+            return
+        if step - self.step0 >= self.STEPS:
+            if self.idx + 1 < len(self.levels):
+                self._set(self.idx + 1, step)
+            else:
+                self._finish(job)
+
+    def _set(self, i, step):
+        ok, msg = set_power_limit(self.levels[i])
+        if not ok:
+            self.note = "Balayage de puissance interrompu : " + msg + "."
+            self.done = True
+            return
+        ORCH._power_changed = True
+        self.idx, self.step0 = i, step
+        self.note = (f"Balayage de puissance : palier {i + 1}/{len(self.levels)} a {self.levels[i]} W "
+                     f"({self.STEPS} pas par palier).")
+
+    def _finish(self, job):
+        rows = [r for r in PerfLog.read(job) if self.t_start and r[0] >= self.t_start]
+        by_level = {}
+        for r in rows:
+            by_level.setdefault(int(round(r[4])), []).append(r[5])
+        stats = {}
+        for lvl in self.levels:
+            vals = by_level.get(lvl, [])[1:]          # premier intervalle : transition entre paliers
+            if len(vals) >= 2:
+                vals = sorted(vals)
+                stats[lvl] = vals[len(vals) // 2]
+        self.done = True
+        if len(stats) < 2:
+            self.note = "Balayage de puissance : pas assez de mesures pour conclure (apercus trop frequents ?)."
+            return
+        best = min(stats.values())
+        pick = min(lvl for lvl, v in stats.items() if v <= best * (1 + self.TOLERANCE))
+        set_power_limit(pick)
+        save_settings(power_limit_w=pick)
+        try:
+            with open(self._file(job), "w", encoding="utf-8") as f:
+                json.dump({"levels": stats, "pick": pick, "time": int(time.time())}, f)
+        except OSError:
+            pass
+        slower = (stats[pick] / best - 1) * 100
+        self.note = (f"Balayage de puissance termine : {pick} W retenus ({slower:.0f} % plus lent que le plus "
+                     f"rapide, {max(stats) - pick} W de moins). Enregistre comme limite de puissance.")
+        notify("Balayage de puissance termine", self.note)
+
+
+SWEEP = PowerSweep()
 MON.in_train_phase = lambda: RUN.running() and RUN.train_bar is not None
 MON.is_busy = lambda: RUN.running() and RUN.kind != "download"
 
@@ -1581,6 +1705,10 @@ class Orchestrator:
         if not cfg.get("thermo_on") or not RUN.running() or RUN.kind not in Runner.CONTROLLED:
             self._thermo_temps, self._thermo_last, self._thermo_note = [], 0.0, ""
             return
+        if SWEEP.running():   # le balayage pilote la limite : le thermostat attend la fin
+            self._thermo_temps, self._thermo_last = [], 0.0
+            self._thermo_note = "Thermostat en attente : balayage de puissance en cours."
+            return
         if MON.gpu_temp is None:
             return
         if not is_admin():
@@ -1629,9 +1757,11 @@ class Orchestrator:
     def thermo_text(self):
         cfg = load_settings()
         if not cfg.get("thermo_on"):
-            return "Thermostat desactive."
+            return (SWEEP.note + "\n" if SWEEP.note else "") + "Thermostat desactive."
         head = self._thermo_note or (
             f"Thermostat actif (cible {cfg.get('thermo_target')} °C) : il regule pendant les jobs.")
+        if SWEEP.note:
+            head = SWEEP.note + "\n" + head
         return head + ("\n" + "\n".join(self.thermo_log) if self.thermo_log else "")
 
     def _ram_tick(self):
@@ -1651,6 +1781,11 @@ class Orchestrator:
 
     def _tick(self):
         self._thermal_tick()
+        try:
+            SWEEP.tick()
+        except Exception as exc:  # noqa: BLE001 - jamais bloquant
+            SWEEP.note = f"Balayage de puissance interrompu : {exc}"
+            SWEEP.done = True
         self._thermostat_tick()
         self._ram_tick()
         if RUN.running():

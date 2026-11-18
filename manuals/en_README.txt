@@ -231,6 +231,16 @@ FINDING THE RIGHT POWER LIMIT (Results tab)
   "Wh per step" column gives the energy for the same work. To compare, vary
   the limit during a training (Tools tab) or let the thermostat act.
 
+AUTOMATIC POWER SWEEP (Tools tab)
+  "Power sweep at the start of training" box (unticked by default, needs
+  2_LANCER_UI_ADMIN.bat). Once per job, after 10 warm-up steps, the limit
+  goes down in levels of 30 W (adjustable), 30 steps each, from the saved
+  limit (or the original one) to the floor (200 W recommended on a 3090):
+  about 6 to 8 minutes. Training carries on normally meanwhile. At the end,
+  the lowest level within 3 % of the top speed is applied and saved as the
+  power limit, and a notification gives the result. The thermostat waits
+  for the sweep to finish, then uses it as its ceiling.
+
 CHOOSING THE CHECKPOINT: LIKENESS (Results tab)
   The "Likeness" tab compares each preview with the dataset images (DINOv2
   model) and with its prompt without the trigger word (CLIP model), on the

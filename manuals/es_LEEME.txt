@@ -238,6 +238,17 @@ ENCONTRAR EL LÍMITE DE POTENCIA ADECUADO (pestaña Resultados)
   energía para un mismo trabajo. Para comparar, varíe el límite durante un
   entrenamiento (pestaña Herramientas) o deje actuar al termostato.
 
+BARRIDO DE POTENCIA AUTOMÁTICO (pestaña Herramientas)
+  Casilla «Barrido de potencia al inicio del entrenamiento» (desmarcada por
+  defecto, requiere 2_LANCER_UI_ADMIN.bat). Una vez por job, tras 10 pasos de
+  arranque, el límite baja por escalones de 30 W (ajustable), 30 pasos cada
+  uno, desde el límite guardado (o el original) hasta el mínimo (200 W
+  recomendado en una 3090): unos 6 a 8 minutos. El entrenamiento sigue con
+  normalidad mientras tanto. Al final, el escalón más bajo a menos del 3 % de
+  la velocidad máxima se aplica y se guarda como límite de potencia, y una
+  notificación da el resultado. El termostato espera al final del barrido y
+  luego lo usa como máximo.
+
 ELEGIR EL CHECKPOINT: PARECIDO (pestaña Resultados)
   La pestaña «Parecido» compara cada vista previa con las imágenes del
   dataset (modelo DINOv2) y con su prompt sin la palabra clave (modelo CLIP),

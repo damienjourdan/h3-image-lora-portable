@@ -239,6 +239,16 @@ ENCONTRAR O LIMITE DE POTÊNCIA CERTO (aba Resultados)
   comparar, varie o limite durante um treinamento (aba Ferramentas) ou
   deixe o termostato agir.
 
+VARREDURA DE POTÊNCIA AUTOMÁTICA (aba Ferramentas)
+  Caixa "Varredura de potência no início do treinamento" (desmarcada por
+  padrão, requer 2_LANCER_UI_ADMIN.bat). Uma vez por job, após 10 passos de
+  aquecimento, o limite desce em patamares de 30 W (ajustável), 30 passos
+  cada, do limite salvo (ou do original) até o piso (200 W recomendado numa
+  3090): cerca de 6 a 8 minutos. O treinamento continua normalmente nesse
+  tempo. No fim, o patamar mais baixo a menos de 3 % da velocidade máxima é
+  aplicado e salvo como limite de potência, e uma notificação dá o
+  resultado. O termostato espera o fim da varredura e depois o usa como teto.
+
 ESCOLHER O CHECKPOINT: SEMELHANÇA (aba Resultados)
   A aba "Semelhança" compara cada prévia às imagens do dataset (modelo
   DINOv2) e ao seu prompt sem a palavra-gatilho (modelo CLIP), no processador

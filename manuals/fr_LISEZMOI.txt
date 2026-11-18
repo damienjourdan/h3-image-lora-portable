@@ -233,6 +233,17 @@ TROUVER LA BONNE LIMITE DE PUISSANCE (onglet Résultats)
   l'énergie pour un même travail. Pour comparer, faites varier la limite
   pendant un entraînement (onglet Outils) ou laissez le thermostat agir.
 
+BALAYAGE DE PUISSANCE AUTOMATIQUE (onglet Outils)
+  Case « Balayage de puissance au début de l'entraînement » (décochée par
+  défaut, demande 2_LANCER_UI_ADMIN.bat). Une fois par job, après 10 pas de
+  mise en route, la limite descend par paliers de 30 W (réglable), 30 pas
+  chacun, de la limite enregistrée (ou celle d'origine) jusqu'au plancher
+  (200 W conseillé sur une 3090) : environ 6 à 8 minutes. L'entraînement
+  continue normalement pendant ce temps. À la fin, le palier le plus bas qui
+  reste à moins de 3 % de la vitesse maximale est appliqué et enregistré
+  comme limite de puissance, et une notification donne le résultat. Le
+  thermostat attend la fin du balayage, puis s'en sert comme plafond.
+
 CHOISIR LE CHECKPOINT : RESSEMBLANCE (onglet Résultats)
   L'onglet « Ressemblance » compare chaque aperçu aux images du dataset
   (modèle DINOv2) et à son prompt sans le mot déclencheur (modèle CLIP),

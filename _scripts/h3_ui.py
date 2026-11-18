@@ -190,6 +190,8 @@ def render_status():
         extra.append(f"<b style='color:#e53935'>{ORCH.thermal_message}</b>")
     if ORCH.ram_message:
         extra.append(f"<b style='color:#e53935'>{ORCH.ram_message}</b>")
+    if core.SWEEP.note and s["running"]:
+        extra.append(core.SWEEP.note)
     if ORCH._thermo_note and s["running"]:
         extra.append(ORCH._thermo_note)
     elif ORCH.power_message:
@@ -829,7 +831,8 @@ def auto_test_results(job, last_sig):
 
 # ------------------------------------------------------------------ outils
 def save_tools(sound, topic, comfy, awake, t_alert, t_pause, watts, th_on=False, th_target=72, th_min=150,
-               kwh_price=0, currency="", likeness_on=True, leak_pause=False):
+               kwh_price=0, currency="", likeness_on=True, leak_pause=False, sweep_on=False, sweep_min=200,
+               sweep_step=30):
     t_alert, t_pause, watts = int(t_alert or 0), int(t_pause or 0), int(watts or 0)
     th_target, th_min = int(th_target or 72), int(th_min or 150)
     if th_on:
@@ -851,7 +854,8 @@ def save_tools(sound, topic, comfy, awake, t_alert, t_pause, watts, th_on=False,
                        temp_alert=t_alert, temp_pause=t_pause, power_limit_w=watts,
                        thermo_on=bool(th_on), thermo_target=th_target, thermo_min_w=th_min,
                        kwh_price=max(0.0, float(kwh_price or 0)), currency=currency or "",
-                       likeness_on=bool(likeness_on), leak_pause=bool(leak_pause))
+                       likeness_on=bool(likeness_on), leak_pause=bool(leak_pause), sweep_on=bool(sweep_on),
+                       sweep_min_w=max(100, int(sweep_min or 200)), sweep_step_w=max(10, int(sweep_step or 30)))
     if th_on:
         return ("Reglages enregistres. Thermostat actif : il regule pendant les jobs"
                 + ("." if core.is_admin() else
@@ -1258,6 +1262,20 @@ def build(code):
                 opt_thmin = gr.Number(label="Puissance plancher (W)", value=_cfg["thermo_min_w"], precision=0,
                                       info="Preconise : 150. Le thermostat ne descend jamais en dessous. Son "
                                            "plafond est la limite de puissance ci-dessus (ou celle d'origine si 0).")
+            with gr.Row():
+                opt_sweep = gr.Checkbox(label="Balayage de puissance au debut de l'entrainement",
+                                        value=lambda: bool(core.load_settings().get("sweep_on", False)),
+                                        info="Une fois par job : la limite descend par paliers de 30 pas, puis le "
+                                             "seuil conseille (le plus bas a moins de 3 % de la vitesse maximale) "
+                                             "est applique et enregistre comme limite. Necessite "
+                                             "2_LANCER_UI_ADMIN.bat. Resultat dans Resultats > Puissance.")
+                opt_sweepmin = gr.Number(label="Plancher du balayage (W)", precision=0,
+                                         value=lambda: core.load_settings().get("sweep_min_w", 200),
+                                         info="Preconise : 200 sur une 3090. Le balayage part de la limite "
+                                              "ci-dessus (ou celle d'origine si 0).")
+                opt_sweepstep = gr.Number(label="Ecart entre paliers (W)", precision=0,
+                                          value=lambda: core.load_settings().get("sweep_step_w", 30),
+                                          info="Preconise : 30 (environ 5 paliers, 6 a 8 minutes sur une 3090).")
             temp_save = gr.Button("Enregistrer temperature, puissance et thermostat", variant="primary")
             thermo_box = gr.Textbox(label="Thermostat (etat et derniers ajustements)", interactive=False,
                                     value=ORCH.thermo_text, lines=4,
@@ -1364,7 +1382,7 @@ def build(code):
         dl_refresh.click(core.models_state, None, dl_state)
         tools_inputs = [opt_sound, opt_ntfy, opt_comfy, opt_awake, opt_talert, opt_tpause, opt_watts,
                         opt_thermo, opt_thtarget, opt_thmin, opt_price, opt_cur, opt_like,
-                    opt_leakpause]
+                    opt_leakpause, opt_sweep, opt_sweepmin, opt_sweepstep]
         # trois facons d'enregistrer, meme effet : bouton general, bouton de la section, case thermostat
         for trigger_event in (tools_save.click, temp_save.click, opt_thermo.input):
             trigger_event(save_tools, tools_inputs, msg).then(
