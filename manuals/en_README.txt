@@ -262,6 +262,23 @@ BLEEDING: THE CONTROL PROMPT
   recommendation. During training, strong bleeding sends a notification,
   and pauses if the matching box is ticked in Tools.
 
+BLEEDING: THE TWO PROTECTIONS
+  In Process options, section "Against bleeding", two ai-toolkit
+  protections, which can be combined:
+  - Preservation (DOP): at each step, the LoRA is penalized if it changes
+    what the base model draws when the trigger word is replaced by the
+    preserved class (a person, a man...). Nothing to prepare, but each step
+    is about 1.6 to 2 times slower and needs more memory: check with the
+    Quick test.
+  - Regularization images: the "Generate regularization images" button
+    has the base model (without LoRA) produce images from your captions,
+    trigger word replaced by the class. They are stored in
+    <dataset>_regularisation with their captions, then mixed into training
+    if the box is ticked. Same speed per step, but they take a share of
+    the steps: double the steps with as many images as the dataset.
+  Compare the Bleeding column in Results > Likeness with and without
+  protection to choose.
+
 AI-TOOLKIT VERSION
   By default: latest version of the main branch. This package was audited
   on commit 4a7f285 (10 Nov 2026). "Pin current version" button in the

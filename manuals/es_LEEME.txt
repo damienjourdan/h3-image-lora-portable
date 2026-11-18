@@ -271,6 +271,24 @@ DESBORDAMIENTO: EL PROMPT DE CONTROL
   el entrenamiento, un desbordamiento fuerte envía una notificación, y pausa
   si la casilla correspondiente está marcada en Herramientas.
 
+DESBORDAMIENTO: LAS DOS PROTECCIONES
+  En Opciones del proceso, apartado «Contra el desbordamiento», dos
+  protecciones de ai-toolkit, combinables:
+  - Preservación (DOP): en cada paso, el LoRA se penaliza si cambia lo que
+    el modelo base dibuja cuando la palabra clave se sustituye por la clase
+    preservada (a person, a man...). Nada que preparar, pero cada paso es
+    unas 1,6 a 2 veces más lento y requiere más memoria: compruébelo con
+    la Prueba rápida.
+  - Imágenes de regularización: el botón «Generar las imágenes de
+    regularización» hace que el modelo base (sin LoRA) produzca imágenes a
+    partir de sus descripciones, con la palabra clave sustituida por la
+    clase. Se guardan en <dataset>_regularisation con sus descripciones y
+    se mezclan en el entrenamiento si la casilla está marcada. Misma
+    velocidad por paso, pero ocupan una parte de los pasos: duplique los
+    pasos con tantas imágenes como el dataset.
+  Compare la columna Desbordamiento de Resultados > Parecido con y sin
+  protección para elegir.
+
 VERSIÓN DE AI-TOOLKIT
   Por defecto: última versión de la rama main. Este paquete se auditó en el
   commit 4a7f285 (10 nov. 2026). Botón «Fijar la versión actual» en la

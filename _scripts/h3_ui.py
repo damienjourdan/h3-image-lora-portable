@@ -397,6 +397,10 @@ def start_training(*args):
     return msg, gr.update()
 
 
+def reg_generate(count, *args):
+    return core.start_reg_generation(_params(args), count)
+
+
 def enqueue_training(*args):
     return core.start_training(_params(args), queue=True)[0]
 
@@ -1042,6 +1046,32 @@ def build(code):
                                        info="Tire plus souvent le niveau de bruit le plus net, ou se forment peau, "
                                             "yeux et details : 17 -> 33 -> 50 % aux passages 1, 3, 5 ; 75 % aux "
                                             "passages 2, 4, 6 et ensuite. Pour un sujet ; inutile pour un style.")
+                gr.Markdown("**Contre le debordement** (le personnage qui apparait partout) : deux protections "
+                            "d'ai-toolkit, combinables. Mesurez leur effet avec la colonne Debordement de "
+                            "Resultats > Ressemblance.")
+                with gr.Row():
+                    dop = gr.Checkbox(label="Preservation (DOP)", value=False,
+                                      info="A chaque pas, le LoRA est penalise s'il change ce que le modele de base "
+                                           "dessine pour la legende ou le mot declencheur est remplace par la classe "
+                                           "ci-contre. Aucune image a preparer, mais chaque pas est environ 1,6 a 2 "
+                                           "fois plus lent et demande plus de memoire : verifiez avec le Test rapide.")
+                    dop_class = gr.Textbox(label="Classe preservee", value=core.CONTROL_SUBJECT,
+                                           info="En anglais : ce que le mot declencheur designe sans le LoRA "
+                                                "(a person, a man, a woman, a dog...).")
+                with gr.Row():
+                    reg = gr.Checkbox(label="Images de regularisation", value=False,
+                                      info="Melange a l'entrainement des images 'a person...' produites par le modele "
+                                           "de base (dossier <dataset>_regularisation). Pas de perte de vitesse par "
+                                           "pas, mais elles prennent une part des pas : avec autant d'images que le "
+                                           "dataset, doublez les pas pour garder le meme apprentissage du sujet.")
+                    reg_weight = gr.Number(label="Poids des images de regularisation", value=1.0, minimum=0.1,
+                                           maximum=2.0, step=0.1,
+                                           info="Preconise : 1. Plus bas : protection plus douce.")
+                with gr.Row():
+                    reg_count = gr.Number(label="Nombre d'images a generer", value=0, precision=0,
+                                          info="0 = autant que d'images dans le dataset (60 au plus).")
+                    reg_btn = gr.Button("Generer les images de regularisation")
+                reg_msg = gr.Textbox(label="Images de regularisation", interactive=False, lines=2)
             with gr.Row():
                 job_name = gr.Textbox(label="Nom du job (meme nom = reprise)", value="h3img_mon_lora_v1",
                                       info="Lettres, chiffres, _ et -. Changez le nom (v2, v3...) pour repartir "
@@ -1318,7 +1348,8 @@ def build(code):
 
         cfg_inputs = [job_name, ds_folder, ctrl, preset, offload, resol, steps, lr, rank,
                       trigger, save_every, sample_every, sample_size, no_sample, prompts, w4a8_fix,
-                      process, optimizer, ema, adapter, likeness, sampler, control]
+                      process, optimizer, ema, adapter, likeness, sampler, control,
+                      dop, dop_class, reg, reg_weight]
         process.input(apply_process, [process, ds_folder],
                       [resol, rank, lr, steps, save_every, sample_every,
                        optimizer, ema, adapter, likeness, sampler, msg])
@@ -1342,6 +1373,8 @@ def build(code):
         capfix_apply_btn.click(capfix_apply, [ds_folder, capfix_table], [capfix_msg, capfix_table, capfix_apply_btn])
         capfix_restore_btn.click(capfix.restore, ds_folder, capfix_msg)
         audit_fix_btn.click(audit_fix, [ds_folder, audit_state], [audit_report, audit_fix_btn])
+        reg_btn.click(reg_generate, [reg_count] + cfg_inputs, reg_msg)
+        ds_folder.change(core.reg_status, ds_folder, reg_msg)
         for comp in (trigger, prompts, no_sample, control):
             comp.change(prompt_check, [trigger, prompts, no_sample, control], prompt_note)
         cap_btn.click(fill_captions, [ds_folder, cap_text], [ds_msg, ds_gallery])
@@ -1405,7 +1438,7 @@ def build(code):
         demo.load(restore_page, None, cfg_inputs + [preset_sel, job_sel, test_job])
 
     # champs dont le contenu appartient a l'utilisateur (chemins, prompts, legendes, journaux)
-    keep = [ds_folder, cap_text, cap_extra, cap_prompt, cap_log, job_name, trigger, ctrl, prompts,
+    keep = [ds_folder, cap_text, cap_extra, cap_prompt, cap_log, job_name, trigger, ctrl, prompts, dop_class,
             train_log, pause_time, test_prompts, test_log, dl_log, opt_ntfy, opt_comfy]
     i18n.localize_blocks(demo, code, keep_values=keep)
     i18n.wrap_events(demo, code, keep_values=keep)

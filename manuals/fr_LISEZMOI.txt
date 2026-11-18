@@ -266,6 +266,24 @@ DÉBORDEMENT : LE PROMPT TÉMOIN
   envoie une notification, et met en pause si la case correspondante est
   cochée dans Outils.
 
+DÉBORDEMENT : LES DEUX PROTECTIONS
+  Dans Options du process, rubrique « Contre le débordement », deux
+  protections d'ai-toolkit, combinables :
+  - Préservation (DOP) : à chaque pas, le LoRA est pénalisé s'il change ce
+    que le modèle de base dessine quand le mot déclencheur est remplacé par
+    la classe préservée (a person, a man...). Rien à préparer, mais chaque
+    pas est environ 1,6 à 2 fois plus lent et demande plus de mémoire :
+    vérifiez avec le Test rapide.
+  - Images de régularisation : le bouton « Générer les images de
+    régularisation » fait produire par le modèle de base (sans LoRA) des
+    images à partir de vos légendes, mot déclencheur remplacé par la
+    classe. Elles sont rangées dans <dataset>_regularisation avec leurs
+    légendes, puis mêlées à l'entraînement si la case est cochée. Vitesse
+    par pas inchangée, mais elles prennent une part des pas : doublez les
+    pas avec autant d'images que le dataset.
+  Comparez la colonne Débordement de Résultats > Ressemblance avec et
+  sans protection pour choisir.
+
 VERSION D'AI-TOOLKIT
   Par défaut : dernière version de la branche main. Ce paquet a été audité
   sur le commit 4a7f285 (10 nov. 2026). Bouton « Figer la version actuelle »

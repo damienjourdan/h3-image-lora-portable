@@ -279,6 +279,24 @@ DURCHSCHLAGEN: DER KONTROLL-PROMPT
   ausgeschlossen. Während des Trainings sendet starkes Durchschlagen eine
   Benachrichtigung und pausiert, wenn das Kästchen in Werkzeuge angehakt ist.
 
+DURCHSCHLAGEN: DIE ZWEI SCHUTZFUNKTIONEN
+  In den Prozessoptionen, Abschnitt „Gegen Durchschlagen“, zwei
+  kombinierbare Schutzfunktionen von ai-toolkit:
+  - Erhaltung (DOP): bei jedem Schritt wird das LoRA bestraft, wenn es
+    verändert, was das Basismodell zeichnet, wenn das Triggerwort durch die
+    erhaltene Klasse ersetzt ist (a person, a man...). Nichts vorzubereiten,
+    aber jeder Schritt ist etwa 1,6- bis 2-mal langsamer und braucht mehr
+    Speicher: mit dem Schnelltest prüfen.
+  - Regularisierungsbilder: die Schaltfläche „Regularisierungsbilder
+    erzeugen“ lässt das Basismodell (ohne LoRA) Bilder aus Ihren
+    Beschreibungen erzeugen, Triggerwort durch die Klasse ersetzt. Sie
+    liegen mit ihren Beschreibungen in <dataset>_regularisation und werden
+    ins Training gemischt, wenn das Kästchen angehakt ist. Gleiches Tempo
+    pro Schritt, aber sie beanspruchen einen Teil der Schritte: bei so
+    vielen Bildern wie im Dataset die Schritte verdoppeln.
+  Vergleichen Sie die Spalte Durchschlagen in Ergebnisse > Ähnlichkeit mit
+  und ohne Schutz, um zu wählen.
+
 AI-TOOLKIT-VERSION
   Standard: neueste Version des main-Zweigs. Dieses Paket wurde auf Commit
   4a7f285 (10. Nov. 2026) geprüft. Schaltfläche „Aktuelle Version fixieren"

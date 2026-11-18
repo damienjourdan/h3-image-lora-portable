@@ -57,12 +57,14 @@ PRESET_W4A8 = "w4a8 - EXPERIMENTAL sur 3090 (plus leger, sans offload)"
 CALIB_NAME = "_calibrage"
 CALIB_STEPS = 20
 TEST_PREFIX = "_test_"
+REG_PREFIX = "_reg_"
 
 # ordre des champs de l'onglet Entrainement (UI <-> dictionnaire de parametres)
 PARAM_KEYS = ["name", "folder", "ctrl", "preset", "offload", "resolutions", "steps", "lr",
               "rank", "trigger", "save_every", "sample_every", "sample_size", "no_sample",
               "prompts", "w4a8_fix",
-              "process", "optimizer", "ema", "adapter", "likeness", "sampler", "control"]
+              "process", "optimizer", "ema", "adapter", "likeness", "sampler", "control",
+              "dop", "dop_class", "reg", "reg_weight"]
 
 # ---- procedes d'entrainement
 PROC_STANDARD = "Standard ai-toolkit"
@@ -1452,6 +1454,18 @@ def build_config(P):
         proc["train"]["ema_config"] = {"use_ema": True, "ema_decay": ema}
     if (P.get("trigger") or "").strip():
         proc["trigger_word"] = P["trigger"].strip()
+        if P.get("dop"):
+            # preservation (DOP, ai-toolkit) : a chaque pas, le LoRA ne doit pas changer ce que le modele
+            # de base produit pour la legende ou le mot declencheur est remplace par la classe
+            proc["train"].update({"diff_output_preservation": True,
+                                  "diff_output_preservation_class": (P.get("dop_class") or CONTROL_SUBJECT).strip(),
+                                  "diff_output_preservation_multiplier": 1.0})
+    reg_dir = reg_folder(P.get("folder"))
+    if P.get("reg") and count_images(reg_dir):
+        # images de regularisation (generees par le modele de base) : pas de mot declencheur ajoute
+        proc["datasets"].append({"folder_path": reg_dir, "caption_ext": "txt", "cache_latents_to_disk": True,
+                                 "is_reg": True, "resolution": ds["resolution"]})
+        proc["train"]["reg_weight"] = float(P.get("reg_weight") or 1.0)
     cfg = {"job": "extension", "config": {"name": name, "process": [proc]},
            "meta": {"name": "[name]", "version": "1.0"}}
     return name, cfg
@@ -1534,7 +1548,7 @@ def _has_word(line, word):
     return any(t.lower() == word.lower() for t in re.findall(r"[\w\-]+", line))
 
 
-def control_prompt(prompts, trigger):
+def control_prompt(prompts, trigger, subject=CONTROL_SUBJECT):
     """Prompt temoin sans mot declencheur, qui sert a mesurer le debordement (le personnage qui
     apparait meme sans son mot). Rend (texte, ajoute_automatiquement) ou (None, False).
     Un prompt de l'utilisateur sans le mot (et sans variante proche) sert de temoin ; sinon on derive
@@ -1547,13 +1561,17 @@ def control_prompt(prompts, trigger):
         if not _has_word(line, trigger) and not prompt_trigger_issues(trigger, [trigger, line]):
             return line, False
     base = next((x for x in lines if _has_word(x, trigger)), lines[0])
-    text = re.sub(r"(?<![\w\-])" + re.escape(trigger) + r"(?![\w\-])", CONTROL_SUBJECT, base, flags=re.I)
+    text = re.sub(r"(?<![\w\-])" + re.escape(trigger) + r"(?![\w\-])", subject, base, flags=re.I)
     # variantes proches du mot (ancien nom, faute de frappe) : remplacees aussi
-    text = re.sub(r"[\w\-]+", lambda m: CONTROL_SUBJECT if (
-        m.group(0).lower() != CONTROL_SUBJECT and prompt_trigger_issues(trigger, [trigger, m.group(0)])
+    text = re.sub(r"[\w\-]+", lambda m: subject if (
+        m.group(0).lower() != subject and prompt_trigger_issues(trigger, [trigger, m.group(0)])
         and m.group(0).lower() != trigger.lower()) else m.group(0), text)
-    text = re.sub(r"\s+", " ", text.replace("[trigger]", CONTROL_SUBJECT)).strip()
-    return text, True
+    text = re.sub(r"\s+", " ", text.replace("[trigger]", subject)).strip()
+    parts = []   # "a man, a man, wearing..." : groupe repete retire
+    for part in text.split(", "):
+        if not parts or part.strip().lower() != parts[-1].strip().lower():
+            parts.append(part)
+    return ", ".join(parts), True
 
 
 def prompt_warning(P):
@@ -1851,6 +1869,10 @@ class Orchestrator:
                 notify("Entrainement en pause", f"{name} : {run.stop_phase}")
             return
         if kind == "download":
+            return
+        if name and name.startswith(REG_PREFIX):
+            self.last_message = collect_reg(name, code == 0)
+            notify("Images de regularisation", self.last_message)
             return
         label = {"train": "Entrainement", "test": "Test de LoRA", "caption": "Legendage"}.get(kind, kind)
         if code == 0:
@@ -2157,6 +2179,104 @@ def lora_test_results(job):
         for i, img in enumerate(imgs):
             out.append((img, f"{ck} | prompt {i + 1}"))
     return out
+
+
+# =========================================================== images de regularisation
+def reg_folder(folder):
+    """Dossier des images de regularisation, a cote du dataset (ai-toolkit lit les sous-dossiers)."""
+    return (os.path.normpath(folder) + "_regularisation") if folder else ""
+
+
+def reg_prompts(folder, trigger, count, subject=CONTROL_SUBJECT):
+    """Legendes du dataset, mot declencheur (et variantes proches) remplace par 'a person'."""
+    caps = []
+    for f in sorted(os.listdir(folder)):
+        if f.lower().endswith(".txt") and any(
+                os.path.isfile(os.path.join(folder, os.path.splitext(f)[0] + e)) for e in IMG_EXT):
+            try:
+                with open(os.path.join(folder, f), encoding="utf-8", errors="replace") as fh:
+                    text = fh.read().strip()
+            except OSError:
+                continue
+            if text:
+                ctl, _auto = control_prompt([text], trigger, subject)
+                caps.append(ctl or text)
+    if not caps:
+        return []
+    return [caps[i % len(caps)] for i in range(count)]
+
+
+def start_reg_generation(P, count):
+    """Genere les images de regularisation avec le modele de base (job ai-toolkit a 0 pas,
+    LoRA neutre), puis les range avec leurs legendes dans <dataset>_regularisation."""
+    folder, trigger = P.get("folder"), (P.get("trigger") or "").strip()
+    if not folder or not os.path.isdir(folder):
+        return "Dossier du dataset introuvable."
+    if not trigger:
+        return "Renseignez d'abord le mot declencheur (onglet Entrainement) : il est remplace par 'a person'."
+    count = int(max(4, min(60, int(count or 0) or count_images(folder))))
+    prompts = reg_prompts(folder, trigger, count, (P.get("dop_class") or CONTROL_SUBJECT).strip())
+    if not prompts:
+        return "Aucune legende dans le dataset : creez-les d'abord (legendage automatique)."
+    job = safe_name(P.get("name") or os.path.basename(os.path.normpath(folder)))
+    name = f"{REG_PREFIX}{job}"
+    q = dict(P)
+    q.update(name=name, no_sample=False, control=False, dop=False, reg=False)
+    _n, cfg = build_config(q)
+    cfg["config"]["name"] = name
+    proc = cfg["config"]["process"][0]
+    proc["train"].update({"steps": 0, "skip_first_sample": True, "disable_sampling": False})
+    proc["train"].pop("ema_config", None)
+    proc["save"]["save_every"] = 100000
+    proc["sample"].update({"prompts": prompts, "width": 1024, "height": 1024, "seed": 1234,
+                           "walk_seed": True, "sample_every": 100000})
+    proc.pop("trigger_word", None)
+    shutil.rmtree(os.path.join(OUTPUT, name), ignore_errors=True)
+    os.makedirs(os.path.join(OUTPUT, name), exist_ok=True)
+    with open(os.path.join(OUTPUT, name, "reg_meta.json"), "w", encoding="utf-8") as fh:
+        json.dump({"folder": reg_folder(folder), "prompts": prompts}, fh)
+    cfg_path = write_config(name, cfg)
+    ORCH.enqueue({"kind": "test", "name": name, "cfg_path": cfg_path,
+                  "label": f"Images de regularisation ({len(prompts)})",
+                  "env": _job_env(cfg, {"sampler": SAMPLER_EULER, "w4a8_fix": P.get("w4a8_fix", True)})})
+    ORCH.hold = False
+    return (f"Generation de {len(prompts)} image(s) de regularisation ajoutee a la file (modele de base, "
+            "1024 px). Elles seront rangees dans " + reg_folder(folder) + ".")
+
+
+def collect_reg(name, ok):
+    """Fin de la generation : copie les images et leurs legendes dans le dossier de regularisation."""
+    meta_path = os.path.join(OUTPUT, name, "reg_meta.json")
+    try:
+        with open(meta_path, encoding="utf-8") as fh:
+            meta = json.load(fh)
+    except (OSError, ValueError):
+        return "Images de regularisation : informations de generation introuvables."
+    imgs = sorted(f for f in glob.glob(os.path.join(OUTPUT, name, "samples", "*.*")) if f.lower().endswith(IMG_EXT))
+    if not ok or not imgs:
+        return "Images de regularisation : la generation a echoue (voir le journal)."
+    dest = meta["folder"]
+    os.makedirs(dest, exist_ok=True)
+    for f in glob.glob(os.path.join(dest, "reg_*.*")):
+        os.remove(f)
+    n = 0
+    for path in imgs:
+        m = re.search(r"_(\d+)\.[a-z]+$", os.path.basename(path), re.I)
+        idx = int(m.group(1)) if m else n
+        prompt = meta["prompts"][idx] if idx < len(meta["prompts"]) else ""
+        base = os.path.join(dest, f"reg_{idx:03d}")
+        shutil.copy2(path, base + os.path.splitext(path)[1].lower())
+        with open(base + ".txt", "w", encoding="utf-8") as fh:
+            fh.write(prompt)
+        n += 1
+    return f"{n} image(s) de regularisation pretes dans {dest}. Cochez 'Images de regularisation' pour les utiliser."
+
+
+def reg_status(folder):
+    d = reg_folder(folder)
+    n = count_images(d) if d and os.path.isdir(d) else 0
+    return (f"{n} image(s) de regularisation disponibles dans {d}." if n else
+            "Aucune image de regularisation pour ce dataset : generez-les d'abord.")
 
 
 # =========================================================== version d'ai-toolkit
