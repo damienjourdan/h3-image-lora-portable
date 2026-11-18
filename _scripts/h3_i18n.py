@@ -266,7 +266,9 @@ def wrap_events(demo, code, keep_values=()):
 SELECTOR_JS = """
 (code) => {
   try {
-    const tabs = Array.from(document.querySelectorAll('button[role="tab"]'));
+    const root = document.getElementById('main-tabs');
+    const tabs = Array.from(document.querySelectorAll('#main-tabs button[role="tab"]'))
+      .filter(b => b.closest('.tabs') === root);
     const i = tabs.findIndex(b => b.getAttribute('aria-selected') === 'true');
     sessionStorage.setItem('h3tab', String(Math.max(0, i)));
   } catch (e) {}
@@ -283,7 +285,9 @@ RESTORE_TAB_JS = """
   if (i === null) return;
   let tries = 0;
   const t = setInterval(() => {
-    const tabs = document.querySelectorAll('button[role="tab"]');
+    const root = document.getElementById('main-tabs');
+    const tabs = Array.from(document.querySelectorAll('#main-tabs button[role="tab"]'))
+      .filter(b => b.closest('.tabs') === root);
     if (tabs.length > Number(i)) { tabs[Number(i)].click(); clearInterval(t); }
     if (++tries > 40) clearInterval(t);
   }, 150);

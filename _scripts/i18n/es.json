@@ -637,5 +637,22 @@
 "Nouvelle version {0} de l'outil disponible : [page de la version]({1}) (details dans Outils).": "Nueva versión {0} de la herramienta disponible: [página de la versión]({1}) (detalles en Herramientas).",
 "### Mises a jour": "### Actualizaciones",
 "Versions": "Versiones",
-"Verifier les mises a jour": "Buscar actualizaciones"
+"Verifier les mises a jour": "Buscar actualizaciones",
+"Aide": "Ayuda",
+"Apercus et sauvegardes": "Vistas previas y guardado",
+"Audit": "Auditoría",
+"Contre le debordement": "Contra el desbordamiento",
+"Correction": "Corrección",
+"Electricite": "Electricidad",
+"Fichiers": "Archivos",
+"GPU": "GPU",
+"General": "General",
+"Journal": "Registro",
+"Les reglages de cet onglet s'appliquent apres **Enregistrer**.": "Los ajustes de esta pestaña se aplican tras **Guardar**.",
+"Options du procede": "Opciones del proceso",
+"Pause et file": "Pausa y cola",
+"Rognage": "Recorte",
+"Version d'ai-toolkit": "Versión de ai-toolkit",
+"YAML": "YAML",
+"Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son cout et le cout projete a la fin s'affichent a cote du temps ecoule, du temps restant et de la vitesse. Seule la carte graphique est comptee : processeur, ecran et reste du PC s'y ajoutent. Enregistrez avec le bouton Enregistrer en haut de l'onglet.": "Durante un job, el consumo de la GPU (leído por nvidia-smi cada 2 s), su coste y el coste previsto al final se muestran junto al tiempo transcurrido, el tiempo restante y la velocidad. Solo se cuenta la tarjeta gráfica: el procesador, la pantalla y el resto del PC se suman. Guarde con el botón Guardar de la parte superior de la pestaña."
 }

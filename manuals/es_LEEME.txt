@@ -23,7 +23,7 @@ ORDEN DE USO
   2_LANCER_UI.bat          Abre la UI Python (Gradio): http://127.0.0.1:7860
   3_METTRE_A_JOUR.bat      git pull + resincronización de dependencias
   4_TELECHARGER_MODELE.bat Opcional: descarga los pesos por adelantado (también
-                           posible en la pestaña «Modelos» de la UI)
+                           posible en Herramientas > Modelos)
   2_LANCER_UI_ADMIN.bat    Opcional: la misma UI con derechos de administrador,
                            para cambiar el límite de potencia de la GPU sin
                            ventana de confirmación de Windows.
@@ -56,29 +56,31 @@ QUÉ ESTÁ DÓNDE
   modelos y la caché de uv evitan volver a descargarlo todo).
 
 LA UI (pestañas)
-  1. Dataset        carpeta, añadir imágenes, control de descripciones,
-                    DESCRIPCIÓN AUTOMÁTICA (Qwen3-VL) de las imágenes sin
-                    .txt, recorte de marcas de agua y textos.
-  2. Entrenamiento  ajustes con ayuda y valores recomendados; procesos de
-                    entrenamiento; PRUEBA RÁPIDA (20 pasos): mide velocidad
-                    y memoria, propone ajustes y una duración; ajustes
-                    guardados por job; cola; pausa automática en un paso o
-                    a una hora.
-  3. Resultados     vistas previas, CURVA DE PÉRDIDA, checkpoints, copia a
+  Arriba: job en curso, fase, progreso, memoria y temperatura de la GPU,
+  con los botones Pausa, Vista previa ahora y Detener. Las ayudas de los
+  campos caben en una línea: pase el ratón por encima para leer el texto
+  completo (también aparece al escribir). Tema claro u oscuro según el
+  sistema.
+  1. Dataset        a la izquierda: carpeta, análisis, estado, vista previa;
+                    a la derecha, en subpestañas: Descripción (Qwen3-VL),
+                    Corrección, Auditoría, Recorte de marcas de agua,
+                    Archivos, Ayuda.
+  2. Entrenamiento  a la izquierda: ajustes esenciales (job, proceso,
+                    preset, resoluciones, pasos, prompts), luego en
+                    subpestañas: Vistas previas y guardado, Opciones del
+                    proceso, Contra el desbordamiento, Pausa y cola, YAML,
+                    Ayuda. A la derecha, siempre visible: Lanzar, PRUEBA
+                    RÁPIDA (20 pasos), cola, seguimiento, calibración, registro.
+  3. Resultados     vistas previas a la izquierda; a la derecha Pérdida,
+                    Parecido, Potencia/velocidad/temperatura; exportar a
                     ComfyUI. Actualización automática cada 5 s.
-  4. Probar un LoRA mismos prompts y misma semilla en varios checkpoints,
-                    para elegir el mejor (experimental).
-  Modelos           descarga previa + estado de los archivos.
-  Herramientas      notificaciones (sonido, móvil vía ntfy.sh), evitar la
-                    suspensión, temperatura y potencia de la GPU, carpeta de
-                    ComfyUI, fijar / liberar la versión de ai-toolkit.
-  Arriba: job en curso, fase, progreso, monitor de VRAM / RAM / temperatura
-  de la GPU, y los botones Pausa, Vista previa ahora, Detener.
-  Cada pestaña tiene su propio seguimiento y registro: descripción en
-  Dataset, entrenamiento y Prueba rápida en Entrenamiento, pruebas en Probar
-  un LoRA, descargas en Modelos. El seguimiento muestra las etapas, una
-  animación mientras la duración no es medible, y luego una barra con el
-  tiempo restante.
+  4. Probar un LoRA mismos prompts y semilla en varios checkpoints (ajustes
+                    a la izquierda, resultados a la derecha; experimental).
+  Herramientas      subpestañas General (notificaciones, anti-suspensión,
+                    parecido, ComfyUI), GPU (temperatura, potencia,
+                    termostato, barrido), Electricidad, Modelos (descarga
+                    previa), Versiones. Botón Guardar arriba.
+  Cada pestaña tiene su propio seguimiento; los registros están plegados.
 
 PROCESOS DE ENTRENAMIENTO (pestaña Entrenamiento)
   Elegir un proceso rellena los campos; todo sigue siendo modificable.
@@ -272,7 +274,7 @@ DESBORDAMIENTO: EL PROMPT DE CONTROL
   si la casilla correspondiente está marcada en Herramientas.
 
 DESBORDAMIENTO: LAS DOS PROTECCIONES
-  En Opciones del proceso, apartado «Contra el desbordamiento», dos
+  Pestaña Entrenamiento, subpestaña «Contra el desbordamiento»: dos
   protecciones de ai-toolkit, combinables:
   - Preservación (DOP): en cada paso, el LoRA se penaliza si cambia lo que
     el modelo base dibuja cuando la palabra clave se sustituye por la clase

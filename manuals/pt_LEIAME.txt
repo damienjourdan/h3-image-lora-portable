@@ -23,7 +23,7 @@ ORDEM DE USO
   2_LANCER_UI.bat          Abre a UI Python (Gradio): http://127.0.0.1:7860
   3_METTRE_A_JOUR.bat      git pull + ressincronização das dependências
   4_TELECHARGER_MODELE.bat Opcional: baixa os pesos antecipadamente (também
-                           possível na aba "Modelos" da UI)
+                           possível em Ferramentas > Modelos)
   2_LANCER_UI_ADMIN.bat    Opcional: a mesma UI com direitos de administrador,
                            para mudar o limite de potência da GPU sem janela
                            de confirmação do Windows.
@@ -58,28 +58,30 @@ O QUE FICA ONDE
   modelos e o cache do uv evitam baixar tudo de novo).
 
 A UI (abas)
-  1. Dataset        pasta, adição de imagens, verificação das legendas,
-                    LEGENDAGEM AUTOMÁTICA (Qwen3-VL) das imagens sem .txt,
-                    recorte de marcas d'água e textos.
-  2. Treinamento    ajustes com ajuda e valores recomendados; processos de
-                    treinamento; TESTE RÁPIDO (20 passos): mede velocidade e
-                    memória, propõe ajustes e uma duração; ajustes salvos por
-                    job; fila; pausa automática num passo ou numa hora.
-  3. Resultados     prévias, CURVA DE PERDA, checkpoints, cópia para o
-                    ComfyUI. Atualização automática a cada 5 s.
-  4. Testar um LoRA mesmos prompts e mesma semente em vários checkpoints,
-                    para escolher o melhor (experimental).
-  Modelos           download antecipado + estado dos arquivos.
-  Ferramentas       notificações (som, celular via ntfy.sh), impedir a
-                    suspensão, temperatura e potência da GPU, pasta do
-                    ComfyUI, fixar / liberar a versão do ai-toolkit.
-  No topo: job em andamento, fase, progresso, monitor de VRAM / RAM /
-  temperatura da GPU, e os botões Pausar, Prévia agora, Parar.
-  Cada aba tem seu próprio acompanhamento e registro: legendagem em Dataset,
-  treinamento e Teste rápido em Treinamento, testes em Testar um LoRA,
-  downloads em Modelos. O acompanhamento mostra as etapas, uma animação
-  enquanto a duração não é mensurável, depois uma barra com o tempo
-  restante.
+  No topo: job em andamento, fase, progresso, memória e temperatura da GPU,
+  com os botões Pausa, Prévia agora e Parar. As ajudas dos campos cabem
+  em uma linha: passe o mouse por cima para ler o texto inteiro (ele
+  também aparece durante a digitação). Tema claro ou escuro conforme o
+  sistema.
+  1. Dataset        à esquerda: pasta, análise, estado, prévia; à direita,
+                    em subabas: Legendagem (Qwen3-VL), Correção, Auditoria,
+                    Recorte de marcas d'água, Arquivos, Ajuda.
+  2. Treinamento    à esquerda: ajustes essenciais (job, processo, preset,
+                    resoluções, passos, prompts), depois em subabas: Prévias
+                    e salvamentos, Opções do processo, Contra o vazamento,
+                    Pausa e fila, YAML, Ajuda. À direita, sempre visível:
+                    Iniciar, TESTE RÁPIDO (20 passos), fila, acompanhamento,
+                    calibração e registro.
+  3. Resultados     prévias à esquerda; à direita Perda, Semelhança,
+                    Potência/velocidade/temperatura; exportar ao ComfyUI.
+                    Atualização automática a cada 5 s.
+  4. Testar um LoRA mesmos prompts e semente em vários checkpoints (ajustes
+                    à esquerda, resultados à direita; experimental).
+  Ferramentas       subabas Geral (notificações, anti-suspensão, semelhança,
+                    ComfyUI), GPU (temperatura, potência, termostato,
+                    varredura), Eletricidade, Modelos (pré-download), Versões.
+                    Botão Salvar no alto.
+  Cada aba tem seu próprio acompanhamento; os registros ficam recolhidos.
 
 PROCESSOS DE TREINAMENTO (aba Treinamento)
   Escolher um processo preenche os campos; tudo continua editável.
@@ -272,7 +274,7 @@ VAZAMENTO: O PROMPT DE CONTROLE
   correspondente estiver marcada em Ferramentas.
 
 VAZAMENTO: AS DUAS PROTEÇÕES
-  Em Opções do processo, seção "Contra o vazamento", duas proteções do
+  Aba Treinamento, subaba "Contra o vazamento": duas proteções do
   ai-toolkit, combináveis:
   - Preservação (DOP): a cada passo, o LoRA é penalizado se mudar o que o
     modelo base desenha quando a palavra-gatilho é trocada pela classe

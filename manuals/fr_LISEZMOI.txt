@@ -23,7 +23,7 @@ ORDRE D'UTILISATION
   2_LANCER_UI.bat          Ouvre l'UI Python (Gradio) : http://127.0.0.1:7860
   3_METTRE_A_JOUR.bat      git pull + resynchronisation des dépendances
   4_TELECHARGER_MODELE.bat Optionnel : pré-télécharge les poids (aussi faisable
-                           dans l'onglet « Modèles » de l'UI)
+                           dans Outils > Modèles de l'UI)
   2_LANCER_UI_ADMIN.bat    Facultatif : même UI avec les droits administrateur,
                            pour changer la limite de puissance du GPU sans
                            fenêtre de confirmation Windows.
@@ -54,28 +54,30 @@ CE QUI RESTE OÙ
   chemins absolus ; les modèles et le cache uv évitent de tout retélécharger).
 
 L'UI (onglets)
-  1. Dataset        dossier, ajout d'images, vérification des légendes,
-                    LÉGENDAGE AUTOMATIQUE (Qwen3-VL) des images sans .txt,
-                    rognage des filigranes et textes.
-  2. Entraînement   réglages avec aide et valeurs préconisées ; procédés
-                    d'entraînement ; TEST RAPIDE (20 pas) : mesure vitesse et
-                    mémoire, propose les réglages et une durée ; réglages
-                    enregistrés par job ; file d'attente ; pause automatique
-                    à un pas ou une heure.
-  3. Résultats      aperçus, COURBE DE PERTE, checkpoints, copie vers ComfyUI.
+  En haut : job en cours, phase, progression, mémoire et température du
+  GPU, avec les boutons Pause, Aperçu maintenant et Arrêter. Les aides des
+  champs tiennent sur une ligne : survolez-la pour lire le texte entier
+  (il s'affiche aussi pendant la saisie). Thème clair ou sombre selon le
+  système.
+  1. Dataset        à gauche : dossier, analyse, état, aperçu ; à droite,
+                    en sous-onglets : Légendage (Qwen3-VL), Correction des
+                    légendes, Audit, Rognage des filigranes, Fichiers, Aide.
+  2. Entraînement   à gauche : réglages essentiels (job, procédé, preset,
+                    résolutions, pas, prompts), puis en sous-onglets :
+                    Aperçus et sauvegardes, Options du procédé, Contre le
+                    débordement, Pause et file, YAML, Aide. À droite, toujours
+                    visible : Lancer, TEST RAPIDE (20 pas), file d'attente,
+                    suivi, calibrage et journal.
+  3. Résultats      aperçus à gauche ; à droite Perte, Ressemblance,
+                    Puissance/vitesse/température ; export ComfyUI.
                     Mise à jour automatique toutes les 5 s.
-  4. Tester un LoRA mêmes prompts et même graine sur plusieurs checkpoints,
-                    pour choisir le meilleur (expérimental).
-  Modèles           pré-téléchargement + état des fichiers.
-  Outils            notifications (son, téléphone via ntfy.sh), anti-veille,
-                    température et puissance du GPU, dossier ComfyUI,
-                    figer / défiger la version d'ai-toolkit.
-  En haut : job en cours, phase, progression, moniteur VRAM / RAM /
-  température GPU, et les boutons Pause, Aperçu maintenant, Arrêter.
-  Chaque onglet a son propre suivi et son journal : légendage dans Dataset,
-  entraînement et Test rapide dans Entraînement, tests dans Tester un LoRA,
-  téléchargements dans Modèles. Le suivi affiche les étapes, une animation
-  tant que la durée n'est pas mesurable, puis une barre avec le temps restant.
+  4. Tester un LoRA mêmes prompts et même graine sur plusieurs checkpoints
+                    (réglages à gauche, résultats à droite ; expérimental).
+  Outils            sous-onglets Général (notifications, anti-veille,
+                    ressemblance, ComfyUI), GPU (température, puissance,
+                    thermostat, balayage), Électricité, Modèles
+                    (pré-téléchargement), Versions. Bouton Enregistrer en haut.
+  Chaque onglet a son propre suivi ; les journaux sont repliés (« Journal »).
 
 PROCÉDÉS D'ENTRAÎNEMENT (onglet Entraînement)
   Choisir un procédé remplit les champs ; tout reste modifiable ensuite.
@@ -267,7 +269,7 @@ DÉBORDEMENT : LE PROMPT TÉMOIN
   cochée dans Outils.
 
 DÉBORDEMENT : LES DEUX PROTECTIONS
-  Dans Options du process, rubrique « Contre le débordement », deux
+  Onglet Entraînement, sous-onglet « Contre le débordement » : deux
   protections d'ai-toolkit, combinables :
   - Préservation (DOP) : à chaque pas, le LoRA est pénalisé s'il change ce
     que le modèle de base dessine quand le mot déclencheur est remplacé par

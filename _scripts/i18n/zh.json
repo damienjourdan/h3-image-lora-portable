@@ -637,5 +637,22 @@
 "Nouvelle version {0} de l'outil disponible : [page de la version]({1}) (details dans Outils).": "工具有新版本 {0}：[版本页面]({1})（详情见“工具”）。",
 "### Mises a jour": "### 更新",
 "Versions": "版本",
-"Verifier les mises a jour": "检查更新"
+"Verifier les mises a jour": "检查更新",
+"Aide": "帮助",
+"Apercus et sauvegardes": "预览与保存",
+"Audit": "审核",
+"Contre le debordement": "防止外溢",
+"Correction": "修正",
+"Electricite": "电费",
+"Fichiers": "文件",
+"GPU": "GPU",
+"General": "常规",
+"Journal": "日志",
+"Les reglages de cet onglet s'appliquent apres **Enregistrer**.": "本标签页的设置在点击 **保存** 后生效。",
+"Options du procede": "流程选项",
+"Pause et file": "暂停与队列",
+"Rognage": "裁剪",
+"Version d'ai-toolkit": "ai-toolkit 版本",
+"YAML": "YAML",
+"Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son cout et le cout projete a la fin s'affichent a cote du temps ecoule, du temps restant et de la vitesse. Seule la carte graphique est comptee : processeur, ecran et reste du PC s'y ajoutent. Enregistrez avec le bouton Enregistrer en haut de l'onglet.": "任务期间，GPU 的耗电量（nvidia-smi 每 2 秒读取一次）、对应电费以及预计结束时的总电费，会显示在已用时间、剩余时间和速度旁边。只统计显卡：处理器、显示器和电脑其他部分的耗电不计入。请用标签页顶部的“保存”按钮保存。"
 }

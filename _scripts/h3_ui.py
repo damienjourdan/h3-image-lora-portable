@@ -122,79 +122,77 @@ def _bar_html(title, d, color, energy=False):
         if cost:
             detail += f" &nbsp;|&nbsp; {cost}"
     name = (d or {}).get("desc") or ""
-    alert = ("<div style='font-size:12px;color:#e53935;margin-top:2px'>Taux d'apprentissage effondre : "
+    alert = ("<div class='h3-alert'>Taux d'apprentissage effondre : "
              "l'entrainement n'apprend presque plus. Mettez en pause et relancez avec adamw8bit.</div>"
              if (d or {}).get("lr_low") else "")
     return f"""
-<div style="margin:6px 0">
-  <div style="display:flex;justify-content:space-between;font-size:13px">
-    <b>{title}</b><span>{pct} %</span></div>
-  <div style="background:#2a2a2a;border-radius:6px;height:16px;overflow:hidden">
-    <div style="width:{pct}%;height:100%;background:{color};transition:width .5s"></div></div>
-  <div style="font-size:12px;opacity:.8;margin-top:2px">{name} {detail}</div>{alert}
+<div class="h3-bar">
+  <div class="h3-bar-head"><b>{title}</b><span>{pct} %</span></div>
+  <div class="h3-track"><div class="h3-fill" style="width:{pct}%;background:{color}"></div></div>
+  <div class="h3-bar-detail">{name} {detail}</div>{alert}
 </div>"""
 
 
 def _meter(label, used, total, extra=""):
     pct = max(0, min(100, int(100 * used / total))) if total else 0
-    color = "#e53935" if pct >= 96 else "#fb8c00" if pct >= 88 else "#7e57c2"
-    return f"""
-<div style="flex:1;min-width:180px">
-  <div style="font-size:12px"><b>{label}</b> {used:.1f} / {total:.1f} Go {extra}</div>
-  <div style="background:#2a2a2a;border-radius:5px;height:10px;overflow:hidden">
-    <div style="width:{pct}%;height:100%;background:{color}"></div></div>
-</div>"""
+    color = "var(--h3-bad)" if pct >= 96 else "var(--h3-warn)" if pct >= 88 else "var(--h3-accent)"
+    return (f"<div class='h3-meter'><div class='h3-meter-head'><b>{label}</b> {used:.1f} / {total:.1f} Go "
+            f"{extra}</div><div class='h3-track thin'><div class='h3-fill' style='width:{pct}%;"
+            f"background:{color}'></div></div></div>")
 
 
 def _monitor_html():
-    parts = []
+    parts, chips = [], []
     if MON.vram_used is not None and MON.vram_total:
-        extra = f"(pic {MON.peak_all:.1f})" if MON.peak_all else ""
+        extra = f"<span class='h3-muted'>(pic {MON.peak_all:.1f})</span>" if MON.peak_all else ""
+        parts.append(_meter("VRAM", MON.vram_used, MON.vram_total, extra))
         if MON.gpu_util is not None:
             alert = int(core.load_settings().get("temp_alert") or 0)
             hot = alert and MON.gpu_temp is not None and MON.gpu_temp >= alert
-            temp = (f"<b style='color:#e53935'>{MON.gpu_temp} °C</b>" if hot else f"{MON.gpu_temp} °C")
-            extra += f" &nbsp;GPU {MON.gpu_util} % &nbsp;{temp}"
+            chips.append(f"<span class='h3-chip'>GPU {MON.gpu_util} %</span>")
+            chips.append(f"<span class='h3-chip{' hot' if hot else ''}'>{MON.gpu_temp} °C</span>")
             if MON.fan is not None:
-                extra += f" &nbsp;ventilateur {MON.fan} %"
+                chips.append(f"<span class='h3-chip'>ventilateur {MON.fan} %</span>")
             if MON.power_draw is not None:
-                extra += f" &nbsp;{MON.power_draw:.0f}"
-                extra += f" / {MON.power_limit:.0f} W" if MON.power_limit else " W"
-        parts.append(_meter("VRAM", MON.vram_used, MON.vram_total, extra))
+                watts = f"{MON.power_draw:.0f}" + (f" / {MON.power_limit:.0f} W" if MON.power_limit else " W")
+                chips.append(f"<span class='h3-chip'>{watts}</span>")
     if MON.ram_used and MON.ram_total:
         parts.append(_meter("RAM", MON.ram_used, MON.ram_total))
     if not parts:
         return ""
-    return f"<div style='display:flex;gap:14px;flex-wrap:wrap;margin-top:8px'>{''.join(parts)}</div>"
+    return f"<div class='h3-meters'>{''.join(parts)}<div class='h3-chips'>{''.join(chips)}</div></div>"
 
 
 TAB_OF_KIND = {"caption": "1. Dataset", "train": "2. Entrainement", "calib": "2. Entrainement",
-               "test": "4. Tester un LoRA", "download": "Modeles"}
+               "test": "4. Tester un LoRA", "download": "Outils"}
 
 
 def render_status():
     s = RUN.snapshot()
     if s["running"]:
-        html = (PANEL_CSS + f"<div style='font-size:14px'><span class='h3-spin'></span><b>EN COURS</b> "
-                f"&nbsp; {s['label']} &nbsp;<span style='opacity:.8'>({_dur(s['elapsed'])})</span>"
-                f" &nbsp;<span style='opacity:.7'>- details et journal dans l'onglet "
-                f"{TAB_OF_KIND.get(s['kind'], '')}</span><br>Phase : <b>{s['phase']}</b></div>")
+        html = (f"<div class='h3-st-line'><span class='h3-dot run'></span><b>EN COURS</b> "
+                f"&nbsp; {s['label']} &nbsp;<span class='h3-muted'>({_dur(s['elapsed'])})</span>"
+                f" &nbsp;<span class='h3-muted'>- details et journal dans l'onglet "
+                f"{TAB_OF_KIND.get(s['kind'], '')}</span></div>"
+                f"<div class='h3-st-sub'>Phase : <b>{s['phase']}</b></div>")
     else:
-        html = "<div style='font-size:14px'><b>INACTIF</b> &nbsp;<span style='opacity:.7'>aucun job en cours</span></div>"
+        html = ("<div class='h3-st-line'><span class='h3-dot'></span><b>INACTIF</b> &nbsp;"
+                "<span class='h3-muted'>aucun job en cours</span></div>")
     if s["running"] and s["kind"] in RUN.CONTROLLED:
         st = core.db_get(RUN.job_name)
         if st and st["info"]:
-            html += (f"<div style='font-size:13px;opacity:.85'>ai-toolkit : {st['info']}"
+            html += (f"<div class='h3-st-sub'>ai-toolkit : {st['info']}"
                      f"{' &nbsp;|&nbsp; ' + st['speed'] if st['speed'] else ''}</div>")
     if s["running"] and (s["train_bar"] or s["bar"]):
-        html += _bar_html("Progression", s["train_bar"] or s["bar"], "#4caf50" if s["train_bar"] else "#2196f3",
+        html += _bar_html("Progression", s["train_bar"] or s["bar"],
+                          "var(--h3-ok)" if s["train_bar"] else "var(--h3-info)",
                           energy=s["kind"] != "download")
     html += _monitor_html()
     extra = []
     if ORCH.thermal_message:
-        extra.append(f"<b style='color:#e53935'>{ORCH.thermal_message}</b>")
+        extra.append(f"<b class='h3-bad'>{ORCH.thermal_message}</b>")
     if ORCH.ram_message:
-        extra.append(f"<b style='color:#e53935'>{ORCH.ram_message}</b>")
+        extra.append(f"<b class='h3-bad'>{ORCH.ram_message}</b>")
     if core.SWEEP.note and s["running"]:
         extra.append(core.SWEEP.note)
     if ORCH._thermo_note and s["running"]:
@@ -209,24 +207,13 @@ def render_status():
     if ORCH.last_message and not s["running"]:
         extra.append(ORCH.last_message)
     if extra:
-        html += "<div style='font-size:12px;opacity:.85;margin-top:6px'>" + "<br>".join(extra) + "</div>"
-    return (html, ORCH.calib_report, ORCH.queue_text(),
+        html += "<div class='h3-st-extra'>" + "<br>".join(extra) + "</div>"
+    return ("<div class='h3-st'>" + html + "</div>", ORCH.calib_report, ORCH.queue_text(),
             *render_caption_panel(), *render_train_panel(), *render_test_panel(), *render_download_panel())
 
 
 # ------------------------------------------------------------------ panneaux par onglet
-PANEL_CSS = """<style>
-@keyframes h3spin{to{transform:rotate(360deg)}}
-@keyframes h3stripe{from{background-position:0 0}to{background-position:40px 0}}
-.h3-spin{display:inline-block;width:13px;height:13px;border:2px solid #9e9e9e;border-top-color:#ff7a00;
- border-radius:50%;animation:h3spin .8s linear infinite;vertical-align:-2px;margin-right:6px}
-.h3-indet{height:14px;border-radius:6px;background:repeating-linear-gradient(45deg,#2196f3 0 10px,#64b5f6 10px 20px);
- background-size:40px 14px;animation:h3stripe 1s linear infinite}
-.h3-steps{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0;font-size:12px}
-.h3-step{padding:2px 8px;border-radius:10px;border:1px solid #9e9e9e55;opacity:.55}
-.h3-step.done{opacity:.85;border-color:#4caf5088}
-.h3-step.now{opacity:1;border-color:#ff7a00;font-weight:600}
-</style>"""
+PANEL_CSS = ""   # styles dans UI_CSS (feuille globale)
 
 
 def _dur(seconds):
@@ -240,24 +227,24 @@ def panel(kinds, idle_text):
     """(html, journal) pour l'onglet des jobs de ce type : etapes, animation, barre et ETA."""
     v = RUN.view(kinds)
     if v is None:
-        return PANEL_CSS + f"<div style='opacity:.7;font-size:13px'>{idle_text}</div>", ""
+        return PANEL_CSS + f"<div class='h3-idle'>{idle_text}</div>", ""
     if not v["live"]:
         if v["stopped"]:
-            icon, color = "&#10074;&#10074;", "#fb8c00"
+            icon, color = "&#10074;&#10074;", "var(--h3-warn)"
         elif v["exit_code"] == 0:
-            icon, color = "&#10004;", "#43a047"
+            icon, color = "&#10004;", "var(--h3-ok)"
         else:
-            icon, color = "&#10008;", "#e53935"
+            icon, color = "&#10008;", "var(--h3-bad)"
         when = time.strftime("%H:%M", time.localtime(v["ended"]))
-        html = (f"<div style='font-size:13px'><b style='color:{color}'>{icon}</b> <b>{v['label']}</b> "
-                f"&nbsp;-&nbsp; {v['phase']} &nbsp;<span style='opacity:.75'>(fin a {when}, "
+        html = (f"<div class='h3-st-line'><b style='color:{color}'>{icon}</b> <b>{v['label']}</b> "
+                f"&nbsp;-&nbsp; {v['phase']} &nbsp;<span class='h3-muted'>(fin a {when}, "
                 f"duree {_dur(v['duration'])})</span></div>")
         spent = core.energy_summary(v.get("wh"), i18n.lang_now())
         if spent:
-            html += f"<div style='font-size:12px;opacity:.8;margin-top:2px'>Consommation : {spent}</div>"
+            html += f"<div class='h3-bar-detail'>Consommation : {spent}</div>"
         return PANEL_CSS + html, v["log"]
-    html = (f"<div style='font-size:14px'><span class='h3-spin'></span><b>{v['label']}</b> "
-            f"&nbsp;<span style='opacity:.75'>en cours depuis {_dur(v['elapsed'])}</span></div>")
+    html = (f"<div class='h3-st-line'><span class='h3-spin'></span><b>{v['label']}</b> "
+            f"&nbsp;<span class='h3-muted'>en cours depuis {_dur(v['elapsed'])}</span></div>")
     stages = v["stages"]
     if stages:
         now = stages.index(v["stage"]) if v["stage"] in stages else 0
@@ -267,12 +254,13 @@ def panel(kinds, idle_text):
             mark = "&#10004; " if i < now else ""
             chips.append(f"<span class='h3-step {cls}'>{mark}{i + 1}. {name}</span>")
         html += "<div class='h3-steps'>" + "".join(chips) + "</div>"
-    html += f"<div style='font-size:13px'>{v['phase']}</div>"
+    html += f"<div class='h3-st-sub'>{v['phase']}</div>"
     if v["train_bar"]:
-        html += _bar_html("Progression (pas)", v["train_bar"], "#4caf50", energy=True)
+        html += _bar_html("Progression (pas)", v["train_bar"], "var(--h3-ok)", energy=True)
     if v["bar"]:
         title = v["bar"].get("desc") or v["stage"] or "Etape en cours"
-        html += _bar_html(title, v["bar"], "#2196f3", energy=not v["train_bar"] and v.get("kind") != "download")
+        html += _bar_html(title, v["bar"], "var(--h3-info)",
+                          energy=not v["train_bar"] and v.get("kind") != "download")
     if not v["train_bar"] and not v["bar"]:
         detail = f"etape en cours depuis {_dur(v['stage_elapsed'])}"
         if v["stage"] == "Legendage" and v["total"]:
@@ -281,8 +269,8 @@ def panel(kinds, idle_text):
             cost = core.energy_text(None, i18n.lang_now())
             if cost:
                 detail += f" &nbsp;|&nbsp; {cost}"
-        html += (f"<div style='margin:6px 0'><div class='h3-indet'></div>"
-                 f"<div style='font-size:12px;opacity:.8;margin-top:2px'>{detail} "
+        html += (f"<div class='h3-bar'><div class='h3-indet'></div>"
+                 f"<div class='h3-bar-detail'>{detail} "
                  "(duree non mesurable a ce stade)</div></div>")
     return PANEL_CSS + html, v["log"]
 
@@ -897,471 +885,701 @@ def test_notification():
 # ------------------------------------------------------------------ interface
 _cfg = core.load_settings()
 
+# ------------------------------------------------------------------ apparence (pur CSS, sans Node.js)
+UI_THEME = gr.themes.Soft(
+    primary_hue="indigo", secondary_hue="violet", neutral_hue="slate",
+    spacing_size="sm", text_size="sm", radius_size="md",
+    font=["Inter", "Segoe UI", "system-ui", "-apple-system", "Roboto", "sans-serif"],
+    font_mono=["Cascadia Mono", "Consolas", "ui-monospace", "monospace"],
+).set(
+    block_padding="10px 12px", layout_gap="10px", block_label_text_weight="600",
+    button_large_padding="12px 18px", button_primary_text_color="white",
+    block_title_background_fill="transparent", block_title_padding="0",
+    block_title_text_color="*neutral_700", block_title_text_color_dark="*neutral_200",
+    block_label_background_fill="transparent", block_label_background_fill_dark="transparent",
+    block_label_text_color="*neutral_600", block_label_text_color_dark="*neutral_300",
+    block_shadow="none", block_border_width="1px",
+)
+
+UI_CSS = """
+:root{--h3-ok:#22a06b;--h3-info:#4f6bed;--h3-warn:#e08a00;--h3-bad:#e5484d;--h3-accent:#7c5cff;
+ --h3-track:#e6e8ef;--h3-card:#ffffff;--h3-border:#e3e6ee}
+.dark{--h3-track:#2a2f3c;--h3-card:#171a22;--h3-border:#2b3040}
+.gradio-container{max-width:1360px!important;margin:0 auto!important;padding-top:6px!important}
+footer{display:none!important}
+/* en-tete */
+#h3-header{align-items:center;gap:8px;margin-bottom:2px}
+.h3-brand{display:flex;align-items:center;gap:12px}
+.h3-logo{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;
+ background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;font-weight:800;font-size:15px;letter-spacing:.5px;
+ box-shadow:0 4px 14px #6366f155}
+.h3-title{font-size:19px;font-weight:700;line-height:1.1}
+.h3-sub{font-size:12px;opacity:.65}
+#h3-banner p{margin:0;padding:6px 10px;border-radius:8px;background:#6366f11a;font-size:13px}
+#h3-banner:empty,#h3-banner:has(.prose:empty){display:none}
+/* barre d'etat */
+#h3-statusbar{background:var(--h3-card);border:1px solid var(--h3-border);border-radius:12px;padding:8px 12px;
+ align-items:center}
+#h3-statusbar > div{padding:0!important}
+.h3-cmds{gap:6px!important}
+.h3-cmds button{white-space:nowrap;min-width:0!important;flex:0 0 auto!important;width:auto!important;
+ padding:4px 12px!important}
+#h3-msg textarea{background:transparent!important;border:none!important;box-shadow:none!important;font-size:13px;
+ padding:2px 4px!important;min-height:0!important;color:var(--body-text-color-subdued)}
+.h3-st{font-size:13px}
+.h3-st-line{font-size:13.5px}
+.h3-st-sub,.h3-bar-detail,.h3-st-extra{font-size:12px;opacity:.8;margin-top:2px}
+.h3-muted{opacity:.65}
+.h3-idle{opacity:.6;font-size:13px}
+.h3-bad{color:var(--h3-bad)}
+.h3-alert{font-size:12px;color:var(--h3-bad);margin-top:2px;font-weight:600}
+.h3-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#9aa3b5;margin-right:6px;
+ vertical-align:1px}
+.h3-dot.run{background:var(--h3-ok);box-shadow:0 0 0 0 #22a06b88;animation:h3pulse 1.6s infinite}
+@keyframes h3pulse{0%{box-shadow:0 0 0 0 #22a06b88}70%{box-shadow:0 0 0 8px #22a06b00}100%{box-shadow:0 0 0 0 #22a06b00}}
+.h3-meters{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-top:6px}
+.h3-meter{flex:1;min-width:160px;max-width:300px}
+.h3-meter-head{font-size:11.5px;opacity:.85;margin-bottom:2px}
+.h3-chips{display:flex;gap:6px;flex-wrap:wrap}
+.h3-chip{font-size:11.5px;padding:1px 8px;border-radius:999px;border:1px solid var(--h3-border);opacity:.9}
+.h3-chip.hot{border-color:var(--h3-bad);color:var(--h3-bad);font-weight:600}
+/* barres */
+.h3-bar{margin:6px 0}
+.h3-bar-head{display:flex;justify-content:space-between;font-size:12.5px}
+.h3-track{background:var(--h3-track);border-radius:999px;height:10px;overflow:hidden}
+.h3-track.thin{height:6px}
+.h3-fill{height:100%;border-radius:999px;transition:width .5s}
+@keyframes h3spin{to{transform:rotate(360deg)}}
+@keyframes h3stripe{from{background-position:0 0}to{background-position:40px 0}}
+.h3-spin{display:inline-block;width:12px;height:12px;border:2px solid #9aa3b5;border-top-color:var(--h3-accent);
+ border-radius:50%;animation:h3spin .8s linear infinite;vertical-align:-2px;margin-right:6px}
+.h3-indet{height:10px;border-radius:999px;background:repeating-linear-gradient(45deg,#6366f1 0 10px,#a5b4fc 10px 20px);
+ background-size:40px 10px;animation:h3stripe 1s linear infinite}
+.h3-steps{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0;font-size:11.5px}
+.h3-step{padding:1px 8px;border-radius:999px;border:1px solid var(--h3-border);opacity:.55}
+.h3-step.done{opacity:.85;border-color:#22a06b88}
+.h3-step.now{opacity:1;border-color:var(--h3-accent);font-weight:600}
+.h3-card{background:var(--h3-card);border:1px solid var(--h3-border);border-radius:10px;padding:8px 10px!important}
+/* onglets */
+#main-tabs > .tab-wrapper button[role=tab]{font-weight:600;font-size:14px;padding:8px 14px}
+.tabs .tabs button[role=tab]{font-size:12.5px;padding:5px 10px}
+/* colonne d'actions qui reste visible */
+.h3-sticky{position:sticky;top:8px;align-self:flex-start}
+/* aides : une ligne, texte complet au survol (infobulle) ou pendant la saisie */
+.info-text,[data-testid=block-info] + .info{display:-webkit-box!important;-webkit-line-clamp:1;-webkit-box-orient:vertical;
+ overflow:hidden;opacity:.7;font-size:11.5px!important;line-height:1.35}
+.block:focus-within .info-text{-webkit-line-clamp:unset;opacity:.9}
+.h3-note{font-size:12.5px;opacity:.8}
+.h3-note p{margin:2px 0 6px}
+.h3-group{border-radius:10px!important}
+.h3-toolbar{align-items:center}
+.h3-inline{align-items:flex-end!important}
+.h3-inline > button{margin-bottom:10px}
+#h3-statusbar{flex-wrap:nowrap!important}
+#h3-statusbar > .h3-cmds{flex:0 0 auto!important;width:auto!important;gap:6px!important;flex-wrap:nowrap!important;
+ align-self:flex-start;margin-top:2px}
+@media (max-width:900px){#h3-statusbar{flex-wrap:wrap!important}}
+#h3-msg:has(textarea:placeholder-shown){display:none}
+#h3-msg{margin:-2px 0 2px}
+"""
+
+# infobulle : le texte d'aide complet s'affiche en survolant la ligne tronquee ; onglet restaure apres
+# un changement de langue
+UI_HEAD = """<script>
+(() => {
+  const tip = () => document.querySelectorAll('.info-text').forEach(e => {
+    const t = e.textContent.trim(); if (t && e.title !== t) e.title = t; });
+  new MutationObserver(tip).observe(document.documentElement, {childList: true, subtree: true});
+  document.addEventListener('DOMContentLoaded', tip);
+})();
+</script>"""
+
+
 def build(code):
     """Construit l'interface dans une langue (une page par langue : /en/, /fr/, ...)."""
-    with gr.Blocks(title="H3-Image LoRA - RTX 3090") as demo:
-        with gr.Row(equal_height=True):
-            with gr.Column(scale=6):
-                gr.Markdown("## LoRA MiniMax-H3-Image &nbsp;·&nbsp; ai-toolkit &nbsp;·&nbsp; RTX 3090 24 Go"
-                            f" &nbsp;<small>v{core.tool_version()}</small>")
-                upd_banner = gr.Markdown()
-            with gr.Column(scale=1, min_width=150):
-                lang_sel = gr.Dropdown([(name, c) for c, name in i18n.LANGS], value=code,
-                                       show_label=False, container=False, interactive=True)
+    with gr.Blocks(title="H3-Image LoRA", fill_width=False) as demo:
+        # ============================================================ en-tete
+        with gr.Row(elem_id="h3-header", equal_height=True):
+            gr.HTML("<div class='h3-brand'><span class='h3-logo'>H3</span><div><div class='h3-title'>"
+                    "H3-Image LoRA</div><div class='h3-sub'>MiniMax-H3-Image &middot; ai-toolkit &middot; "
+                    f"v{core.tool_version()}</div></div></div>")
+            lang_sel = gr.Dropdown([(name, c) for c, name in i18n.LANGS], value=code, elem_id="h3-lang",
+                                   show_label=False, container=False, interactive=True, scale=0, min_width=150)
         lang_sel.input(None, lang_sel, None, js=i18n.SELECTOR_JS)
+        upd_banner = gr.Markdown(elem_id="h3-banner")
 
-        with gr.Row():
-            with gr.Column(scale=3):
+        with gr.Row(elem_id="h3-statusbar", equal_height=False):
+            with gr.Column(scale=5, min_width=320):
                 status = gr.HTML()
-            with gr.Column(scale=1, min_width=180):
-                pause_btn = gr.Button("Pause (sauvegarder l'etat)", variant="primary")
-                sample_btn = gr.Button("Apercu maintenant")
-                stop_btn = gr.Button("Arreter sans sauvegarder", variant="stop")
-        msg = gr.Textbox(label="Message", lines=1, interactive=False)
+            with gr.Row(elem_classes="h3-cmds"):
+                pause_btn = gr.Button("Pause (sauvegarder l'etat)", variant="primary", size="sm", scale=0,
+                                      min_width=150)
+                sample_btn = gr.Button("Apercu maintenant", size="sm", scale=0, min_width=120)
+                stop_btn = gr.Button("Arreter sans sauvegarder", variant="stop", size="sm", scale=0,
+                                     min_width=150)
+        msg = gr.Textbox(label="Message", show_label=False, lines=1, max_lines=4, interactive=False,
+                         container=False, elem_id="h3-msg", placeholder=" ")
 
-        # ============================================================ 1. Dataset
-        with gr.Tab("1. Dataset"):
-            with gr.Accordion("Aide : preparer un bon dataset", open=False):
-                gr.Markdown(AIDE_DATASET)
-            ds_folder = gr.Textbox(label="Dossier du dataset", value=os.path.join(core.DATASETS, "mon_dataset"),
-                                   info="Un dossier par LoRA. Preconise : 15 a 40 images (style : 30 a 100), "
-                                        "nettes, variees, cote court >= 1024 px. Sans espaces dans le chemin.")
-            with gr.Row():
-                ds_files = gr.File(label="Ajouter des images / .txt", file_count="multiple")
-                with gr.Column():
-                    ds_check = gr.Button("Analyser le dossier")
-                    cap_text = gr.Textbox(label="Legende par defaut pour les images sans .txt",
-                                          info="Depannage seulement : preferez le legendage automatique ci-dessous.")
-                    cap_btn = gr.Button("Creer les legendes manquantes")
-            with gr.Accordion("Legendage automatique (Qwen3-VL)", open=False):
-                gr.Markdown("Un modele de vision decrit chaque image et ecrit le .txt correspondant. "
-                            "A lancer **avant** l'entrainement (un seul job GPU a la fois). "
-                            "Le modele est telecharge au premier usage.")
+        with gr.Tabs(elem_id="main-tabs"):
+            # ======================================================== 1. Dataset
+            with gr.Tab("1. Dataset"):
                 with gr.Row():
-                    lora_type = gr.Radio(core.LORA_TYPES, value=core.LORA_SUBJECT, label="Type de LoRA",
-                                         info="Regle la consigne ci-dessous et le controle des legendes. "
-                                              "Personnage : les traits permanents ne sont pas decrits. "
-                                              "Style : seul le contenu est decrit.")
-                    cap_extra = gr.Textbox(label="Autres elements permanents a ne pas decrire (optionnel)",
-                                           placeholder="sunglasses, red crescent patch",
-                                           info="En anglais, separes par des virgules. Ex. un accessoire que le "
-                                                "personnage porte sur toutes les images. Il fera alors partie "
-                                                "du mot declencheur et ne pourra plus etre retire.")
-                with gr.Row():
-                    cap_model = gr.Dropdown(core.CAPTION_MODELS, value=core.CAPTION_MODELS[0], label="Modele",
-                                            info="Preconise : 8B (meilleures descriptions, ~10 Go de VRAM). "
-                                                 "4B / 2B : plus rapides, moins precis.")
-                    cap_tokens = gr.Slider(64, 512, value=256, step=32, label="Longueur maximale",
-                                           info="Preconise : 256 (1 a 3 phrases detaillees).")
-                    cap_redo = gr.Checkbox(label="Refaire les legendes existantes", value=False,
-                                           info="Decoche : seules les images sans .txt sont traitees.")
-                    cap_variants = gr.Slider(1, 3, value=1, step=1, label="Variantes par image",
-                                             info="2 ou 3 : plusieurs legendes par image, une par ligne du "
-                                                  ".txt ; une variante differente est vue a chaque passage, le "
-                                                  "LoRA s'attache moins a une formulation. Utile sous 30 images. "
-                                                  "Legendage plus long d'autant.")
-                cap_prompt = gr.Textbox(label="Consigne donnee au modele (modifiable)",
-                                        value=core.caption_prompt(core.LORA_SUBJECT), lines=5,
-                                        info="Generee d'apres le type de LoRA, le mot declencheur de l'onglet "
-                                             "Entrainement et les elements permanents. Un modele de vision ne "
-                                             "respecte pas toujours une interdiction : relancez 'Analyser le "
-                                             "dossier' apres le legendage pour reperer les ecarts.")
-                cap_auto_btn = gr.Button("Lancer le legendage automatique", variant="primary")
-            cap_panel = gr.HTML()
-            cap_log = gr.Textbox(label="Journal du legendage", lines=8, max_lines=8, autoscroll=True,
-                                 interactive=False)
-            with gr.Accordion("Corriger les legendes : retirer les traits permanents", open=False):
-                gr.Markdown("Pour un LoRA de personnage, retire des legendes les traits permanents du sujet "
-                            "(cheveux, barbe, carrure, cicatrices, tatouages...) et les elements permanents "
-                            "saisis plus haut. Les expressions et vetements restent ('eyes closed', 'skin-tight "
-                            "suit'). Chaque proposition est modifiable : decochez celles a laisser. Les "
-                            "originales sont sauvegardees a cote du dataset (`<dataset>_legendes_originales`).")
-                with gr.Row():
-                    capfix_btn = gr.Button("Proposer les corrections")
-                    capfix_restore_btn = gr.Button("Restaurer les legendes d'origine")
-                capfix_msg = gr.Textbox(label="Message", lines=2, interactive=False)
-                capfix_table = gr.Dataframe(headers=CAPFIX_HEADERS,
-                                            datatype=["bool", "str", "str", "str"], interactive=True,
-                                            type="array", wrap=True, visible=False, column_widths=["8%", "14%", "39%", "39%"])
-                capfix_apply_btn = gr.Button("Appliquer les corrections cochees", variant="primary", visible=False)
-            with gr.Accordion("Audit du dataset : fonds unis, doublons, cadrages trop semblables", open=False):
-                gr.Markdown("Repere ce que l'oeil laisse passer : un meme fond uni sur beaucoup d'images et absent "
-                            "des legendes (il s'attache au mot declencheur : le LoRA le met partout), les "
-                            "quasi-doublons (comptent double), les groupes d'images au meme cadrage (surappris). "
-                            "Fonds : analyse des bords de l'image. Doublons : modele DINOv2 sur le processeur "
-                            "(~90 Mo, telecharge au premier usage).")
-                audit_btn = gr.Button("Auditer le dataset")
-                audit_report = gr.Textbox(label="Rapport d'audit", lines=8, interactive=False)
-                audit_fix_btn = gr.Button("Ajouter le fond aux legendes", visible=False, variant="primary")
-                audit_gallery = gr.Gallery(label="Quasi-doublons (par paires)", columns=6, height=220)
-                audit_state = gr.State([])
-            with gr.Accordion("Rogner les filigranes et textes (detection automatique)", open=False):
-                gr.Markdown(
-                    "Repere les zones de texte (filigrane, signature, adresse de site, legende) et propose, pour "
-                    "chaque image, le plus grand cadrage qui n'en contient aucune. L'image est seulement rognee : "
-                    "rien n'est efface ni repeint. Les originaux sont copies dans un dossier voisin du dataset "
-                    "(`<dataset>_originaux`). Non detectes : les logos sans texte et les filigranes repetes sur "
-                    "toute l'image.")
-                with gr.Row():
-                    crop_keep = gr.Slider(40, 95, value=65, step=5, label="Part minimale de l'image a conserver (%)",
-                                          info="Preconise : 65. En dessous, l'image est declaree non rognable "
-                                               "plutot que d'etre trop amputee.")
-                    crop_margin = gr.Slider(0, 5, value=1.5, step=0.5, label="Marge autour du texte (% du grand cote)",
-                                            info="Preconise : 1,5. Augmentez si un bout de filigrane subsiste.")
-                    crop_conf = gr.Slider(0.3, 0.9, value=0.5, step=0.05, label="Seuil de detection",
-                                          info="Preconise : 0,5. Plus bas : detecte les filigranes pales, mais "
-                                               "aussi plus de faux textes.")
-                crop_scan_btn = gr.Button("Analyser les images", variant="primary")
-                crop_report = gr.Textbox(label="Resultat", lines=7, interactive=False)
-                crop_gallery = gr.Gallery(label="Texte detecte en rouge, cadrage propose en vert, zone retiree assombrie",
-                                          columns=5, height=380)
-                crop_pick = gr.CheckboxGroup(choices=[], label="Images a rogner",
-                                             info="Decochez celles ou le texte fait partie de la scene.")
-                with gr.Row():
-                    crop_apply_btn = gr.Button("Rogner les images cochees", variant="primary")
-                    crop_restore_btn = gr.Button("Restaurer tous les originaux")
-            ds_msg = gr.Textbox(label="Etat", lines=14, interactive=False,
-                                info="Le controle des tailles utilise les resolutions cochees dans l'onglet Entrainement.")
-            ds_gallery = gr.Gallery(label="Apercu", columns=8, height=260)
+                    with gr.Column(scale=5, min_width=340):
+                        ds_folder = gr.Textbox(label="Dossier du dataset",
+                                               value=os.path.join(core.DATASETS, "mon_dataset"),
+                                               info="Un dossier par LoRA. Preconise : 15 a 40 images (style : 30 a "
+                                                    "100), nettes, variees, cote court >= 1024 px. Sans espaces dans "
+                                                    "le chemin.")
+                        ds_check = gr.Button("Analyser le dossier", variant="primary")
+                        ds_msg = gr.Textbox(label="Etat", lines=9, max_lines=16, interactive=False,
+                                            info="Le controle des tailles utilise les resolutions cochees dans "
+                                                 "l'onglet Entrainement.")
+                        ds_gallery = gr.Gallery(label="Apercu", columns=6, height=220, show_label=False)
+                    with gr.Column(scale=6, min_width=380):
+                        with gr.Tabs():
+                            with gr.Tab("Legendage"):
+                                gr.Markdown("Un modele de vision decrit chaque image et ecrit le .txt correspondant. "
+                                            "A lancer **avant** l'entrainement (un seul job GPU a la fois). "
+                                            "Le modele est telecharge au premier usage.", elem_classes="h3-note")
+                                with gr.Row():
+                                    lora_type = gr.Radio(core.LORA_TYPES, value=core.LORA_SUBJECT,
+                                                         label="Type de LoRA",
+                                                         info="Regle la consigne ci-dessous et le controle des "
+                                                              "legendes. Personnage : les traits permanents ne sont "
+                                                              "pas decrits. Style : seul le contenu est decrit.")
+                                cap_extra = gr.Textbox(label="Autres elements permanents a ne pas decrire (optionnel)",
+                                                       placeholder="sunglasses, red crescent patch",
+                                                       info="En anglais, separes par des virgules. Ex. un accessoire "
+                                                            "que le personnage porte sur toutes les images. Il fera "
+                                                            "alors partie du mot declencheur et ne pourra plus etre "
+                                                            "retire.")
+                                with gr.Row():
+                                    cap_model = gr.Dropdown(core.CAPTION_MODELS, value=core.CAPTION_MODELS[0],
+                                                            label="Modele",
+                                                            info="Preconise : 8B (meilleures descriptions, ~10 Go "
+                                                                 "de VRAM). 4B / 2B : plus rapides, moins precis.")
+                                    cap_variants = gr.Slider(1, 3, value=1, step=1, label="Variantes par image",
+                                                             info="2 ou 3 : plusieurs legendes par image, une par "
+                                                                  "ligne du .txt ; une variante differente est vue a "
+                                                                  "chaque passage, le LoRA s'attache moins a une "
+                                                                  "formulation. Utile sous 30 images. Legendage plus "
+                                                                  "long d'autant.")
+                                with gr.Row():
+                                    cap_tokens = gr.Slider(64, 512, value=256, step=32, label="Longueur maximale",
+                                                           info="Preconise : 256 (1 a 3 phrases detaillees).")
+                                    cap_redo = gr.Checkbox(label="Refaire les legendes existantes", value=False,
+                                                           info="Decoche : seules les images sans .txt sont "
+                                                                "traitees.")
+                                with gr.Accordion("Consigne donnee au modele (modifiable)", open=False):
+                                    cap_prompt = gr.Textbox(label="Consigne donnee au modele (modifiable)",
+                                                            show_label=False,
+                                                            value=core.caption_prompt(core.LORA_SUBJECT), lines=5,
+                                                            info="Generee d'apres le type de LoRA, le mot declencheur "
+                                                                 "de l'onglet Entrainement et les elements "
+                                                                 "permanents. Un modele de vision ne respecte pas "
+                                                                 "toujours une interdiction : relancez 'Analyser le "
+                                                                 "dossier' apres le legendage pour reperer les "
+                                                                 "ecarts.")
+                                cap_auto_btn = gr.Button("Lancer le legendage automatique", variant="primary")
+                                cap_panel = gr.HTML()
+                                with gr.Accordion("Journal", open=False):
+                                    cap_log = gr.Textbox(label="Journal du legendage", show_label=False, lines=8,
+                                                         max_lines=8, autoscroll=True, interactive=False)
+                            with gr.Tab("Correction"):
+                                gr.Markdown("Pour un LoRA de personnage, retire des legendes les traits permanents du "
+                                            "sujet (cheveux, barbe, carrure, cicatrices, tatouages...) et les elements "
+                                            "permanents saisis plus haut. Les expressions et vetements restent ('eyes "
+                                            "closed', 'skin-tight suit'). Chaque proposition est modifiable : "
+                                            "decochez celles a laisser. Les originales sont sauvegardees a cote du "
+                                            "dataset (`<dataset>_legendes_originales`).", elem_classes="h3-note")
+                                with gr.Row():
+                                    capfix_btn = gr.Button("Proposer les corrections", variant="primary")
+                                    capfix_restore_btn = gr.Button("Restaurer les legendes d'origine")
+                                capfix_msg = gr.Textbox(label="Message", lines=2, interactive=False)
+                                capfix_table = gr.Dataframe(headers=CAPFIX_HEADERS,
+                                                            datatype=["bool", "str", "str", "str"], interactive=True,
+                                                            type="array", wrap=True, visible=False,
+                                                            column_widths=["8%", "14%", "39%", "39%"])
+                                capfix_apply_btn = gr.Button("Appliquer les corrections cochees", variant="primary",
+                                                             visible=False)
+                            with gr.Tab("Audit"):
+                                gr.Markdown("Repere ce que l'oeil laisse passer : un meme fond uni sur beaucoup "
+                                            "d'images et absent des legendes (il s'attache au mot declencheur : le "
+                                            "LoRA le met partout), les quasi-doublons (comptent double), les groupes "
+                                            "d'images au meme cadrage (surappris). Fonds : analyse des bords de "
+                                            "l'image. Doublons : modele DINOv2 sur le processeur (~90 Mo, telecharge "
+                                            "au premier usage).", elem_classes="h3-note")
+                                audit_btn = gr.Button("Auditer le dataset", variant="primary")
+                                audit_report = gr.Textbox(label="Rapport d'audit", lines=7, interactive=False)
+                                audit_fix_btn = gr.Button("Ajouter le fond aux legendes", visible=False,
+                                                          variant="primary")
+                                audit_gallery = gr.Gallery(label="Quasi-doublons (par paires)", columns=6, height=200)
+                                audit_state = gr.State([])
+                            with gr.Tab("Rognage"):
+                                gr.Markdown(
+                                    "Repere les zones de texte (filigrane, signature, adresse de site, legende) et "
+                                    "propose, pour chaque image, le plus grand cadrage qui n'en contient aucune. "
+                                    "L'image est seulement rognee : rien n'est efface ni repeint. Les originaux sont "
+                                    "copies dans un dossier voisin du dataset (`<dataset>_originaux`). Non detectes : "
+                                    "les logos sans texte et les filigranes repetes sur toute l'image.",
+                                    elem_classes="h3-note")
+                                with gr.Row():
+                                    crop_keep = gr.Slider(40, 95, value=65, step=5,
+                                                          label="Part minimale de l'image a conserver (%)",
+                                                          info="Preconise : 65. En dessous, l'image est declaree non "
+                                                               "rognable plutot que d'etre trop amputee.")
+                                    crop_margin = gr.Slider(0, 5, value=1.5, step=0.5,
+                                                            label="Marge autour du texte (% du grand cote)",
+                                                            info="Preconise : 1,5. Augmentez si un bout de "
+                                                                 "filigrane subsiste.")
+                                    crop_conf = gr.Slider(0.3, 0.9, value=0.5, step=0.05, label="Seuil de detection",
+                                                          info="Preconise : 0,5. Plus bas : detecte les filigranes "
+                                                               "pales, mais aussi plus de faux textes.")
+                                crop_scan_btn = gr.Button("Analyser les images", variant="primary")
+                                crop_report = gr.Textbox(label="Resultat", lines=5, interactive=False)
+                                crop_gallery = gr.Gallery(label="Texte detecte en rouge, cadrage propose en vert, "
+                                                                "zone retiree assombrie", columns=4, height=300)
+                                crop_pick = gr.CheckboxGroup(choices=[], label="Images a rogner",
+                                                             info="Decochez celles ou le texte fait partie de la "
+                                                                  "scene.")
+                                with gr.Row():
+                                    crop_apply_btn = gr.Button("Rogner les images cochees", variant="primary")
+                                    crop_restore_btn = gr.Button("Restaurer tous les originaux")
+                            with gr.Tab("Fichiers"):
+                                ds_files = gr.File(label="Ajouter des images / .txt", file_count="multiple",
+                                                   height=140)
+                                cap_text = gr.Textbox(label="Legende par defaut pour les images sans .txt",
+                                                      info="Depannage seulement : preferez le legendage "
+                                                           "automatique ci-dessous.")
+                                cap_btn = gr.Button("Creer les legendes manquantes")
+                            with gr.Tab("Aide"):
+                                gr.Markdown(AIDE_DATASET)
 
-        # ============================================================ 2. Entrainement
-        with gr.Tab("2. Entrainement"):
-            with gr.Row():
-                preset_sel = gr.Dropdown(core.list_job_settings(), label="Reglages enregistres",
-                                         info="Chaque job lance enregistre ses reglages sous son nom.")
-                preset_load = gr.Button("Charger")
-                preset_save = gr.Button("Enregistrer les reglages actuels")
-            process = gr.Radio(core.PROCESSES, value=core.PROC_STANDARD, label="Procede d'entrainement",
-                               info="Standard : vos reglages, inchanges. Rapide 512 : resolution 512, rang 32, "
-                                    "optimiseur automagic4, EMA 0,98, 30 passages - bien plus rapide par pas. "
-                                    "Recette Fizgig : la meme, plus son adaptateur, l'optimisation de ressemblance "
-                                    "et les apercus LCM. Choisir un procede remplit les champs ; tout reste modifiable.")
-            with gr.Accordion("Options du procede (optimiseur, EMA, adaptateur, ressemblance, echantillonneur)",
-                              open=False):
+            # ======================================================== 2. Entrainement
+            with gr.Tab("2. Entrainement"):
                 with gr.Row():
-                    optimizer = gr.Dropdown(list(core.OPTIMIZERS), value=core.OPT_ADAMW, label="Optimiseur",
-                                            info="adamw8bit : le taux saisi est applique tel quel. automagic : le "
-                                                 "taux saisi est un point de depart, l'optimiseur le regle seul "
-                                                 "sans depasser 2,5e-4.")
-                    ema = gr.Dropdown(list(core.EMA_CHOICES), value=core.EMA_OFF, label="Moyenne des poids (EMA)",
-                                      info="Lisse le LoRA sur les derniers pas : apercus et checkpoints plus "
-                                           "stables. Preconise avec 512 px : 0,98.")
-                with gr.Row():
-                    adapter = gr.Dropdown(core.ADAPTERS, value=core.ADAPTER_OSTRIS, label="Adaptateur d'entrainement",
-                                          info="Garde le modele distille stable pendant l'apprentissage ; jamais "
-                                               "dans le LoRA final. Fizgig : telecharge (~150 Mo) et converti au "
-                                               "premier job. Changez de nom de job quand vous changez d'adaptateur.")
-                    sampler = gr.Dropdown(core.SAMPLERS, value=core.SAMPLER_EULER, label="Echantillonneur des apercus",
-                                          info="N'affecte que les apercus et l'onglet Tester un LoRA, pas le LoRA. "
-                                               "LCM : la meme graine donne une autre image qu'Euler.")
-                likeness = gr.Checkbox(label="Optimisation de ressemblance (calendrier Fizgig)", value=False,
-                                       info="Tire plus souvent le niveau de bruit le plus net, ou se forment peau, "
-                                            "yeux et details : 17 -> 33 -> 50 % aux passages 1, 3, 5 ; 75 % aux "
-                                            "passages 2, 4, 6 et ensuite. Pour un sujet ; inutile pour un style.")
-                gr.Markdown("**Contre le debordement** (le personnage qui apparait partout) : deux protections "
-                            "d'ai-toolkit, combinables. Mesurez leur effet avec la colonne Debordement de "
-                            "Resultats > Ressemblance.")
-                with gr.Row():
-                    dop = gr.Checkbox(label="Preservation (DOP)", value=False,
-                                      info="A chaque pas, le LoRA est penalise s'il change ce que le modele de base "
-                                           "dessine pour la legende ou le mot declencheur est remplace par la classe "
-                                           "ci-contre. Aucune image a preparer, mais chaque pas est environ 1,6 a 2 "
-                                           "fois plus lent et demande plus de memoire : verifiez avec le Test rapide.")
-                    dop_class = gr.Textbox(label="Classe preservee", value=core.CONTROL_SUBJECT,
-                                           info="En anglais : ce que le mot declencheur designe sans le LoRA "
-                                                "(a person, a man, a woman, a dog...).")
-                with gr.Row():
-                    reg = gr.Checkbox(label="Images de regularisation", value=False,
-                                      info="Melange a l'entrainement des images 'a person...' produites par le modele "
-                                           "de base (dossier <dataset>_regularisation). Pas de perte de vitesse par "
-                                           "pas, mais elles prennent une part des pas : avec autant d'images que le "
-                                           "dataset, doublez les pas pour garder le meme apprentissage du sujet.")
-                    reg_weight = gr.Number(label="Poids des images de regularisation", value=1.0, minimum=0.1,
-                                           maximum=2.0, step=0.1,
-                                           info="Preconise : 1. Plus bas : protection plus douce.")
-                with gr.Row():
-                    reg_count = gr.Number(label="Nombre d'images a generer", value=0, precision=0,
-                                          info="0 = autant que d'images dans le dataset (60 au plus).")
-                    reg_btn = gr.Button("Generer les images de regularisation")
-                reg_msg = gr.Textbox(label="Images de regularisation", interactive=False, lines=2)
-            with gr.Row():
-                job_name = gr.Textbox(label="Nom du job (meme nom = reprise)", value="h3img_mon_lora_v1",
-                                      info="Lettres, chiffres, _ et -. Changez le nom (v2, v3...) pour repartir "
-                                           "de zero ; gardez-le pour reprendre.")
-                trigger = gr.Textbox(label="Mot declencheur (optionnel)",
-                                     info="Preconise : un mot invente avec des chiffres (ex. m41ne) pour un sujet, "
-                                          "jamais un vrai mot ni un nom connu ; vide pour un style. "
-                                          "A reutiliser ensuite dans vos prompts.")
-            preset = gr.Radio(core.PRESETS, value=core.PRESET_INT8, label="Preset selon la carte",
-                              info="Preconise sur 24 Go : int8. w4a8 : a essayer avec le Test rapide ; s'il "
-                                   "fonctionne il evite l'aller-retour avec la RAM. 8 Go (RTX 2000 Ada, A2000...) : "
-                                   "w4a8, 90 % du transformer en RAM, 512 px ; environ 40 Go de RAM au pic, "
-                                   "64 Go conseilles, et nettement plus lent (mesurez avec le Test rapide).")
-            w4a8_fix = gr.Checkbox(label="Correctif w4a8 pour GPU anterieurs aux RTX 40 (experimental)", value=True,
-                                   info="Sans effet en int8. En w4a8 sur 3090 : contourne le noyau triton "
-                                        "incompatible en decompressant en torch pur. Laissez coche.")
-            offload = gr.Slider(0, core.OFFLOAD_MAX, value=0.35, step=0.05, label="Part du transformer en RAM",
-                                info="Preconise : 0.35 en int8, 0 en w4a8, 0.9 en 8 Go. Erreur memoire -> 0.5 "
-                                     "puis 0.7 (plus lent). Le Test rapide indique s'il y a de la marge.")
-            resol = gr.CheckboxGroup(["512", "768", "1024", "1536", "2048"], value=["1024", "1536"],
-                                     label="Resolutions d'entrainement",
-                                     info="512 : le reglage de Fizgig, de loin le plus rapide (la memoire change "
-                                          "peu avec la resolution, la duree d'un pas beaucoup). 1024 + 1536 : plus "
-                                          "lent, a comparer sur vos apercus. Defaut ai-toolkit : 512 + 768 + 1024.")
-            with gr.Row():
-                steps = gr.Number(label="Pas", value=2000, precision=0,
-                                  info="Preconise : 1500 a 3000 (defaut ai-toolkit : 3000). Repere : ~100 pas "
-                                       "par image. Jugez sur les apercus, pas sur le nombre.")
-                lr = gr.Number(label="Learning rate", value=1e-4,
-                               info="adamw8bit : 0.0001 (defaut ai-toolkit) ; brule ou deforme -> 0.00005 ; "
-                                    "n'apprend rien -> 0.0002. automagic : 0.00025 (point de depart et plafond).")
-                rank = gr.Dropdown([4, 8, 16, 32], value=16, label="Rang LoRA",
-                                   info="Preconise : 16 (defaut ai-toolkit pour ce modele). 8 = plus leger, "
-                                        "moins de memoire. 32 = sujets/styles complexes, plus de memoire.")
-            with gr.Row():
-                save_every = gr.Number(label="Sauvegarde tous les N pas", value=250, precision=0,
-                                       info="Preconise : 250. Les 6 derniers checkpoints sont gardes : "
-                                            "le meilleur LoRA est souvent avant le dernier.")
-                sample_every = gr.Number(label="Apercus tous les N pas", value=250, precision=0,
-                                         info="Preconise : 250, aligne sur les sauvegardes pour pouvoir "
-                                              "choisir le checkpoint d'apres ses apercus.")
-                sample_size = gr.Dropdown([1024, 1536, 2048], value=2048, label="Taille des apercus",
-                                          info="Preconise : 2048 (le modele vise 4 MP+). Erreur memoire "
-                                               "pendant les apercus -> 1536. 1024 = artefacts normaux.")
-                no_sample = gr.Checkbox(label="Desactiver les apercus", value=False,
-                                        info="A cocher si les apercus saturent la memoire.")
-            ctrl = gr.Textbox(label="Dossier d'images de reference (optionnel)",
-                              info="Vide = LoRA texte-vers-image (cas normal). Rempli = LoRA d'edition : "
-                                   "memes noms de fichiers que le dataset, references nommees <Picture 1> "
-                                   "dans les legendes.")
-            prompts = gr.Textbox(label="Prompts d'apercu (un par ligne)", value=DEFAULT_PROMPTS, lines=3,
-                                 info="Preconise : 2 a 4 prompts detailles, avec votre mot declencheur, dont "
-                                      "un proche du dataset et un tres different (teste la generalisation). "
-                                      "Chaque prompt rallonge la pause d'apercu.")
-            control = gr.Checkbox(value=True, label="Ajouter un prompt temoin sans mot declencheur (preconise)",
-                                  info="Sert a detecter le debordement : le personnage qui apparait meme sans son "
-                                       "mot, signe de sur-apprentissage. Si aucun de vos prompts ne s'en passe, "
-                                       "l'UI ajoute le premier prompt avec 'a person' a la place du mot. Il est "
-                                       "affiche ci-dessous.")
-            prompt_note = gr.Markdown("")
-            with gr.Accordion("Aide : valeurs preconisees et diagnostic", open=False):
-                gr.Markdown(AIDE_REGLAGES)
+                    with gr.Column(scale=7, min_width=420):
+                        with gr.Row(elem_classes="h3-inline"):
+                            preset_sel = gr.Dropdown(core.list_job_settings(), label="Reglages enregistres",
+                                                     info="Chaque job lance enregistre ses reglages sous son nom.",
+                                                     scale=3)
+                            preset_load = gr.Button("Charger", size="sm", scale=1, min_width=90)
+                            preset_save = gr.Button("Enregistrer les reglages actuels", size="sm", scale=1,
+                                                    min_width=120)
+                        with gr.Row():
+                            job_name = gr.Textbox(label="Nom du job (meme nom = reprise)", value="h3img_mon_lora_v1",
+                                                  info="Lettres, chiffres, _ et -. Changez le nom (v2, v3...) pour "
+                                                       "repartir de zero ; gardez-le pour reprendre.")
+                            trigger = gr.Textbox(label="Mot declencheur (optionnel)",
+                                                 info="Preconise : un mot invente avec des chiffres (ex. m41ne) pour "
+                                                      "un sujet, jamais un vrai mot ni un nom connu ; vide pour un "
+                                                      "style. A reutiliser ensuite dans vos prompts.")
+                        process = gr.Radio(core.PROCESSES, value=core.PROC_STANDARD, label="Procede d'entrainement",
+                                           info="Standard : vos reglages, inchanges. Rapide 512 : resolution 512, "
+                                                "rang 32, optimiseur automagic4, EMA 0,98, 30 passages - bien plus "
+                                                "rapide par pas. Recette Fizgig : la meme, plus son adaptateur, "
+                                                "l'optimisation de ressemblance et les apercus LCM. Choisir un "
+                                                "procede remplit les champs ; tout reste modifiable.")
+                        with gr.Group(elem_classes="h3-group"):
+                            preset = gr.Radio(core.PRESETS, value=core.PRESET_INT8, label="Preset selon la carte",
+                                              info="Preconise sur 24 Go : int8. w4a8 : a essayer avec le Test "
+                                                   "rapide ; s'il fonctionne il evite l'aller-retour avec la RAM. "
+                                                   "8 Go (RTX 2000 Ada, A2000...) : w4a8, 90 % du transformer en "
+                                                   "RAM, 512 px ; environ 40 Go de RAM au pic, 64 Go conseilles, et "
+                                                   "nettement plus lent (mesurez avec le Test rapide).")
+                            with gr.Row():
+                                offload = gr.Slider(0, core.OFFLOAD_MAX, value=0.35, step=0.05,
+                                                    label="Part du transformer en RAM", scale=3,
+                                                    info="Preconise : 0.35 en int8, 0 en w4a8, 0.9 en 8 Go. Erreur "
+                                                         "memoire -> 0.5 puis 0.7 (plus lent). Le Test rapide "
+                                                         "indique s'il y a de la marge.")
+                                w4a8_fix = gr.Checkbox(label="Correctif w4a8 pour GPU anterieurs aux RTX 40 "
+                                                             "(experimental)", value=True, scale=2,
+                                                       info="Sans effet en int8. En w4a8 sur 3090 : contourne le "
+                                                            "noyau triton incompatible en decompressant en torch "
+                                                            "pur. Laissez coche.")
+                        resol = gr.CheckboxGroup(["512", "768", "1024", "1536", "2048"], value=["1024", "1536"],
+                                                 label="Resolutions d'entrainement",
+                                                 info="512 : le reglage de Fizgig, de loin le plus rapide (la memoire "
+                                                      "change peu avec la resolution, la duree d'un pas beaucoup). "
+                                                      "1024 + 1536 : plus lent, a comparer sur vos apercus. Defaut "
+                                                      "ai-toolkit : 512 + 768 + 1024.")
+                        with gr.Row():
+                            steps = gr.Number(label="Pas", value=2000, precision=0,
+                                              info="Preconise : 1500 a 3000 (defaut ai-toolkit : 3000). Repere : "
+                                                   "~100 pas par image. Jugez sur les apercus, pas sur le nombre.")
+                            lr = gr.Number(label="Learning rate", value=1e-4,
+                                           info="adamw8bit : 0.0001 (defaut ai-toolkit) ; brule ou deforme -> "
+                                                "0.00005 ; n'apprend rien -> 0.0002. automagic : 0.00025 (point de "
+                                                "depart et plafond).")
+                            rank = gr.Dropdown([4, 8, 16, 32], value=16, label="Rang LoRA",
+                                               info="Preconise : 16 (defaut ai-toolkit pour ce modele). 8 = plus "
+                                                    "leger, moins de memoire. 32 = sujets/styles complexes, plus de "
+                                                    "memoire.")
+                        prompts = gr.Textbox(label="Prompts d'apercu (un par ligne)", value=DEFAULT_PROMPTS, lines=3,
+                                             info="Preconise : 2 a 4 prompts detailles, avec votre mot declencheur, "
+                                                  "dont un proche du dataset et un tres different (teste la "
+                                                  "generalisation). Chaque prompt rallonge la pause d'apercu.")
+                        control = gr.Checkbox(value=True,
+                                              label="Ajouter un prompt temoin sans mot declencheur (preconise)",
+                                              info="Sert a detecter le debordement : le personnage qui apparait meme "
+                                                   "sans son mot, signe de sur-apprentissage. Si aucun de vos prompts "
+                                                   "ne s'en passe, l'UI ajoute le premier prompt avec 'a person' a la "
+                                                   "place du mot. Il est affiche ci-dessous.")
+                        prompt_note = gr.Markdown("")
+                        with gr.Tabs():
+                            with gr.Tab("Apercus et sauvegardes"):
+                                with gr.Row():
+                                    save_every = gr.Number(label="Sauvegarde tous les N pas", value=250, precision=0,
+                                                           info="Preconise : 250. Les 6 derniers checkpoints sont "
+                                                                "gardes : le meilleur LoRA est souvent avant le "
+                                                                "dernier.")
+                                    sample_every = gr.Number(label="Apercus tous les N pas", value=250, precision=0,
+                                                             info="Preconise : 250, aligne sur les sauvegardes pour "
+                                                                  "pouvoir choisir le checkpoint d'apres ses "
+                                                                  "apercus.")
+                                    sample_size = gr.Dropdown([1024, 1536, 2048], value=2048,
+                                                              label="Taille des apercus",
+                                                              info="Preconise : 2048 (le modele vise 4 MP+). Erreur "
+                                                                   "memoire pendant les apercus -> 1536. 1024 = "
+                                                                   "artefacts normaux.")
+                                no_sample = gr.Checkbox(label="Desactiver les apercus", value=False,
+                                                        info="A cocher si les apercus saturent la memoire.")
+                                ctrl = gr.Textbox(label="Dossier d'images de reference (optionnel)",
+                                                  info="Vide = LoRA texte-vers-image (cas normal). Rempli = LoRA "
+                                                       "d'edition : memes noms de fichiers que le dataset, references "
+                                                       "nommees <Picture 1> dans les legendes.")
+                            with gr.Tab("Options du procede"):
+                                with gr.Row():
+                                    optimizer = gr.Dropdown(list(core.OPTIMIZERS), value=core.OPT_ADAMW,
+                                                            label="Optimiseur",
+                                                            info="adamw8bit : le taux saisi est applique tel quel. "
+                                                                 "automagic : le taux saisi est un point de depart, "
+                                                                 "l'optimiseur le regle seul sans depasser 2,5e-4.")
+                                    ema = gr.Dropdown(list(core.EMA_CHOICES), value=core.EMA_OFF,
+                                                      label="Moyenne des poids (EMA)",
+                                                      info="Lisse le LoRA sur les derniers pas : apercus et "
+                                                           "checkpoints plus stables. Preconise avec 512 px : 0,98.")
+                                with gr.Row():
+                                    adapter = gr.Dropdown(core.ADAPTERS, value=core.ADAPTER_OSTRIS,
+                                                          label="Adaptateur d'entrainement",
+                                                          info="Garde le modele distille stable pendant "
+                                                               "l'apprentissage ; jamais dans le LoRA final. Fizgig : "
+                                                               "telecharge (~150 Mo) et converti au premier job. "
+                                                               "Changez de nom de job quand vous changez "
+                                                               "d'adaptateur.")
+                                    sampler = gr.Dropdown(core.SAMPLERS, value=core.SAMPLER_EULER,
+                                                          label="Echantillonneur des apercus",
+                                                          info="N'affecte que les apercus et l'onglet Tester un "
+                                                               "LoRA, pas le LoRA. LCM : la meme graine donne une "
+                                                               "autre image qu'Euler.")
+                                likeness = gr.Checkbox(label="Optimisation de ressemblance (calendrier Fizgig)",
+                                                       value=False,
+                                                       info="Tire plus souvent le niveau de bruit le plus net, ou se "
+                                                            "forment peau, yeux et details : 17 -> 33 -> 50 % aux "
+                                                            "passages 1, 3, 5 ; 75 % aux passages 2, 4, 6 et ensuite. "
+                                                            "Pour un sujet ; inutile pour un style.")
+                            with gr.Tab("Contre le debordement"):
+                                gr.Markdown("**Contre le debordement** (le personnage qui apparait partout) : deux "
+                                            "protections d'ai-toolkit, combinables. Mesurez leur effet avec la "
+                                            "colonne Debordement de Resultats > Ressemblance.", elem_classes="h3-note")
+                                with gr.Row():
+                                    dop = gr.Checkbox(label="Preservation (DOP)", value=False,
+                                                      info="A chaque pas, le LoRA est penalise s'il change ce que le "
+                                                           "modele de base dessine pour la legende ou le mot "
+                                                           "declencheur est remplace par la classe ci-contre. Aucune "
+                                                           "image a preparer, mais chaque pas est environ 1,6 a 2 fois "
+                                                           "plus lent et demande plus de memoire : verifiez avec le "
+                                                           "Test rapide.")
+                                    dop_class = gr.Textbox(label="Classe preservee", value=core.CONTROL_SUBJECT,
+                                                           info="En anglais : ce que le mot declencheur designe sans "
+                                                                "le LoRA (a person, a man, a woman, a dog...).")
+                                with gr.Row():
+                                    reg = gr.Checkbox(label="Images de regularisation", value=False,
+                                                      info="Melange a l'entrainement des images 'a person...' "
+                                                           "produites par le modele de base (dossier "
+                                                           "<dataset>_regularisation). Pas de perte de vitesse par "
+                                                           "pas, mais elles prennent une part des pas : avec autant "
+                                                           "d'images que le dataset, doublez les pas pour garder le "
+                                                           "meme apprentissage du sujet.")
+                                    reg_weight = gr.Number(label="Poids des images de regularisation", value=1.0,
+                                                           minimum=0.1, maximum=2.0, step=0.1,
+                                                           info="Preconise : 1. Plus bas : protection plus douce.")
+                                with gr.Row(elem_classes="h3-inline"):
+                                    reg_count = gr.Number(label="Nombre d'images a generer", value=0, precision=0,
+                                                          info="0 = autant que d'images dans le dataset (60 au "
+                                                               "plus).")
+                                    reg_btn = gr.Button("Generer les images de regularisation", size="sm")
+                                reg_msg = gr.Textbox(label="Images de regularisation", interactive=False, lines=2)
+                            with gr.Tab("Pause et file"):
+                                with gr.Row(elem_classes="h3-inline"):
+                                    pause_step = gr.Number(label="Mettre en pause au pas", value=0, precision=0,
+                                                           info="0 = desactive. La pause sauvegarde l'etat, comme le "
+                                                                "bouton.")
+                                    pause_time = gr.Textbox(label="Mettre en pause a (HH:MM)", placeholder="07:30",
+                                                            info="Vide = desactive. Si l'heure est passee : demain. "
+                                                                 "Utile pour liberer le PC le matin.")
+                                    sched_btn = gr.Button("Programmer", size="sm")
+                                sched_box = gr.Textbox(label="Pause programmee", interactive=False,
+                                                       value=ORCH.schedule_text)
+                                queue_box = gr.Textbox(label="File d'attente (jobs lances l'un apres l'autre)",
+                                                       lines=3, interactive=False,
+                                                       info="Un job en erreur n'arrete pas la file. Une pause ou un "
+                                                            "arret manuel la suspend.")
+                                with gr.Row():
+                                    queue_resume = gr.Button("Reprendre la file")
+                                    queue_clear = gr.Button("Vider la file")
+                            with gr.Tab("YAML"):
+                                prev_btn = gr.Button("Voir le YAML")
+                                yaml_box = gr.Code(label="Config generee", language="yaml")
+                            with gr.Tab("Aide"):
+                                gr.Markdown(AIDE_REGLAGES)
+                    with gr.Column(scale=4, min_width=320, elem_classes="h3-sticky"):
+                        go_btn = gr.Button("Lancer / Reprendre", variant="primary", size="lg")
+                        with gr.Row():
+                            calib_btn = gr.Button("Test rapide (20 pas : vitesse + memoire)", size="sm")
+                            queue_btn = gr.Button("Ajouter a la file d'attente", size="sm")
+                        train_panel = gr.HTML(elem_classes="h3-card")
+                        calib_box = gr.Textbox(label="Calibrage (resultat du Test rapide)", lines=5, max_lines=12,
+                                               interactive=False,
+                                               info="Mesure la vitesse reelle et le pic de VRAM avec les reglages "
+                                                    "ci-dessus, puis propose des ajustements et une duree estimee.")
+                        with gr.Accordion("Journal", open=False):
+                            train_log = gr.Textbox(label="Journal de l'entrainement et du Test rapide",
+                                                   show_label=False, lines=12, max_lines=12, autoscroll=True,
+                                                   interactive=False)
 
-            with gr.Row():
-                calib_btn = gr.Button("Test rapide (20 pas : vitesse + memoire)")
-                prev_btn = gr.Button("Voir le YAML")
-                queue_btn = gr.Button("Ajouter a la file d'attente")
-                go_btn = gr.Button("Lancer / Reprendre", variant="primary")
-            train_panel = gr.HTML()
-            train_log = gr.Textbox(label="Journal de l'entrainement et du Test rapide", lines=10, max_lines=10,
-                                   autoscroll=True, interactive=False)
-            calib_box = gr.Textbox(label="Calibrage (resultat du Test rapide)", lines=6, interactive=False,
-                                   info="Mesure la vitesse reelle et le pic de VRAM avec les reglages ci-dessus, "
-                                        "puis propose des ajustements et une duree estimee.")
-
-            with gr.Accordion("Pause automatique et file d'attente", open=False):
+            # ======================================================== 3. Resultats
+            with gr.Tab("3. Resultats"):
+                with gr.Row(elem_classes="h3-inline"):
+                    job_sel = gr.Dropdown(choices=core.list_jobs(), label="Job", scale=3)
+                    refresh_btn = gr.Button("Rafraichir la liste", size="sm", scale=1, min_width=110)
+                    open_btn = gr.Button("Ouvrir le dossier du job", size="sm", scale=1, min_width=110)
+                res_sig = gr.State("")
                 with gr.Row():
-                    pause_step = gr.Number(label="Mettre en pause au pas", value=0, precision=0,
-                                           info="0 = desactive. La pause sauvegarde l'etat, comme le bouton.")
-                    pause_time = gr.Textbox(label="Mettre en pause a (HH:MM)", placeholder="07:30",
-                                            info="Vide = desactive. Si l'heure est passee : demain. "
-                                                 "Utile pour liberer le PC le matin.")
-                    sched_btn = gr.Button("Programmer")
-                sched_box = gr.Textbox(label="Pause programmee", interactive=False,
-                                       value=ORCH.schedule_text)
-                queue_box = gr.Textbox(label="File d'attente (jobs lances l'un apres l'autre)", lines=4,
-                                       interactive=False,
-                                       info="Un job en erreur n'arrete pas la file. Une pause ou un arret "
-                                            "manuel la suspend.")
+                    with gr.Column(scale=5, min_width=360):
+                        res_gallery = gr.Gallery(label="Apercus (plus recents d'abord)", columns=3, height=520)
+                        with gr.Row(elem_classes="h3-inline"):
+                            ck_sel = gr.Dropdown(choices=[], label="Checkpoint a exporter", scale=3,
+                                                 info="Le meilleur est souvent un checkpoint intermediaire : "
+                                                      "comparez-les dans l'onglet Tester un LoRA.")
+                            comfy_btn = gr.Button("Copier dans ComfyUI", size="sm", scale=1, min_width=120)
+                        with gr.Accordion("Checkpoints LoRA (.safetensors) - chemins sur le disque", open=False):
+                            res_files = gr.Textbox(label="Checkpoints LoRA (.safetensors) - chemins sur le disque",
+                                                   show_label=False, lines=5, interactive=False)
+                    with gr.Column(scale=6, min_width=380):
+                        with gr.Tabs():
+                            with gr.Tab("Perte"):
+                                loss_plot = gr.HTML()
+                                gr.Markdown("*Lecture : la courbe lissee qui devient plate indique que les pas "
+                                            "suivants apportent peu ; comparez les checkpoints reperes en vert dans "
+                                            "l'onglet Tester un LoRA. La courbe ne detecte pas le sur-apprentissage : "
+                                            "seuls des apercus varies le montrent.*", elem_classes="h3-note")
+                            with gr.Tab("Ressemblance"):
+                                likeness_plot = gr.HTML()
+                                gr.Markdown("*Chaque apercu est compare aux images du dataset (ressemblance, modele "
+                                            "DINOv2) et a son prompt sans le mot declencheur (fidelite, modele CLIP), "
+                                            "sur le processeur : la carte reste a l'entrainement. La ressemblance "
+                                            "seule recompenserait le sur-apprentissage : le checkpoint conseille est "
+                                            "le plus ressemblant parmi ceux qui suivent encore le prompt comme au "
+                                            "debut. Mesures indicatives : verifiez toujours avec Tester un LoRA. "
+                                            "Modeles telecharges au premier usage (environ 700 Mo).*",
+                                            elem_classes="h3-note")
+                            with gr.Tab("Puissance, vitesse et temperature"):
+                                perf_plot = gr.HTML()
+                                gr.Markdown("*Releve pendant l'entrainement, par tranches de 5 pas (les apercus et "
+                                            "sauvegardes sont exclus). Pour trouver la bonne limite : faites varier la "
+                                            "limite de puissance (onglet Outils) ou laissez le thermostat la faire "
+                                            "bouger, puis lisez le tableau. Le seuil conseille est la puissance la "
+                                            "plus basse qui reste a moins de 3 % de la vitesse maximale ; Wh par pas "
+                                            "indique l'energie pour un meme travail.*", elem_classes="h3-note")
+
+            # ======================================================== 4. Tester un LoRA
+            with gr.Tab("4. Tester un LoRA"):
                 with gr.Row():
-                    queue_resume = gr.Button("Reprendre la file")
-                    queue_clear = gr.Button("Vider la file")
-            yaml_box = gr.Code(label="Config generee", language="yaml")
+                    with gr.Column(scale=4, min_width=340):
+                        gr.Markdown(
+                            "Genere les memes prompts avec plusieurs checkpoints (meme graine) pour les comparer. "
+                            "Chaque checkpoint est un job a part qui recharge le modele : comptez plusieurs minutes "
+                            "par checkpoint. A lancer quand aucun entrainement ne tourne, ou a mettre en file. "
+                            "*Experimental : repose sur un job ai-toolkit a 0 pas d'entrainement.*",
+                            elem_classes="h3-note")
+                        with gr.Row(elem_classes="h3-inline"):
+                            test_job = gr.Dropdown(choices=core.list_jobs(), label="Job", scale=3)
+                            test_refresh = gr.Button("Rafraichir", size="sm", scale=1, min_width=90)
+                        test_cks = gr.CheckboxGroup(choices=[], label="Checkpoints a comparer",
+                                                    info="Preconise : 2 a 4 checkpoints espaces (ex. 1000, 1500, "
+                                                         "2000).")
+                        test_prompts = gr.Textbox(label="Prompts de test (un par ligne)", lines=3,
+                                                  info="Preconise : un prompt proche du dataset, un tres different, "
+                                                       "et un SANS le mot declencheur (il ne doit pas faire "
+                                                       "apparaitre le sujet).")
+                        with gr.Row():
+                            test_size = gr.Dropdown([1024, 1536, 2048], value=1536, label="Taille",
+                                                    info="Preconise : 1536 pour comparer vite, 2048 pour juger la "
+                                                         "qualite finale.")
+                            test_seed = gr.Number(label="Graine", value=42, precision=0,
+                                                  info="Identique pour tous les checkpoints : seules les differences "
+                                                       "dues au LoRA restent visibles.")
+                        test_btn = gr.Button("Lancer les tests", variant="primary")
+                        test_panel = gr.HTML(elem_classes="h3-card")
+                        with gr.Accordion("Journal", open=False):
+                            test_log = gr.Textbox(label="Journal des tests", show_label=False, lines=8, max_lines=8,
+                                                  autoscroll=True, interactive=False)
+                    with gr.Column(scale=7, min_width=380):
+                        test_sig = gr.State("")
+                        test_gallery = gr.Gallery(label="Resultats (legende : checkpoint | prompt)", columns=3,
+                                                  height=640)
 
-        # ============================================================ 3. Resultats
-        with gr.Tab("3. Resultats"):
-            with gr.Row():
-                job_sel = gr.Dropdown(choices=core.list_jobs(), label="Job")
-                refresh_btn = gr.Button("Rafraichir la liste")
-                open_btn = gr.Button("Ouvrir le dossier du job")
-            gr.Markdown("Apercus, courbe et checkpoints du job selectionne se mettent a jour tout seuls (5 s).")
-            res_sig = gr.State("")
-            res_gallery = gr.Gallery(label="Apercus (plus recents d'abord)", columns=4, height=460)
-            with gr.Tabs():
-                with gr.Tab("Perte"):
-                    loss_plot = gr.HTML()
-                    gr.Markdown("*Lecture : la courbe lissee qui devient plate indique que les pas suivants "
-                                "apportent peu ; comparez les checkpoints reperes en vert dans l'onglet Tester un "
-                                "LoRA. La courbe ne detecte pas le sur-apprentissage : seuls des apercus varies "
-                                "le montrent.*")
-                with gr.Tab("Ressemblance"):
-                    likeness_plot = gr.HTML()
-                    gr.Markdown("*Chaque apercu est compare aux images du dataset (ressemblance, modele DINOv2) et "
-                                "a son prompt sans le mot declencheur (fidelite, modele CLIP), sur le processeur : "
-                                "la carte reste a l'entrainement. La ressemblance seule recompenserait le "
-                                "sur-apprentissage : le checkpoint conseille est le plus ressemblant parmi ceux "
-                                "qui suivent encore le prompt comme au debut. Mesures indicatives : verifiez "
-                                "toujours avec Tester un LoRA. Modeles telecharges au premier usage (environ "
-                                "700 Mo).*")
-                with gr.Tab("Puissance, vitesse et temperature"):
-                    perf_plot = gr.HTML()
-                    gr.Markdown("*Releve pendant l'entrainement, par tranches de 5 pas (les apercus et sauvegardes "
-                                "sont exclus). Pour trouver la bonne limite : faites varier la limite de puissance "
-                                "(onglet Outils) ou laissez le thermostat la faire bouger, puis lisez le tableau. Le "
-                                "seuil conseille est la puissance la plus basse qui reste a moins de 3 % de la "
-                                "vitesse maximale ; Wh par pas indique l'energie pour un meme travail.*")
-            res_files = gr.Textbox(label="Checkpoints LoRA (.safetensors) - chemins sur le disque",
-                                   lines=5, interactive=False)
-            with gr.Row():
-                ck_sel = gr.Dropdown(choices=[], label="Checkpoint a exporter",
-                                     info="Le meilleur est souvent un checkpoint intermediaire : "
-                                          "comparez-les dans l'onglet Tester un LoRA.")
-                comfy_btn = gr.Button("Copier dans ComfyUI")
-
-        # ============================================================ 4. Tester un LoRA
-        with gr.Tab("4. Tester un LoRA"):
-            gr.Markdown(
-                "Genere les memes prompts avec plusieurs checkpoints (meme graine) pour les comparer. "
-                "Chaque checkpoint est un job a part qui recharge le modele : comptez plusieurs minutes "
-                "par checkpoint. A lancer quand aucun entrainement ne tourne, ou a mettre en file. "
-                "*Experimental : repose sur un job ai-toolkit a 0 pas d'entrainement.*")
-            with gr.Row():
-                test_job = gr.Dropdown(choices=core.list_jobs(), label="Job")
-                test_refresh = gr.Button("Rafraichir")
-            test_cks = gr.CheckboxGroup(choices=[], label="Checkpoints a comparer",
-                                        info="Preconise : 2 a 4 checkpoints espaces (ex. 1000, 1500, 2000).")
-            test_prompts = gr.Textbox(label="Prompts de test (un par ligne)", lines=3,
-                                      info="Preconise : un prompt proche du dataset, un tres different, "
-                                           "et un SANS le mot declencheur (il ne doit pas faire apparaitre le sujet).")
-            with gr.Row():
-                test_size = gr.Dropdown([1024, 1536, 2048], value=1536, label="Taille",
-                                        info="Preconise : 1536 pour comparer vite, 2048 pour juger la qualite finale.")
-                test_seed = gr.Number(label="Graine", value=42, precision=0,
-                                      info="Identique pour tous les checkpoints : seules les differences "
-                                           "dues au LoRA restent visibles.")
-                test_btn = gr.Button("Lancer les tests", variant="primary")
-            test_panel = gr.HTML()
-            test_log = gr.Textbox(label="Journal des tests", lines=8, max_lines=8, autoscroll=True, interactive=False)
-            test_sig = gr.State("")
-            test_gallery = gr.Gallery(label="Resultats (legende : checkpoint | prompt)", columns=4, height=520)
-
-        # ============================================================ Modeles
-        with gr.Tab("Modeles"):
-            gr.Markdown("Optionnel : sinon les poids se telechargent au premier entrainement. "
-                        "Une coupure reprend automatiquement ; relancer reprend aussi le fichier partiel.")
-            dl_choice = gr.Radio(["int8", "w4a8", "les deux"], value="int8", label="Transformer",
-                                 info="Preconise : int8 (correspond au preset par defaut). "
-                                      "Prevoir 35 a 50 Go libres selon le choix.")
-            dl_btn = gr.Button("Telecharger", variant="primary")
-            dl_panel = gr.HTML()
-            dl_log = gr.Textbox(label="Journal du telechargement", lines=8, max_lines=8, autoscroll=True,
-                                interactive=False)
-            dl_state = gr.Textbox(label="Etat des fichiers", lines=5, interactive=False, value=core.models_state)
-            dl_refresh = gr.Button("Rafraichir l'etat")
-
-        # ============================================================ Outils
-        with gr.Tab("Outils"):
-            gr.Markdown("### Notifications")
-            with gr.Row():
-                opt_sound = gr.Checkbox(label="Son a la fin d'un job ou en cas d'erreur", value=_cfg["sound"])
-                opt_awake = gr.Checkbox(label="Empecher la mise en veille pendant un job", value=_cfg["keep_awake"],
-                                        info="Preconise : coche. L'ecran peut s'eteindre, le PC reste actif. "
-                                             "Sans effet si vous fermez le capot d'un portable.")
-                opt_like = gr.Checkbox(label="Mesurer la ressemblance des apercus",
-                                       value=lambda: bool(core.load_settings().get("likeness_on", True)),
-                                       info="Onglet Resultats > Ressemblance. Calcul sur le processeur ; modeles "
-                                            "telecharges au premier usage (environ 700 Mo).")
-                opt_leakpause = gr.Checkbox(label="Pause automatique si le debordement devient fort",
-                                            value=lambda: bool(core.load_settings().get("leak_pause", False)),
-                                            info="Le personnage apparait sur le prompt temoin, sans son mot : "
-                                                 "pause avec sauvegarde. Sinon, simple notification.")
-            opt_ntfy = gr.Textbox(label="Notification sur telephone : sujet ntfy.sh (optionnel)",
-                                  value=_cfg["ntfy_topic"],
-                                  info="Installez l'application ntfy, abonnez-vous a un sujet au nom long et "
-                                       "difficile a deviner, et saisissez-le ici. Le nom du job transite par le "
-                                       "service public ntfy.sh ; laissez vide pour ne rien envoyer.")
-            gr.Markdown("### Temperature et puissance du GPU")
-            with gr.Row():
-                opt_talert = gr.Number(label="Alerte de temperature (°C)", value=_cfg["temp_alert"], precision=0,
-                                       info="Preconise : 5 C sous la limite thermique de la carte (78 pour une limite "
-                                            "a 83). Notification + temperature en rouge. 0 = desactive.")
-                opt_tpause = gr.Number(label="Pause automatique (°C)", value=_cfg["temp_pause"], precision=0,
-                                       info="Preconise : 88. Au-dela pendant 60 s : pause avec sauvegarde "
-                                            "(filet de securite, pas une regulation). 0 = desactive.")
-                opt_watts = gr.Number(label="Limite de puissance pendant les jobs (W)",
-                                      value=_cfg["power_limit_w"], precision=0,
-                                      info="0 = ne pas toucher. Preconise sur 3090 si elle chauffe : 250 a 280 "
-                                           "(la plage de votre carte s'affiche dessous). Cliquez Enregistrer : "
-                                           "appliquee tout de suite si un job tourne, sinon au prochain "
-                                           "lancement. Windows peut demander une confirmation.")
-            with gr.Row():
-                opt_thermo = gr.Checkbox(label="Thermostat : ajuster la puissance pour tenir une temperature",
-                                         value=_cfg["thermo_on"],
-                                         info="Toutes les 45 s pendant un job : baisse la limite de 10 a 30 W si la "
-                                              "carte depasse la cible, la remonte de 10 W si elle est 3 °C en "
-                                              "dessous. Necessite 2_LANCER_UI_ADMIN.bat.")
-                opt_thtarget = gr.Number(label="Temperature cible (°C)", value=_cfg["thermo_target"], precision=0,
-                                         info="Preconise : 10 °C sous la limite thermique de la carte "
-                                              "(72 pour une limite a 83).")
-                opt_thmin = gr.Number(label="Puissance plancher (W)", value=_cfg["thermo_min_w"], precision=0,
-                                      info="Preconise : 150. Le thermostat ne descend jamais en dessous. Son "
-                                           "plafond est la limite de puissance ci-dessus (ou celle d'origine si 0).")
-            with gr.Row():
-                opt_sweep = gr.Checkbox(label="Balayage de puissance au debut de l'entrainement",
-                                        value=lambda: bool(core.load_settings().get("sweep_on", False)),
-                                        info="Une fois par job : la limite descend par paliers de 30 pas, puis le "
-                                             "seuil conseille (le plus bas a moins de 3 % de la vitesse maximale) "
-                                             "est applique et enregistre comme limite. Necessite "
-                                             "2_LANCER_UI_ADMIN.bat. Resultat dans Resultats > Puissance.")
-                opt_sweepmin = gr.Number(label="Plancher du balayage (W)", precision=0,
-                                         value=lambda: core.load_settings().get("sweep_min_w", 200),
-                                         info="Preconise : 200 sur une 3090. Le balayage part de la limite "
-                                              "ci-dessus (ou celle d'origine si 0).")
-                opt_sweepstep = gr.Number(label="Ecart entre paliers (W)", precision=0,
-                                          value=lambda: core.load_settings().get("sweep_step_w", 30),
-                                          info="Preconise : 30 (environ 5 paliers, 6 a 8 minutes sur une 3090).")
-            temp_save = gr.Button("Enregistrer temperature, puissance et thermostat", variant="primary")
-            thermo_box = gr.Textbox(label="Thermostat (etat et derniers ajustements)", interactive=False,
-                                    value=ORCH.thermo_text, lines=4,
-                                    info="Reflete les reglages ENREGISTRES : une case cochee ou une valeur modifiee "
-                                         "ne compte qu'apres un clic sur Enregistrer (cocher la case l'enregistre "
-                                         "automatiquement).")
-            power_box = gr.Textbox(label="Puissance", interactive=False, value=core.power_text, lines=2)
-            with gr.Row():
-                power_apply = gr.Button("Appliquer maintenant la valeur saisie")
-                power_reset = gr.Button("Retablir la limite d'origine")
-            gr.Markdown("La vitesse des ventilateurs n'est pas pilotee par cette UI (risque en cas de plantage) : "
-                        "reglez une courbe dans MSI Afterburner ou FanControl. Sans droits administrateur, la limite "
-                        "de puissance reste en place apres le job : utilisez 'Retablir la limite d'origine' "
-                        "ou redemarrez le PC.")
-            gr.Markdown("### Cout de l'electricite (GPU)")
-            with gr.Row():
-                opt_price = gr.Number(label="Prix du kWh", value=lambda: core.load_settings().get("kwh_price") or 0, minimum=0,
-                                      info="Le montant de votre facture d'electricite, abonnement exclu. "
-                                           "0 = afficher seulement les kWh.")
-                opt_cur = gr.Dropdown([(f"{c} ({v[0]})", c) for c, v in core.CURRENCIES.items()],
-                                      value=lambda: core.currency_for(code), label="Monnaie")
-            gr.Markdown("Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son cout "
-                        "et le cout projete a la fin s'affichent a cote du temps ecoule, du temps restant et de "
-                        "la vitesse. Seule la carte graphique est comptee : processeur, ecran et reste du PC "
-                        "s'y ajoutent. Enregistrez avec le bouton Enregistrer ci-dessous.")
-            gr.Markdown("### ComfyUI")
-            opt_comfy = gr.Textbox(label="Dossier 'loras' de ComfyUI", value=_cfg["comfy_loras_dir"],
-                                   placeholder="D:\\ComfyUI\\models\\loras",
-                                   info="Utilise par le bouton 'Copier dans ComfyUI' de l'onglet Resultats.")
-            with gr.Row():
-                tools_save = gr.Button("Enregistrer", variant="primary")
-                tools_test = gr.Button("Tester la notification")
-            gr.Markdown("### Mises a jour")
-            upd_box = gr.Textbox(label="Versions", lines=3, interactive=False)
-            upd_btn = gr.Button("Verifier les mises a jour")
-            gr.Markdown("### Version d'ai-toolkit")
-            ver_box = gr.Textbox(label="Version", lines=2, interactive=False, value=core.version_text)
-            with gr.Row():
-                pin_btn = gr.Button("Figer la version actuelle")
-                unpin_btn = gr.Button("Defiger")
-            gr.Markdown("Preconise : figer apres un premier entrainement reussi. Une version figee n'est plus "
-                        "modifiee par 3_METTRE_A_JOUR.bat tant que vous ne la defigez pas.")
+            # ======================================================== Outils
+            with gr.Tab("Outils"):
+                with gr.Row(elem_classes="h3-inline h3-toolbar"):
+                    gr.Markdown("Les reglages de cet onglet s'appliquent apres **Enregistrer**.",
+                                elem_classes="h3-note")
+                    tools_save = gr.Button("Enregistrer", variant="primary", size="sm", scale=0, min_width=130)
+                    tools_test = gr.Button("Tester la notification", size="sm", scale=0, min_width=150)
+                with gr.Tabs():
+                    with gr.Tab("General"):
+                        with gr.Row():
+                            opt_sound = gr.Checkbox(label="Son a la fin d'un job ou en cas d'erreur",
+                                                    value=_cfg["sound"])
+                            opt_awake = gr.Checkbox(label="Empecher la mise en veille pendant un job",
+                                                    value=_cfg["keep_awake"],
+                                                    info="Preconise : coche. L'ecran peut s'eteindre, le PC reste "
+                                                         "actif. Sans effet si vous fermez le capot d'un portable.")
+                        with gr.Row():
+                            opt_like = gr.Checkbox(label="Mesurer la ressemblance des apercus",
+                                                   value=lambda: bool(core.load_settings().get("likeness_on", True)),
+                                                   info="Onglet Resultats > Ressemblance. Calcul sur le processeur ; "
+                                                        "modeles telecharges au premier usage (environ 700 Mo).")
+                            opt_leakpause = gr.Checkbox(label="Pause automatique si le debordement devient fort",
+                                                        value=lambda: bool(core.load_settings().get("leak_pause",
+                                                                                                    False)),
+                                                        info="Le personnage apparait sur le prompt temoin, sans son "
+                                                             "mot : pause avec sauvegarde. Sinon, simple "
+                                                             "notification.")
+                        opt_ntfy = gr.Textbox(label="Notification sur telephone : sujet ntfy.sh (optionnel)",
+                                              value=_cfg["ntfy_topic"],
+                                              info="Installez l'application ntfy, abonnez-vous a un sujet au nom long "
+                                                   "et difficile a deviner, et saisissez-le ici. Le nom du job "
+                                                   "transite par le service public ntfy.sh ; laissez vide pour ne "
+                                                   "rien envoyer.")
+                        opt_comfy = gr.Textbox(label="Dossier 'loras' de ComfyUI", value=_cfg["comfy_loras_dir"],
+                                               placeholder="D:\\ComfyUI\\models\\loras",
+                                               info="Utilise par le bouton 'Copier dans ComfyUI' de l'onglet "
+                                                    "Resultats.")
+                    with gr.Tab("GPU"):
+                        with gr.Row():
+                            opt_talert = gr.Number(label="Alerte de temperature (°C)", value=_cfg["temp_alert"],
+                                                   precision=0,
+                                                   info="Preconise : 5 C sous la limite thermique de la carte (78 "
+                                                        "pour une limite a 83). Notification + temperature en "
+                                                        "rouge. 0 = desactive.")
+                            opt_tpause = gr.Number(label="Pause automatique (°C)", value=_cfg["temp_pause"],
+                                                   precision=0,
+                                                   info="Preconise : 88. Au-dela pendant 60 s : pause avec "
+                                                        "sauvegarde (filet de securite, pas une regulation). 0 = "
+                                                        "desactive.")
+                            opt_watts = gr.Number(label="Limite de puissance pendant les jobs (W)",
+                                                  value=_cfg["power_limit_w"], precision=0,
+                                                  info="0 = ne pas toucher. Preconise sur 3090 si elle chauffe : 250 "
+                                                       "a 280 (la plage de votre carte s'affiche dessous). Cliquez "
+                                                       "Enregistrer : appliquee tout de suite si un job tourne, sinon "
+                                                       "au prochain lancement. Windows peut demander une "
+                                                       "confirmation.")
+                        with gr.Row():
+                            opt_thermo = gr.Checkbox(label="Thermostat : ajuster la puissance pour tenir une "
+                                                           "temperature", value=_cfg["thermo_on"],
+                                                     info="Toutes les 45 s pendant un job : baisse la limite de 10 a "
+                                                          "30 W si la carte depasse la cible, la remonte de 10 W si "
+                                                          "elle est 3 °C en dessous. Necessite "
+                                                          "2_LANCER_UI_ADMIN.bat.")
+                            opt_thtarget = gr.Number(label="Temperature cible (°C)", value=_cfg["thermo_target"],
+                                                     precision=0,
+                                                     info="Preconise : 10 °C sous la limite thermique de la carte "
+                                                          "(72 pour une limite a 83).")
+                            opt_thmin = gr.Number(label="Puissance plancher (W)", value=_cfg["thermo_min_w"],
+                                                  precision=0,
+                                                  info="Preconise : 150. Le thermostat ne descend jamais en dessous. "
+                                                       "Son plafond est la limite de puissance ci-dessus (ou celle "
+                                                       "d'origine si 0).")
+                        with gr.Row():
+                            opt_sweep = gr.Checkbox(label="Balayage de puissance au debut de l'entrainement",
+                                                    value=lambda: bool(core.load_settings().get("sweep_on", False)),
+                                                    info="Une fois par job : la limite descend par paliers de 30 pas, "
+                                                         "puis le seuil conseille (le plus bas a moins de 3 % de la "
+                                                         "vitesse maximale) est applique et enregistre comme limite. "
+                                                         "Necessite 2_LANCER_UI_ADMIN.bat. Resultat dans Resultats > "
+                                                         "Puissance.")
+                            opt_sweepmin = gr.Number(label="Plancher du balayage (W)", precision=0,
+                                                     value=lambda: core.load_settings().get("sweep_min_w", 200),
+                                                     info="Preconise : 200 sur une 3090. Le balayage part de la "
+                                                          "limite ci-dessus (ou celle d'origine si 0).")
+                            opt_sweepstep = gr.Number(label="Ecart entre paliers (W)", precision=0,
+                                                      value=lambda: core.load_settings().get("sweep_step_w", 30),
+                                                      info="Preconise : 30 (environ 5 paliers, 6 a 8 minutes sur une "
+                                                           "3090).")
+                        # meme action que le bouton Enregistrer de l'onglet : garde pour le cablage, masque
+                        temp_save = gr.Button("Enregistrer temperature, puissance et thermostat", visible=False)
+                        with gr.Row():
+                            thermo_box = gr.Textbox(label="Thermostat (etat et derniers ajustements)",
+                                                    interactive=False, value=ORCH.thermo_text, lines=4,
+                                                    info="Reflete les reglages ENREGISTRES : une case cochee ou une "
+                                                         "valeur modifiee ne compte qu'apres un clic sur Enregistrer "
+                                                         "(cocher la case l'enregistre automatiquement).")
+                            power_box = gr.Textbox(label="Puissance", interactive=False, value=core.power_text,
+                                                   lines=4)
+                        with gr.Row():
+                            power_apply = gr.Button("Appliquer maintenant la valeur saisie", size="sm")
+                            power_reset = gr.Button("Retablir la limite d'origine", size="sm")
+                        gr.Markdown("La vitesse des ventilateurs n'est pas pilotee par cette UI (risque en cas de "
+                                    "plantage) : reglez une courbe dans MSI Afterburner ou FanControl. Sans droits "
+                                    "administrateur, la limite de puissance reste en place apres le job : utilisez "
+                                    "'Retablir la limite d'origine' ou redemarrez le PC.", elem_classes="h3-note")
+                    with gr.Tab("Electricite"):
+                        with gr.Row():
+                            opt_price = gr.Number(label="Prix du kWh",
+                                                  value=lambda: core.load_settings().get("kwh_price") or 0, minimum=0,
+                                                  info="Le montant de votre facture d'electricite, abonnement exclu. "
+                                                       "0 = afficher seulement les kWh.")
+                            opt_cur = gr.Dropdown([(f"{c} ({v[0]})", c) for c, v in core.CURRENCIES.items()],
+                                                  value=lambda: core.currency_for(code), label="Monnaie")
+                        gr.Markdown("Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son "
+                                    "cout et le cout projete a la fin s'affichent a cote du temps ecoule, du temps "
+                                    "restant et de la vitesse. Seule la carte graphique est comptee : processeur, "
+                                    "ecran et reste du PC s'y ajoutent. Enregistrez avec le bouton Enregistrer "
+                                    "en haut de l'onglet.", elem_classes="h3-note")
+                    with gr.Tab("Modeles"):
+                        gr.Markdown("Optionnel : sinon les poids se telechargent au premier entrainement. "
+                                    "Une coupure reprend automatiquement ; relancer reprend aussi le fichier "
+                                    "partiel.", elem_classes="h3-note")
+                        with gr.Row(elem_classes="h3-inline"):
+                            dl_choice = gr.Radio(["int8", "w4a8", "les deux"], value="int8", label="Transformer",
+                                                 scale=3,
+                                                 info="Preconise : int8 (correspond au preset par defaut). "
+                                                      "Prevoir 35 a 50 Go libres selon le choix.")
+                            dl_btn = gr.Button("Telecharger", variant="primary", size="sm", scale=1)
+                        dl_panel = gr.HTML(elem_classes="h3-card")
+                        with gr.Accordion("Journal", open=False):
+                            dl_log = gr.Textbox(label="Journal du telechargement", show_label=False, lines=8,
+                                                max_lines=8, autoscroll=True, interactive=False)
+                        dl_state = gr.Textbox(label="Etat des fichiers", lines=5, interactive=False,
+                                              value=core.models_state)
+                        dl_refresh = gr.Button("Rafraichir l'etat", size="sm")
+                    with gr.Tab("Versions"):
+                        with gr.Row():
+                            with gr.Column():
+                                upd_box = gr.Textbox(label="Versions", lines=4, interactive=False)
+                                upd_btn = gr.Button("Verifier les mises a jour", size="sm")
+                            with gr.Column():
+                                ver_box = gr.Textbox(label="Version d'ai-toolkit", lines=4, interactive=False,
+                                                     value=core.version_text)
+                                with gr.Row():
+                                    pin_btn = gr.Button("Figer la version actuelle", size="sm")
+                                    unpin_btn = gr.Button("Defiger", size="sm")
+                        gr.Markdown("Preconise : figer apres un premier entrainement reussi. Une version figee n'est "
+                                    "plus modifiee par 3_METTRE_A_JOUR.bat tant que vous ne la defigez pas.",
+                                    elem_classes="h3-note")
 
         cfg_inputs = [job_name, ds_folder, ctrl, preset, offload, resol, steps, lr, rank,
                       trigger, save_every, sample_every, sample_size, no_sample, prompts, w4a8_fix,
@@ -1487,8 +1705,10 @@ def main():
 
     for code, name in i18n.LANGS:
         print(f"  interface {name} ...", flush=True)
+        # ssr_mode=False : rendu dans le navigateur, jamais de serveur Node.js
         app = gr.mount_gradio_app(app, build(code).queue(), path=f"/{code}", show_error=True,
-                                  allowed_paths=[core.ROOT], js=i18n.RESTORE_TAB_JS)
+                                  allowed_paths=[core.ROOT], js=i18n.RESTORE_TAB_JS, ssr_mode=False,
+                                  theme=UI_THEME, css=UI_CSS, head=UI_HEAD, footer_links=[])
     url = "http://127.0.0.1:7860/"
     print(f"UI : {url}   ({core.MODELS})", flush=True)
     if os.environ.get("H3_NO_BROWSER") != "1":

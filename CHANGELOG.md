@@ -3,6 +3,19 @@
 Versions follow `MAJOR.MINOR.PATCH`. The installed version is shown next to the title of the interface
 and in **Tools > Updates**, which also tells when a newer version is published.
 
+## 0.10.0 — 2026-11-18
+
+### Interface
+- Redesigned, more compact interface (still pure Python/Gradio, no Node.js or npm; server-side rendering
+  disabled): light and dark theme following the system, compact header and status bar with the Pause,
+  Preview and Stop buttons on one line, pages about half as long.
+- Two-column layouts: on the Training tab the essential settings are on the left and the Start / Quick
+  test / progress / calibration column stays visible on the right; advanced settings moved to sub-tabs
+  (previews and saves, process options, against bleeding, pause and queue, YAML, help).
+- Dataset tools in sub-tabs (captioning, caption fix, audit, cropping, files, help); Models merged into
+  Tools, which is split into General, GPU, Electricity, Models and Versions.
+- Field help reduced to one line, with the full text as a tooltip and while typing; logs folded.
+
 ## 0.9.0 — 2026-11-18
 
 First numbered version. Everything below the training engine is experimental: tested on an RTX 3090

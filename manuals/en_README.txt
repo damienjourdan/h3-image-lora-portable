@@ -23,7 +23,7 @@ ORDER OF USE
   2_LANCER_UI.bat          Opens the Python UI (Gradio): http://127.0.0.1:7860
   3_METTRE_A_JOUR.bat      git pull + dependency resync
   4_TELECHARGER_MODELE.bat Optional: pre-downloads the weights (also possible
-                           in the "Models" tab of the UI)
+                           in Tools > Models in the UI)
   2_LANCER_UI_ADMIN.bat    Optional: same UI with administrator rights, to
                            change the GPU power limit without a Windows
                            confirmation prompt.
@@ -55,27 +55,28 @@ WHAT LIVES WHERE
   paths; the models and the uv cache avoid downloading everything again).
 
 THE UI (tabs)
-  1. Dataset        folder, adding images, caption check,
-                    AUTO-CAPTIONING (Qwen3-VL) of images without .txt,
-                    cropping out watermarks and text.
-  2. Training       settings with help and recommended values; training
-                    processes; QUICK TEST (20 steps): measures speed and
-                    memory, suggests settings and a duration; settings saved
-                    per job; queue; automatic pause at a step or a time.
-  3. Results        previews, LOSS CURVE, checkpoints, copy to ComfyUI.
+  At the top: current job, phase, progress, GPU memory and temperature,
+  with the Pause, Preview now and Stop buttons. Field help fits on one
+  line: hover it to read the full text (it also shows while typing).
+  Light or dark theme, following the system.
+  1. Dataset        left: folder, analysis, status, preview; right, in
+                    sub-tabs: Captioning (Qwen3-VL), Caption fix, Audit,
+                    Watermark cropping, Files, Help.
+  2. Training       left: essential settings (job, process, preset,
+                    resolutions, steps, prompts), then in sub-tabs: Previews
+                    and saves, Process options, Against bleeding, Pause and
+                    queue, YAML, Help. Right, always visible: Start, QUICK
+                    TEST (20 steps), queue, tracking, calibration and log.
+  3. Results        previews on the left; Loss, Likeness and
+                    Power/speed/temperature on the right; ComfyUI export.
                     Automatic refresh every 5 s.
-  4. Test a LoRA    same prompts and same seed on several checkpoints, to
-                    pick the best one (experimental).
-  Models            pre-download + file status.
-  Tools             notifications (sound, phone via ntfy.sh), sleep
-                    prevention, GPU temperature and power, ComfyUI folder,
-                    pin / unpin the ai-toolkit version.
-  At the top: current job, phase, progress, VRAM / RAM / GPU temperature
-  monitor, and the Pause, Preview now and Stop buttons.
-  Each tab has its own tracking and log: captioning in Dataset, training
-  and Quick test in Training, tests in Test a LoRA, downloads in Models.
-  Tracking shows the steps, an animation while the duration cannot be
-  measured, then a bar with the time left.
+  4. Test a LoRA    same prompts and seed on several checkpoints (settings on
+                    the left, results on the right; experimental).
+  Tools             sub-tabs General (notifications, sleep prevention,
+                    likeness, ComfyUI), GPU (temperature, power, thermostat,
+                    sweep), Electricity, Models (pre-download), Versions.
+                    Save button at the top.
+  Each tab has its own tracking; logs are folded ("Log").
 
 TRAINING PROCESSES (Training tab)
   Choosing a process fills in the fields; everything stays editable.
@@ -263,7 +264,7 @@ BLEEDING: THE CONTROL PROMPT
   and pauses if the matching box is ticked in Tools.
 
 BLEEDING: THE TWO PROTECTIONS
-  In Process options, section "Against bleeding", two ai-toolkit
+  Training tab, "Against bleeding" sub-tab: two ai-toolkit
   protections, which can be combined:
   - Preservation (DOP): at each step, the LoRA is penalized if it changes
     what the base model draws when the trigger word is replaced by the

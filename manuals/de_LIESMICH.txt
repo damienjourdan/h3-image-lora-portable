@@ -23,7 +23,7 @@ REIHENFOLGE
   2_LANCER_UI.bat          Öffnet die Python-UI (Gradio): http://127.0.0.1:7860
   3_METTRE_A_JOUR.bat      git pull + Abgleich der Abhängigkeiten
   4_TELECHARGER_MODELE.bat Optional: lädt die Gewichte vorab herunter (auch im
-                           Tab „Modelle" der UI möglich)
+                           Tab Werkzeuge > Modelle möglich)
   2_LANCER_UI_ADMIN.bat    Optional: dieselbe UI mit Administratorrechten, um
                            das GPU-Leistungslimit ohne Windows-Bestätigung zu
                            ändern.
@@ -57,28 +57,30 @@ WAS WO LIEGT
   Pfade; Modelle und uv-Cache ersparen das erneute Herunterladen).
 
 DIE UI (Tabs)
-  1. Dataset        Ordner, Bilder hinzufügen, Prüfung der Beschreibungen,
-                    AUTOMATISCHE BESCHREIBUNG (Qwen3-VL) von Bildern ohne
-                    .txt, Wegschneiden von Wasserzeichen und Texten.
-  2. Training       Einstellungen mit Hilfe und Empfehlungen;
-                    Trainingsverfahren; SCHNELLTEST (20 Schritte): misst
-                    Tempo und Speicher, schlägt Einstellungen und Dauer vor;
-                    Einstellungen pro Job gespeichert; Warteschlange;
-                    automatische Pause bei einem Schritt oder einer Uhrzeit.
-  3. Ergebnisse     Vorschauen, LOSS-KURVE, Checkpoints, Kopie nach ComfyUI.
+  Oben: laufender Job, Phase, Fortschritt, GPU-Speicher und -Temperatur,
+  mit den Schaltflächen Pause, Vorschau jetzt und Stoppen. Die Hilfen der
+  Felder passen in eine Zeile: mit der Maus darüberfahren, um den ganzen
+  Text zu lesen (er erscheint auch beim Tippen). Helles oder dunkles
+  Design je nach System.
+  1. Dataset        links: Ordner, Analyse, Status, Vorschau; rechts in
+                    Unter-Tabs: Beschreibung (Qwen3-VL), Korrektur, Audit,
+                    Zuschnitt von Wasserzeichen, Dateien, Hilfe.
+  2. Training       links: wesentliche Einstellungen (Job, Prozess, Preset,
+                    Auflösungen, Schritte, Prompts), dann in Unter-Tabs:
+                    Vorschauen und Speichern, Prozessoptionen, Gegen
+                    Durchschlagen, Pause und Warteschlange, YAML, Hilfe.
+                    Rechts, immer sichtbar: Starten, SCHNELLTEST (20
+                    Schritte), Warteschlange, Verlauf, Kalibrierung, Protokoll.
+  3. Ergebnisse     Vorschauen links; rechts Verlust, Ähnlichkeit,
+                    Leistung/Tempo/Temperatur; Export nach ComfyUI.
                     Automatische Aktualisierung alle 5 s.
-  4. LoRA testen    gleiche Prompts und gleicher Seed auf mehreren
-                    Checkpoints, um den besten zu wählen (experimentell).
-  Modelle           Vorab-Download + Dateistatus.
-  Werkzeuge         Benachrichtigungen (Ton, Telefon über ntfy.sh),
-                    Ruhezustand verhindern, GPU-Temperatur und -Leistung,
-                    ComfyUI-Ordner, ai-toolkit-Version fixieren / freigeben.
-  Oben: aktueller Job, Phase, Fortschritt, Anzeige von VRAM / RAM /
-  GPU-Temperatur und die Schaltflächen Pause, Vorschau jetzt, Stoppen.
-  Jeder Tab hat eigene Verfolgung und eigenes Protokoll: Beschreibung in
-  Dataset, Training und Schnelltest in Training, Tests in LoRA testen,
-  Downloads in Modelle. Die Verfolgung zeigt die Schritte, eine Animation,
-  solange die Dauer nicht messbar ist, dann einen Balken mit Restzeit.
+  4. LoRA testen    gleiche Prompts und Seed auf mehreren Checkpoints
+                    (Einstellungen links, Ergebnisse rechts; experimentell).
+  Werkzeuge         Unter-Tabs Allgemein (Benachrichtigungen, Standby-Sperre,
+                    Ähnlichkeit, ComfyUI), GPU (Temperatur, Leistung,
+                    Thermostat, Leistungstest), Strom, Modelle (Vorab-Download),
+                    Versionen. Schaltfläche Speichern oben.
+  Jeder Tab hat seinen eigenen Verlauf; Protokolle sind eingeklappt.
 
 TRAININGSVERFAHREN (Tab Training)
   Die Wahl eines Verfahrens füllt die Felder aus; alles bleibt änderbar.
@@ -280,7 +282,7 @@ DURCHSCHLAGEN: DER KONTROLL-PROMPT
   Benachrichtigung und pausiert, wenn das Kästchen in Werkzeuge angehakt ist.
 
 DURCHSCHLAGEN: DIE ZWEI SCHUTZFUNKTIONEN
-  In den Prozessoptionen, Abschnitt „Gegen Durchschlagen“, zwei
+  Tab Training, Unter-Tab „Gegen Durchschlagen“: zwei
   kombinierbare Schutzfunktionen von ai-toolkit:
   - Erhaltung (DOP): bei jedem Schritt wird das LoRA bestraft, wenn es
     verändert, was das Basismodell zeichnet, wenn das Triggerwort durch die

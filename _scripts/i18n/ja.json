@@ -637,5 +637,22 @@
 "Nouvelle version {0} de l'outil disponible : [page de la version]({1}) (details dans Outils).": "ツールの新しいバージョン {0} があります：[リリースページ]({1})（詳細は「ツール」）。",
 "### Mises a jour": "### アップデート",
 "Versions": "バージョン",
-"Verifier les mises a jour": "アップデートを確認"
+"Verifier les mises a jour": "アップデートを確認",
+"Aide": "ヘルプ",
+"Apercus et sauvegardes": "プレビューと保存",
+"Audit": "監査",
+"Contre le debordement": "にじみ出し対策",
+"Correction": "修正",
+"Electricite": "電気代",
+"Fichiers": "ファイル",
+"GPU": "GPU",
+"General": "一般",
+"Journal": "ログ",
+"Les reglages de cet onglet s'appliquent apres **Enregistrer**.": "このタブの設定は **保存** 後に適用されます。",
+"Options du procede": "プロセスオプション",
+"Pause et file": "一時停止とキュー",
+"Rognage": "トリミング",
+"Version d'ai-toolkit": "ai-toolkit のバージョン",
+"YAML": "YAML",
+"Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son cout et le cout projete a la fin s'affichent a cote du temps ecoule, du temps restant et de la vitesse. Seule la carte graphique est comptee : processeur, ecran et reste du PC s'y ajoutent. Enregistrez avec le bouton Enregistrer en haut de l'onglet.": "ジョブ中は、GPU の消費電力量（nvidia-smi で 2 秒ごとに取得）、その料金、終了時の予想料金が、経過時間・残り時間・速度の横に表示されます。数えるのはグラフィックカードだけで、CPU、画面、PC の他の部分の消費は含みません。タブ上部の「保存」ボタンで保存してください。"
 }

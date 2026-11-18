@@ -637,5 +637,22 @@
 "Nouvelle version {0} de l'outil disponible : [page de la version]({1}) (details dans Outils).": "Neue Version {0} des Tools verfügbar: [Versionsseite]({1}) (Details unter Werkzeuge).",
 "### Mises a jour": "### Aktualisierungen",
 "Versions": "Versionen",
-"Verifier les mises a jour": "Nach Aktualisierungen suchen"
+"Verifier les mises a jour": "Nach Aktualisierungen suchen",
+"Aide": "Hilfe",
+"Apercus et sauvegardes": "Vorschauen und Speichern",
+"Audit": "Audit",
+"Contre le debordement": "Gegen Durchschlagen",
+"Correction": "Korrektur",
+"Electricite": "Strom",
+"Fichiers": "Dateien",
+"GPU": "GPU",
+"General": "Allgemein",
+"Journal": "Protokoll",
+"Les reglages de cet onglet s'appliquent apres **Enregistrer**.": "Die Einstellungen dieses Tabs gelten nach **Speichern**.",
+"Options du procede": "Prozessoptionen",
+"Pause et file": "Pause und Warteschlange",
+"Rognage": "Zuschnitt",
+"Version d'ai-toolkit": "ai-toolkit-Version",
+"YAML": "YAML",
+"Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son cout et le cout projete a la fin s'affichent a cote du temps ecoule, du temps restant et de la vitesse. Seule la carte graphique est comptee : processeur, ecran et reste du PC s'y ajoutent. Enregistrez avec le bouton Enregistrer en haut de l'onglet.": "Während eines Jobs werden der Verbrauch der GPU (alle 2 s von nvidia-smi gelesen), seine Kosten und die voraussichtlichen Kosten am Ende neben vergangener Zeit, Restzeit und Tempo angezeigt. Nur die Grafikkarte wird gezählt: Prozessor, Bildschirm und der Rest des PCs kommen hinzu. Mit der Schaltfläche Speichern oben im Tab speichern."
 }
