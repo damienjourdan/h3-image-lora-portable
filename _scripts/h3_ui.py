@@ -18,6 +18,7 @@ import h3_core as core  # noqa: E402
 import h3_crop as crop  # noqa: E402
 import h3_i18n as i18n  # noqa: E402
 import h3_likeness as likeness  # noqa: E402
+import h3_audit as audit  # noqa: E402
 from h3_core import MON, ORCH, RUN  # noqa: E402
 
 # ------------------------------------------------------------------ textes d'aide
@@ -320,6 +321,23 @@ def fill_captions(folder, text):
     n = core.fill_captions(folder, text)
     msg, gal = dataset_info(folder)
     return f"{n} legende(s) creee(s).\n" + msg, gal
+
+
+# ------------------------------------------------------------------ audit du dataset
+def audit_run(folder, progress=gr.Progress()):
+    def cb(i, n, name):
+        progress((i, max(1, n)), desc=i18n.tr(f"Analyse : {name}"), unit="images")
+    try:
+        report, gallery, fixes = audit.audit(folder, cb)
+    except Exception as exc:  # noqa: BLE001 - modele absent, image illisible...
+        return f"Audit impossible : {type(exc).__name__}: {str(exc)[:200]}", [], [], gr.update(visible=False)
+    return report, gallery, fixes, gr.update(visible=bool(fixes))
+
+
+def audit_fix(folder, fixes):
+    if not fixes:
+        return "Aucune legende a completer.", gr.update(visible=False)
+    return audit.add_background(folder, fixes), gr.update(visible=False)
 
 
 # ------------------------------------------------------------------ rognage des textes
@@ -913,6 +931,17 @@ def build(code):
             cap_panel = gr.HTML()
             cap_log = gr.Textbox(label="Journal du legendage", lines=8, max_lines=8, autoscroll=True,
                                  interactive=False)
+            with gr.Accordion("Audit du dataset : fonds unis, doublons, cadrages trop semblables", open=False):
+                gr.Markdown("Repere ce que l'oeil laisse passer : un meme fond uni sur beaucoup d'images et absent "
+                            "des legendes (il s'attache au mot declencheur : le LoRA le met partout), les "
+                            "quasi-doublons (comptent double), les groupes d'images au meme cadrage (surappris). "
+                            "Fonds : analyse des bords de l'image. Doublons : modele DINOv2 sur le processeur "
+                            "(~90 Mo, telecharge au premier usage).")
+                audit_btn = gr.Button("Auditer le dataset")
+                audit_report = gr.Textbox(label="Rapport d'audit", lines=8, interactive=False)
+                audit_fix_btn = gr.Button("Ajouter le fond aux legendes", visible=False, variant="primary")
+                audit_gallery = gr.Gallery(label="Quasi-doublons (par paires)", columns=6, height=220)
+                audit_state = gr.State([])
             with gr.Accordion("Rogner les filigranes et textes (detection automatique)", open=False):
                 gr.Markdown(
                     "Repere les zones de texte (filigrane, signature, adresse de site, legende) et propose, pour "
@@ -1256,6 +1285,8 @@ def build(code):
             dataset_info, [ds_folder] + ds_extra, [ds_msg, ds_gallery])
         for comp in (lora_type, trigger, cap_extra):
             comp.change(core.caption_prompt, [lora_type, trigger, cap_extra], cap_prompt)
+        audit_btn.click(audit_run, ds_folder, [audit_report, audit_gallery, audit_state, audit_fix_btn])
+        audit_fix_btn.click(audit_fix, [ds_folder, audit_state], [audit_report, audit_fix_btn])
         for comp in (trigger, prompts, no_sample, control):
             comp.change(prompt_check, [trigger, prompts, no_sample, control], prompt_note)
         cap_btn.click(fill_captions, [ds_folder, cap_text], [ds_msg, ds_gallery])

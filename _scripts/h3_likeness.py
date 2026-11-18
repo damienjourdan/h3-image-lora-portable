@@ -148,6 +148,7 @@ class Scorer:
 
     def __init__(self):
         self.lock = threading.Lock()
+        self.lock_models = threading.Lock()
         self.wanted = set()
         self.state = {}          # job -> texte d'etat
         self.error = None
@@ -177,22 +178,42 @@ class Scorer:
         return self.state.get(job, "")
 
     # ------------------------------------------------------------- modeles
+    def _torch(self):
+        import torch
+        if not getattr(self, "_threads_set", False):
+            torch.set_num_threads(max(1, min(4, (os.cpu_count() or 2) // 2)))  # laisse du processeur au reste
+            self._threads_set = True
+        return torch
+
+    def _load_dino(self):
+        with self.lock_models:
+            if not getattr(self, "_dm", None):
+                from transformers import AutoImageProcessor, AutoModel
+                self._dm = (AutoImageProcessor.from_pretrained(DINO_ID), AutoModel.from_pretrained(DINO_ID).eval())
+        return self._dm
+
     def _load(self):
+        """Les deux modeles (ressemblance + fidelite) : (torch, dproc, dino, cproc, clip)."""
         if self.models:
             return self.models
-        import torch
-        from transformers import AutoImageProcessor, AutoModel, CLIPModel, CLIPProcessor
-
-        torch.set_num_threads(max(1, min(4, (os.cpu_count() or 2) // 2)))  # laisse du processeur au reste
-        dproc = AutoImageProcessor.from_pretrained(DINO_ID)
-        dino = AutoModel.from_pretrained(DINO_ID).eval()
+        torch = self._torch()
+        dproc, dino = self._load_dino()
+        from transformers import CLIPModel, CLIPProcessor
         cproc = CLIPProcessor.from_pretrained(CLIP_ID)
         clip = CLIPModel.from_pretrained(CLIP_ID).eval()
         self.models = (torch, dproc, dino, cproc, clip)
         return self.models
 
-    def _dino(self, images):
-        torch, dproc, dino, _cp, _c = self._load()
+    def embed(self, images):
+        """Vecteurs DINOv2 normalises (seul le petit modele est charge : audit du dataset)."""
+        return self._dino(images, dino_only=True)
+
+    def _dino(self, images, dino_only=False):
+        if dino_only or not self.models:
+            torch = self._torch()
+            dproc, dino = self._load_dino()
+        else:
+            torch, dproc, dino, _cp, _c = self._load()
         with torch.no_grad():
             out = dino(**dproc(images=images, return_tensors="pt"))
             emb = out.last_hidden_state[:, 0]          # jeton CLS

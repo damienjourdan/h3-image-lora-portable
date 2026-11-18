@@ -117,6 +117,19 @@ LEGENDAS: A REGRA QUE MAIS IMPORTA
   descrevem traços permanentes ou várias vistas.
   As legendas continuam em inglês, qualquer que seja o idioma da interface.
 
+AUDITORIA DO DATASET (aba Dataset)
+  "Auditar o dataset" encontra três defeitos que passam despercebidos:
+  - um mesmo fundo liso (branco, preto, cinza...) em pelo menos 30 % das
+    imagens e ausente das legendas: ele se associa à palavra-gatilho e o LoRA
+    o coloca em tudo. "Adicionar o fundo às legendas" completa as legendas
+    em questão (por exemplo "white background");
+  - as quase duplicatas: a mesma imagem recortada ou recomprimida, que conta
+    em dobro. Mantenha uma por par;
+  - os grupos de imagens com o mesmo enquadramento, bem mais parecidas que o
+    resto do dataset: varie-as ou mantenha menos.
+  Fundos: análise das bordas da imagem. Duplicatas: modelo DINOv2 no
+  processador (~90 MB, baixado no primeiro uso).
+
 RECORTAR MARCAS D'ÁGUA E TEXTOS (aba Dataset)
   Um detector de texto localiza marcas d'água, assinaturas, endereços de
   site e legendas, e propõe para cada imagem o maior enquadramento sem

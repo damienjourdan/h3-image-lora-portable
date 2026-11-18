@@ -118,6 +118,20 @@ BESCHREIBUNGEN: DIE WICHTIGSTE REGEL
   mit dauerhaften Merkmalen oder mehreren Ansichten.
   Die Beschreibungen bleiben auf Englisch, egal welche Sprache die UI hat.
 
+DATASET-PRÜFUNG (Tab Dataset)
+  „Dataset prüfen" findet drei unauffällige Fehler:
+  - derselbe einfarbige Hintergrund (weiß, schwarz, grau...) auf mindestens
+    30 % der Bilder, der in den Beschreibungen fehlt: er bindet sich an das
+    Triggerwort und das LoRA setzt ihn überall ein. „Hintergrund zu den
+    Beschreibungen hinzufügen" ergänzt die betroffenen Beschreibungen (zum
+    Beispiel „white background");
+  - Beinahe-Duplikate: dasselbe Bild zugeschnitten oder neu komprimiert,
+    das doppelt zählt. Behalten Sie eines pro Paar;
+  - Gruppen von Bildern mit gleichem Ausschnitt, deutlich ähnlicher als der
+    Rest des Datasets: variieren oder weniger behalten.
+  Hintergründe: Analyse der Bildränder. Duplikate: Modell DINOv2 auf dem
+  Prozessor (~90 MB, bei der ersten Nutzung geladen).
+
 WASSERZEICHEN UND TEXTE WEGSCHNEIDEN (Tab Dataset)
   Eine Texterkennung findet Wasserzeichen, Signaturen, Webadressen und
   Bildunterschriften und schlägt pro Bild den größten Ausschnitt ohne Text

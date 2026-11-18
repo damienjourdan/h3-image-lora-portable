@@ -113,6 +113,19 @@ LÉGENDES : LA RÈGLE QUI COMPTE LE PLUS
   légendes qui décrivent des traits permanents ou plusieurs vues.
   Les légendes restent en anglais, quelle que soit la langue de l'interface.
 
+AUDIT DU DATASET (onglet Dataset)
+  « Auditer le dataset » repère trois défauts qui passent inaperçus :
+  - un même fond uni (blanc, noir, gris...) sur au moins 30 % des images et
+    absent des légendes : il s'attache au mot déclencheur et le LoRA le met
+    partout. « Ajouter le fond aux légendes » complète les légendes
+    concernées (par exemple « white background ») ;
+  - les quasi-doublons : même image recadrée ou recompressée, qui compte
+    double. Gardez-en une par paire ;
+  - les groupes d'images au même cadrage, nettement plus semblables que le
+    reste du dataset : variez-les ou gardez-en moins.
+  Fonds : analyse des bords de l'image. Doublons : modèle DINOv2 sur le
+  processeur (~90 Mo, téléchargé au premier usage).
+
 ROGNER LES FILIGRANES ET TEXTES (onglet Dataset)
   Un détecteur de texte repère filigranes, signatures, adresses de site et
   légendes, puis propose pour chaque image le plus grand cadrage qui n'en

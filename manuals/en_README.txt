@@ -113,6 +113,19 @@ CAPTIONS: THE RULE THAT MATTERS MOST
   describe permanent traits or several views.
   Captions stay in English whatever the interface language.
 
+DATASET AUDIT (Dataset tab)
+  "Audit the dataset" finds three flaws that go unnoticed:
+  - the same plain background (white, black, gray...) on at least 30 % of
+    the images and missing from the captions: it binds to the trigger word
+    and the LoRA puts it everywhere. "Add the background to the captions"
+    completes the captions concerned (for example "white background");
+  - near-duplicates: the same image cropped or recompressed, which counts
+    twice. Keep one per pair;
+  - groups of images with the same framing, clearly more alike than the
+    rest of the dataset: vary them or keep fewer.
+  Backgrounds: analysis of the image edges. Duplicates: DINOv2 model on the
+  processor (~90 MB, downloaded on first use).
+
 CROPPING OUT WATERMARKS AND TEXT (Dataset tab)
   A text detector finds watermarks, signatures, website addresses and
   captions, then suggests for each image the largest framing that contains

@@ -115,6 +115,19 @@ DESCRIPCIONES: LA REGLA QUE MÁS IMPORTA
   las descripciones que mencionan rasgos permanentes o varias vistas.
   Las descripciones siguen en inglés, sea cual sea el idioma de la interfaz.
 
+AUDITORÍA DEL DATASET (pestaña Dataset)
+  «Auditar el dataset» detecta tres defectos que pasan desapercibidos:
+  - un mismo fondo liso (blanco, negro, gris...) en al menos el 30 % de las
+    imágenes y ausente de las descripciones: se asocia a la palabra clave y
+    el LoRA lo pone en todas partes. «Añadir el fondo a las descripciones»
+    completa las descripciones afectadas (por ejemplo «white background»);
+  - los casi duplicados: la misma imagen recortada o recomprimida, que
+    cuenta doble. Conserve una por par;
+  - los grupos de imágenes con el mismo encuadre, claramente más parecidas
+    que el resto del dataset: varíelas o conserve menos.
+  Fondos: análisis de los bordes de la imagen. Duplicados: modelo DINOv2 en
+  el procesador (~90 MB, descargado en el primer uso).
+
 RECORTAR MARCAS DE AGUA Y TEXTOS (pestaña Dataset)
   Un detector de texto localiza marcas de agua, firmas, direcciones web y
   pies de foto, y propone para cada imagen el encuadre más grande sin
