@@ -217,6 +217,18 @@ CHOOSING THE CHECKPOINT: LIKENESS (Results tab)
   to confirm with Test a LoRA. Models downloaded on first use (about
   700 MB); can be turned off in Tools.
 
+BLEEDING: THE CONTROL PROMPT
+  An overtrained LoRA makes the character appear even without its trigger
+  word (every customer in the bar gets its face). To measure it, the
+  previews need a control prompt without the word. The "Add a control
+  prompt" box (ticked by default, Training tab) creates it when needed: the
+  first prompt with "a person" in place of the word; it is shown under the
+  prompts, and Test a LoRA adds it too. The Likeness tab then computes the
+  share of the learned likeness that bleeds into this control: orange from
+  30 %, red from 50 %; those checkpoints are left out of the
+  recommendation. During training, strong bleeding sends a notification,
+  and pauses if the matching box is ticked in Tools.
+
 AI-TOOLKIT VERSION
   By default: latest version of the main branch. This package was audited
   on commit 4a7f285 (10 Nov 2026). "Pin current version" button in the

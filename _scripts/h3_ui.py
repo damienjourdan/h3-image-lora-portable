@@ -406,12 +406,22 @@ def load_settings_now(name):
     return [P.get(k, gr.update()) for k in core.PARAM_KEYS] + [f"Reglages charges : {name}"]
 
 
-def prompt_check(trigger, prompts, no_sample=False):
-    """Avertissement sous les prompts d'apercu si le mot declencheur n'y est pas, ou mal ecrit."""
+def prompt_check(trigger, prompts, no_sample=False, control=True):
+    """Sous les prompts d'apercu : ecarts avec le mot declencheur, et prompt temoin (debordement)."""
     if no_sample:
         return ""
     issues = core.prompt_trigger_issues(trigger, prompts)
-    return "\n".join(f"<span style='color:#e65100'>&#9888; {x[0].upper() + x[1:]}</span>  " for x in issues)
+    out = [f"<span style='color:#e65100'>&#9888; {x[0].upper() + x[1:]}</span>  " for x in issues]
+    ctl, auto = core.control_prompt(prompts, trigger)
+    if ctl and not auto:
+        out.append(f"<span style='color:#2e7d32'>&#10004; Prompt temoin sans mot declencheur : '{ctl}'</span>  ")
+    elif ctl and control:
+        out.append(f"<span style='color:#1565c0'>&#9432; Prompt temoin ajoute automatiquement aux apercus : "
+                   f"'{ctl}'</span>  ")
+    elif ctl:
+        out.append("<span style='color:#e65100'>&#9888; Aucun prompt sans mot declencheur : le debordement ne "
+                   "pourra pas etre mesure. Cochez la case ci-dessus ou ecrivez un prompt sans le mot.</span>  ")
+    return "\n".join(out)
 
 
 def _newest(paths):
@@ -640,6 +650,8 @@ def likeness_svg(job):
 
     rec = likeness.recommend(job, rows)
     cks = set(likeness.ck_steps(job, rows))
+    lk = likeness.leaks(rows)
+    has_ctl = any(r[4] is not None for r in rows)
     out = [f"<svg viewBox='0 0 {W} {H}' style='width:100%;height:auto;font-family:sans-serif' "
            "xmlns='http://www.w3.org/2000/svg'>"]
     for lo, hi, color, side in ((d_lo, d_hi, "#2e7d32", "l"), (c_lo, c_hi, "#6a1b9a", "r")):
@@ -664,18 +676,29 @@ def likeness_svg(job):
     for st in steps:
         out.append(f"<text x='{X(st):.1f}' y='{H - B + 15}' font-size='11' text-anchor='middle' "
                    f"fill='currentColor'>{st}</text>")
+        if lk.get(st, 0) >= likeness.LEAK_SOME:   # repere rouge : debordement
+            color = "#c62828" if lk[st] >= likeness.LEAK_HIGH else "#ef6c00"
+            out.append(f"<rect x='{X(st) - 7:.1f}' y='{T - 14}' width='14' height='8' rx='2' fill='{color}'/>")
     out.append(f"<text x='{(L + W - R) / 2}' y='{H - 3}' font-size='11' text-anchor='middle' "
                "fill='currentColor'>pas</text></svg>")
     legend = ("<div style='font-size:12px;margin:2px 0 8px'>"
               "<span style='color:#2e7d32'>&#9472;&#9472;</span> ressemblance au dataset &nbsp; "
               "<span style='color:#6a1b9a'>&#9472;&#9472;</span> fidelite au prompt &nbsp; "
-              "<span style='color:#f9a825'>&#9474;</span> checkpoint conseille</div>")
-    head = "<tr><th>Pas</th><th>Ressemblance</th><th>Fidelite au prompt</th><th>Checkpoint</th><th></th></tr>"
+              "<span style='color:#f9a825'>&#9474;</span> checkpoint conseille &nbsp; "
+              "<span style='color:#c62828'>&#9644;</span> debordement</div>")
+    head = ("<tr><th>Pas</th><th>Ressemblance</th><th>Fidelite au prompt</th>"
+            + ("<th>Debordement</th>" if has_ctl else "") + "<th>Checkpoint</th><th></th></tr>")
     body = []
-    for st, d, c, _n in rows:
+    for st, d, c, _n, _t in rows:
         is_rec = bool(rec) and st == rec[0][0]
         style = " style='background:rgba(249,168,37,.22);font-weight:600'" if is_rec else ""
-        body.append(f"<tr{style}><td>{st}</td><td>{d:.1f}</td><td>{c:.1f}</td>"
+        cell = ""
+        if has_ctl:
+            v = lk.get(st)
+            col = ("#c62828" if v is not None and v >= likeness.LEAK_HIGH else
+                   "#ef6c00" if v is not None and v >= likeness.LEAK_SOME else "inherit")
+            cell = f"<td style='color:{col}'>{'-' if v is None else f'{v * 100:.0f} %'}</td>"
+        body.append(f"<tr{style}><td>{st}</td><td>{d:.1f}</td><td>{c:.1f}</td>{cell}"
                     f"<td>{'oui' if st in cks else '-'}</td><td>{'conseille' if is_rec else ''}</td></tr>")
     table = ("<table style='font-size:12px;border-collapse:collapse;width:100%' cellpadding='4'>"
              + head + "".join(body) + "</table>")
@@ -687,8 +710,19 @@ def likeness_svg(job):
     else:
         verdict = (f"Checkpoint conseille : pas {rec[0][0]}, le plus ressemblant parmi ceux qui suivent "
                    "encore le prompt comme au debut.")
+    leak_txt = ""
+    if not has_ctl:
+        leak_txt = ("Pas de prompt temoin sans mot declencheur dans ces apercus : le debordement n'est pas mesure "
+                    "(case 'Ajouter un prompt temoin' de l'onglet Entrainement, pour le prochain job).")
+    elif lk:
+        first = next((st for st in sorted(lk) if lk[st] >= likeness.LEAK_HIGH), None)
+        if first is not None:
+            leak_txt = (f"Debordement fort a partir du pas {first} : le personnage apparait aussi sans mot "
+                        "declencheur. Ces checkpoints sont ecartes du conseil.")
+    leak_html = f"<div style='font-size:12px;margin-top:4px;color:#c62828'>{leak_txt}</div>" if leak_txt else ""
     return ("<div><b style='font-size:13px'>Ressemblance et fidelite au prompt</b>" + "".join(out) + legend
-            + table + f"<div style='font-size:13px;margin-top:6px'><b>{verdict}</b></div>" + note + "</div>")
+            + table + f"<div style='font-size:13px;margin-top:6px'><b>{verdict}</b></div>" + leak_html + note
+            + "</div>")
 
 
 def _results_sig(job):
@@ -758,7 +792,7 @@ def auto_test_results(job, last_sig):
 
 # ------------------------------------------------------------------ outils
 def save_tools(sound, topic, comfy, awake, t_alert, t_pause, watts, th_on=False, th_target=72, th_min=150,
-               kwh_price=0, currency="", likeness_on=True):
+               kwh_price=0, currency="", likeness_on=True, leak_pause=False):
     t_alert, t_pause, watts = int(t_alert or 0), int(t_pause or 0), int(watts or 0)
     th_target, th_min = int(th_target or 72), int(th_min or 150)
     if th_on:
@@ -780,7 +814,7 @@ def save_tools(sound, topic, comfy, awake, t_alert, t_pause, watts, th_on=False,
                        temp_alert=t_alert, temp_pause=t_pause, power_limit_w=watts,
                        thermo_on=bool(th_on), thermo_target=th_target, thermo_min_w=th_min,
                        kwh_price=max(0.0, float(kwh_price or 0)), currency=currency or "",
-                       likeness_on=bool(likeness_on))
+                       likeness_on=bool(likeness_on), leak_pause=bool(leak_pause))
     if th_on:
         return ("Reglages enregistres. Thermostat actif : il regule pendant les jobs"
                 + ("." if core.is_admin() else
@@ -994,6 +1028,11 @@ def build(code):
                                  info="Preconise : 2 a 4 prompts detailles, avec votre mot declencheur, dont "
                                       "un proche du dataset et un tres different (teste la generalisation). "
                                       "Chaque prompt rallonge la pause d'apercu.")
+            control = gr.Checkbox(value=True, label="Ajouter un prompt temoin sans mot declencheur (preconise)",
+                                  info="Sert a detecter le debordement : le personnage qui apparait meme sans son "
+                                       "mot, signe de sur-apprentissage. Si aucun de vos prompts ne s'en passe, "
+                                       "l'UI ajoute le premier prompt avec 'a person' a la place du mot. Il est "
+                                       "affiche ci-dessous.")
             prompt_note = gr.Markdown("")
             with gr.Accordion("Aide : valeurs preconisees et diagnostic", open=False):
                 gr.Markdown(AIDE_REGLAGES)
@@ -1122,6 +1161,10 @@ def build(code):
                                        value=lambda: bool(core.load_settings().get("likeness_on", True)),
                                        info="Onglet Resultats > Ressemblance. Calcul sur le processeur ; modeles "
                                             "telecharges au premier usage (environ 700 Mo).")
+                opt_leakpause = gr.Checkbox(label="Pause automatique si le debordement devient fort",
+                                            value=lambda: bool(core.load_settings().get("leak_pause", False)),
+                                            info="Le personnage apparait sur le prompt temoin, sans son mot : "
+                                                 "pause avec sauvegarde. Sinon, simple notification.")
             opt_ntfy = gr.Textbox(label="Notification sur telephone : sujet ntfy.sh (optionnel)",
                                   value=_cfg["ntfy_topic"],
                                   info="Installez l'application ntfy, abonnez-vous a un sujet au nom long et "
@@ -1195,7 +1238,7 @@ def build(code):
 
         cfg_inputs = [job_name, ds_folder, ctrl, preset, offload, resol, steps, lr, rank,
                       trigger, save_every, sample_every, sample_size, no_sample, prompts, w4a8_fix,
-                      process, optimizer, ema, adapter, likeness, sampler]
+                      process, optimizer, ema, adapter, likeness, sampler, control]
         process.input(apply_process, [process, ds_folder],
                       [resol, rank, lr, steps, save_every, sample_every,
                        optimizer, ema, adapter, likeness, sampler, msg])
@@ -1213,8 +1256,8 @@ def build(code):
             dataset_info, [ds_folder] + ds_extra, [ds_msg, ds_gallery])
         for comp in (lora_type, trigger, cap_extra):
             comp.change(core.caption_prompt, [lora_type, trigger, cap_extra], cap_prompt)
-        for comp in (trigger, prompts, no_sample):
-            comp.change(prompt_check, [trigger, prompts, no_sample], prompt_note)
+        for comp in (trigger, prompts, no_sample, control):
+            comp.change(prompt_check, [trigger, prompts, no_sample, control], prompt_note)
         cap_btn.click(fill_captions, [ds_folder, cap_text], [ds_msg, ds_gallery])
         # retour immediat : le panneau passe a "Lancement" des le clic, sans attendre le minuteur
         cap_auto_btn.click(lambda f, m, r, p, t: core.start_captioning(f, m, r, p, t),
@@ -1252,7 +1295,8 @@ def build(code):
         dl_btn.click(core.start_download, dl_choice, msg).then(render_download_panel, None, [dl_panel, dl_log])
         dl_refresh.click(core.models_state, None, dl_state)
         tools_inputs = [opt_sound, opt_ntfy, opt_comfy, opt_awake, opt_talert, opt_tpause, opt_watts,
-                        opt_thermo, opt_thtarget, opt_thmin, opt_price, opt_cur, opt_like]
+                        opt_thermo, opt_thtarget, opt_thmin, opt_price, opt_cur, opt_like,
+                    opt_leakpause]
         # trois facons d'enregistrer, meme effet : bouton general, bouton de la section, case thermostat
         for trigger_event in (tools_save.click, temp_save.click, opt_thermo.input):
             trigger_event(save_tools, tools_inputs, msg).then(

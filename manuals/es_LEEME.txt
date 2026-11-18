@@ -223,6 +223,19 @@ ELEGIR EL CHECKPOINT: PARECIDO (pestaña Resultados)
   Medidas indicativas, a confirmar con Probar un LoRA. Modelos descargados
   en el primer uso (unos 700 MB); se puede desactivar en Herramientas.
 
+DESBORDAMIENTO: EL PROMPT DE CONTROL
+  Un LoRA sobreentrenado hace aparecer al personaje incluso sin su palabra
+  clave (todos los clientes del bar tienen su cara). Para medirlo, hace
+  falta entre las vistas previas un prompt de control sin la palabra. La
+  casilla «Añadir un prompt de control» (marcada por defecto, pestaña
+  Entrenamiento) lo crea si hace falta: el primer prompt con «a person» en
+  lugar de la palabra; se muestra bajo los prompts, y Probar un LoRA también
+  lo añade. La pestaña Parecido calcula entonces la parte del parecido
+  aprendido que desborda sobre ese control: naranja desde el 30 %, rojo
+  desde el 50 %; esos checkpoints quedan fuera de la recomendación. Durante
+  el entrenamiento, un desbordamiento fuerte envía una notificación, y pausa
+  si la casilla correspondiente está marcada en Herramientas.
+
 VERSIÓN DE AI-TOOLKIT
   Por defecto: última versión de la rama main. Este paquete se auditó en el
   commit 4a7f285 (10 nov. 2026). Botón «Fijar la versión actual» en la

@@ -62,7 +62,7 @@ TEST_PREFIX = "_test_"
 PARAM_KEYS = ["name", "folder", "ctrl", "preset", "offload", "resolutions", "steps", "lr",
               "rank", "trigger", "save_every", "sample_every", "sample_size", "no_sample",
               "prompts", "w4a8_fix",
-              "process", "optimizer", "ema", "adapter", "likeness", "sampler"]
+              "process", "optimizer", "ema", "adapter", "likeness", "sampler", "control"]
 
 # ---- procedes d'entrainement
 PROC_STANDARD = "Standard ai-toolkit"
@@ -245,7 +245,9 @@ DEFAULT_SETTINGS = {"sound": True, "ntfy_topic": "", "comfy_loras_dir": "", "kee
                     # cout de l'electricite consommee par le GPU (0 = kWh seulement ; "" = devise selon la langue)
                     "kwh_price": 0.0, "currency": "",
                     # ressemblance / fidelite au prompt des apercus (processeur, modeles ~700 Mo)
-                    "likeness_on": True}
+                    "likeness_on": True,
+                    # pause automatique quand le personnage apparait aussi sans mot declencheur
+                    "leak_pause": False}
 
 # devises des langues de l'interface : code -> (symbole, decimales, symbole devant)
 CURRENCIES = {"EUR": ("€", 2, False), "USD": ("$", 2, True), "GBP": ("£", 2, True),
@@ -1290,6 +1292,10 @@ def build_config(P):
     if (P.get("ctrl") or "").strip():
         ds["multi_control_paths"] = [P["ctrl"].strip()]
     prompts = [p.strip() for p in (P.get("prompts") or "").splitlines() if p.strip()]
+    if P.get("control", True):
+        ctl, auto = control_prompt(prompts, P.get("trigger"))
+        if auto:
+            prompts.append(ctl)   # prompt temoin : mesure du debordement (onglet Resultats > Ressemblance)
     size = int(P.get("sample_size") or 2048)
     proc = {
         "type": "diffusion_trainer",
@@ -1395,6 +1401,35 @@ def prompt_trigger_issues(trigger, prompts):
         issues.append(f"aucun prompt d'apercu ne contient le mot declencheur '{trigger}' : les apercus "
                       "ne montreront pas l'effet du LoRA appele par son mot.")
     return issues
+
+
+CONTROL_SUBJECT = "a person"
+
+
+def _has_word(line, word):
+    return any(t.lower() == word.lower() for t in re.findall(r"[\w\-]+", line))
+
+
+def control_prompt(prompts, trigger):
+    """Prompt temoin sans mot declencheur, qui sert a mesurer le debordement (le personnage qui
+    apparait meme sans son mot). Rend (texte, ajoute_automatiquement) ou (None, False).
+    Un prompt de l'utilisateur sans le mot (et sans variante proche) sert de temoin ; sinon on derive
+    le premier prompt en remplacant le mot declencheur par 'a person'."""
+    trigger = (trigger or "").strip()
+    lines = _prompt_lines(prompts)
+    if not trigger or not lines:
+        return None, False
+    for line in lines:
+        if not _has_word(line, trigger) and not prompt_trigger_issues(trigger, [trigger, line]):
+            return line, False
+    base = next((x for x in lines if _has_word(x, trigger)), lines[0])
+    text = re.sub(r"(?<![\w\-])" + re.escape(trigger) + r"(?![\w\-])", CONTROL_SUBJECT, base, flags=re.I)
+    # variantes proches du mot (ancien nom, faute de frappe) : remplacees aussi
+    text = re.sub(r"[\w\-]+", lambda m: CONTROL_SUBJECT if (
+        m.group(0).lower() != CONTROL_SUBJECT and prompt_trigger_issues(trigger, [trigger, m.group(0)])
+        and m.group(0).lower() != trigger.lower()) else m.group(0), text)
+    text = re.sub(r"\s+", " ", text.replace("[trigger]", CONTROL_SUBJECT)).strip()
+    return text, True
 
 
 def prompt_warning(P):
@@ -1938,6 +1973,12 @@ def start_lora_test(job, checkpoints, prompts, size, seed):
         return "Saisissez au moins un prompt."
     with open(base_path, encoding="utf-8") as fh:
         base = yaml.safe_load(fh)
+    added = ""
+    if (load_job_settings(job) or {}).get("control", True):
+        ctl, auto = control_prompt(plist, base["config"]["process"][0].get("trigger_word"))
+        if auto:
+            plist.append(ctl)
+            added = f" Prompt temoin sans mot declencheur ajoute : '{ctl}'."
     count = 0
     for ck in checkpoints:
         path = ck if os.path.isabs(ck) else os.path.join(OUTPUT, job, ck)
@@ -1965,7 +2006,7 @@ def start_lora_test(job, checkpoints, prompts, size, seed):
         return "Aucun checkpoint valide selectionne."
     ORCH.hold = False
     return (f"{count} test(s) ajoute(s) a la file. Chaque test recharge le modele "
-            "(plusieurs minutes) : les images arrivent une serie apres l'autre.")
+            "(plusieurs minutes) : les images arrivent une serie apres l'autre." + ("\n" + added.strip() if added else ""))
 
 
 def lora_test_results(job):

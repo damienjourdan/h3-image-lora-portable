@@ -516,5 +516,19 @@
 "Ressemblance indisponible : {0}": "相似度不可用：{0}",
 "Mesurer la ressemblance des apercus": "测量预览的相似度",
 "Onglet Resultats > Ressemblance. Calcul sur le processeur ; modeles telecharges au premier usage (environ 700 Mo).": "“结果”>“相似度”标签页。在处理器上计算；模型在首次使用时下载（约 700 MB）。",
-"*Chaque apercu est compare aux images du dataset (ressemblance, modele DINOv2) et a son prompt sans le mot declencheur (fidelite, modele CLIP), sur le processeur : la carte reste a l'entrainement. La ressemblance seule recompenserait le sur-apprentissage : le checkpoint conseille est le plus ressemblant parmi ceux qui suivent encore le prompt comme au debut. Mesures indicatives : verifiez toujours avec Tester un LoRA. Modeles telecharges au premier usage (environ 700 Mo).*": "*每张预览都会与数据集图片比较（相似度，DINOv2 模型），并与去掉触发词的提示词比较（忠实度，CLIP 模型），计算在处理器上进行，显卡专注于训练。只看相似度会偏向过拟合：推荐检查点是在仍像开始时一样遵循提示词的检查点中最相似的那个。数值仅供参考：请始终用“测试 LoRA”确认。模型在首次使用时下载（约 700 MB）。*"
+"*Chaque apercu est compare aux images du dataset (ressemblance, modele DINOv2) et a son prompt sans le mot declencheur (fidelite, modele CLIP), sur le processeur : la carte reste a l'entrainement. La ressemblance seule recompenserait le sur-apprentissage : le checkpoint conseille est le plus ressemblant parmi ceux qui suivent encore le prompt comme au debut. Mesures indicatives : verifiez toujours avec Tester un LoRA. Modeles telecharges au premier usage (environ 700 Mo).*": "*每张预览都会与数据集图片比较（相似度，DINOv2 模型），并与去掉触发词的提示词比较（忠实度，CLIP 模型），计算在处理器上进行，显卡专注于训练。只看相似度会偏向过拟合：推荐检查点是在仍像开始时一样遵循提示词的检查点中最相似的那个。数值仅供参考：请始终用“测试 LoRA”确认。模型在首次使用时下载（约 700 MB）。*",
+"Ajouter un prompt temoin sans mot declencheur (preconise)": "添加不含触发词的对照提示词（推荐）",
+"Sert a detecter le debordement : le personnage qui apparait meme sans son mot, signe de sur-apprentissage. Si aucun de vos prompts ne s'en passe, l'UI ajoute le premier prompt avec 'a person' a la place du mot. Il est affiche ci-dessous.": "用于检测外溢：即使没有触发词角色也出现，这是过拟合的迹象。如果你的提示词都含有触发词，界面会把第一个提示词中的触发词换成 'a person' 后添加。它会显示在下方。",
+"Prompt temoin sans mot declencheur : '{0}'": "不含触发词的对照提示词：“{0}”",
+"Prompt temoin ajoute automatiquement aux apercus : '{0}'": "已自动添加到预览的对照提示词：“{0}”",
+"Aucun prompt sans mot declencheur : le debordement ne pourra pas etre mesure. Cochez la case ci-dessus ou ecrivez un prompt sans le mot.": "没有不含触发词的提示词：无法测量外溢。请勾选上方选项，或写一个不含触发词的提示词。",
+"Prompt temoin sans mot declencheur ajoute : '{0}'.": "已添加不含触发词的对照提示词：“{0}”。",
+"debordement": "外溢",
+"Debordement": "外溢",
+"Pas de prompt temoin sans mot declencheur dans ces apercus : le debordement n'est pas mesure (case 'Ajouter un prompt temoin' de l'onglet Entrainement, pour le prochain job).": "这些预览中没有不含触发词的对照提示词：未测量外溢（下一个任务请在“训练”标签页勾选“添加对照提示词”）。",
+"Debordement fort a partir du pas {0} : le personnage apparait aussi sans mot declencheur. Ces checkpoints sont ecartes du conseil.": "从第 {0} 步开始外溢严重：没有触发词时角色也会出现。这些检查点不参与推荐。",
+"Debordement detecte": "检测到外溢",
+"Debordement au pas {0} : le personnage apparait aussi sans mot declencheur ({1} %). Les checkpoints suivants risquent d'etre trop entraines.": "第 {0} 步出现外溢：没有触发词时角色也会出现（{1} %）。之后的检查点可能训练过度。",
+"Pause automatique si le debordement devient fort": "外溢严重时自动暂停",
+"Le personnage apparait sur le prompt temoin, sans son mot : pause avec sauvegarde. Sinon, simple notification.": "角色出现在不含触发词的对照提示词中时：保存并暂停。否则只发送通知。"
 }

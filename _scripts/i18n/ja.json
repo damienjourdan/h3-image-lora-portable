@@ -516,5 +516,19 @@
 "Ressemblance indisponible : {0}": "類似度は利用できません：{0}",
 "Mesurer la ressemblance des apercus": "プレビューの類似度を測定",
 "Onglet Resultats > Ressemblance. Calcul sur le processeur ; modeles telecharges au premier usage (environ 700 Mo).": "「結果」>「類似度」タブ。CPU で計算します。モデルは初回使用時にダウンロード（約 700 MB）。",
-"*Chaque apercu est compare aux images du dataset (ressemblance, modele DINOv2) et a son prompt sans le mot declencheur (fidelite, modele CLIP), sur le processeur : la carte reste a l'entrainement. La ressemblance seule recompenserait le sur-apprentissage : le checkpoint conseille est le plus ressemblant parmi ceux qui suivent encore le prompt comme au debut. Mesures indicatives : verifiez toujours avec Tester un LoRA. Modeles telecharges au premier usage (environ 700 Mo).*": "*各プレビューをデータセットの画像（類似度、DINOv2 モデル）と、トリガーワードを除いたプロンプト（忠実度、CLIP モデル）と比較します。計算は CPU で行い、グラフィックカードは学習に専念します。類似度だけでは過学習が高く評価されてしまうため、推奨チェックポイントは、最初と同じようにプロンプトに従うものの中で最も似ているものです。目安の値なので、必ず「LoRAをテスト」で確認してください。モデルは初回使用時にダウンロード（約 700 MB）。*"
+"*Chaque apercu est compare aux images du dataset (ressemblance, modele DINOv2) et a son prompt sans le mot declencheur (fidelite, modele CLIP), sur le processeur : la carte reste a l'entrainement. La ressemblance seule recompenserait le sur-apprentissage : le checkpoint conseille est le plus ressemblant parmi ceux qui suivent encore le prompt comme au debut. Mesures indicatives : verifiez toujours avec Tester un LoRA. Modeles telecharges au premier usage (environ 700 Mo).*": "*各プレビューをデータセットの画像（類似度、DINOv2 モデル）と、トリガーワードを除いたプロンプト（忠実度、CLIP モデル）と比較します。計算は CPU で行い、グラフィックカードは学習に専念します。類似度だけでは過学習が高く評価されてしまうため、推奨チェックポイントは、最初と同じようにプロンプトに従うものの中で最も似ているものです。目安の値なので、必ず「LoRAをテスト」で確認してください。モデルは初回使用時にダウンロード（約 700 MB）。*",
+"Ajouter un prompt temoin sans mot declencheur (preconise)": "トリガーワードなしの対照プロンプトを追加（推奨）",
+"Sert a detecter le debordement : le personnage qui apparait meme sans son mot, signe de sur-apprentissage. Si aucun de vos prompts ne s'en passe, l'UI ajoute le premier prompt avec 'a person' a la place du mot. Il est affiche ci-dessous.": "にじみ出し（単語がなくてもキャラクターが現れること、過学習の兆候）の検出に使います。トリガーワードなしのプロンプトがない場合、UI は最初のプロンプトの単語を 'a person' に置き換えて追加します。下に表示されます。",
+"Prompt temoin sans mot declencheur : '{0}'": "トリガーワードなしの対照プロンプト：「{0}」",
+"Prompt temoin ajoute automatiquement aux apercus : '{0}'": "プレビューに自動追加した対照プロンプト：「{0}」",
+"Aucun prompt sans mot declencheur : le debordement ne pourra pas etre mesure. Cochez la case ci-dessus ou ecrivez un prompt sans le mot.": "トリガーワードなしのプロンプトがありません：にじみ出しを測定できません。上のボックスをオンにするか、単語なしのプロンプトを書いてください。",
+"Prompt temoin sans mot declencheur ajoute : '{0}'.": "トリガーワードなしの対照プロンプトを追加しました：「{0}」。",
+"debordement": "にじみ出し",
+"Debordement": "にじみ出し",
+"Pas de prompt temoin sans mot declencheur dans ces apercus : le debordement n'est pas mesure (case 'Ajouter un prompt temoin' de l'onglet Entrainement, pour le prochain job).": "これらのプレビューにはトリガーワードなしの対照プロンプトがないため、にじみ出しは測定されません（次のジョブでは「学習」タブの「対照プロンプトを追加」をオンに）。",
+"Debordement fort a partir du pas {0} : le personnage apparait aussi sans mot declencheur. Ces checkpoints sont ecartes du conseil.": "ステップ {0} 以降でにじみ出しが強い：トリガーワードなしでもキャラクターが現れます。これらのチェックポイントは推奨から除外します。",
+"Debordement detecte": "にじみ出しを検出",
+"Debordement au pas {0} : le personnage apparait aussi sans mot declencheur ({1} %). Les checkpoints suivants risquent d'etre trop entraines.": "ステップ {0} でにじみ出し：トリガーワードなしでもキャラクターが現れます（{1} %）。以降のチェックポイントは過学習の可能性があります。",
+"Pause automatique si le debordement devient fort": "にじみ出しが強くなったら自動で一時停止",
+"Le personnage apparait sur le prompt temoin, sans son mot : pause avec sauvegarde. Sinon, simple notification.": "単語なしの対照プロンプトにキャラクターが現れたら、保存して一時停止します。オフなら通知のみ。"
 }

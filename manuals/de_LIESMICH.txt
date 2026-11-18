@@ -230,6 +230,19 @@ DEN CHECKPOINT WÄHLEN: ÄHNLICHKEIT (Tab Ergebnisse)
   Richtwerte, mit LoRA testen zu bestätigen. Modelle bei der ersten Nutzung
   heruntergeladen (etwa 700 MB); in Werkzeuge abschaltbar.
 
+DURCHSCHLAGEN: DER KONTROLL-PROMPT
+  Ein übertrainiertes LoRA lässt die Figur auch ohne Triggerwort erscheinen
+  (alle Gäste der Bar bekommen ihr Gesicht). Zum Messen braucht es unter den
+  Vorschauen einen Kontroll-Prompt ohne das Wort. Das Kästchen
+  „Kontroll-Prompt hinzufügen" (standardmäßig angehakt, Tab Training)
+  erstellt ihn bei Bedarf: der erste Prompt mit „a person" anstelle des
+  Worts; er wird unter den Prompts angezeigt, und LoRA testen fügt ihn
+  ebenfalls hinzu. Der Tab Ähnlichkeit berechnet dann den Anteil der
+  gelernten Ähnlichkeit, der in diesen Kontroll-Prompt durchschlägt: ab 30 %
+  orange, ab 50 % rot; diese Checkpoints werden von der Empfehlung
+  ausgeschlossen. Während des Trainings sendet starkes Durchschlagen eine
+  Benachrichtigung und pausiert, wenn das Kästchen in Werkzeuge angehakt ist.
+
 AI-TOOLKIT-VERSION
   Standard: neueste Version des main-Zweigs. Dieses Paket wurde auf Commit
   4a7f285 (10. Nov. 2026) geprüft. Schaltfläche „Aktuelle Version fixieren"

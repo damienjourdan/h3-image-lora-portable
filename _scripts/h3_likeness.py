@@ -24,6 +24,8 @@ CLIP_ID = "openai/clip-vit-base-patch32"    # ~600 Mo
 CACHE = "ressemblance.json"
 SAMPLE_RX = re.compile(r"__(\d+)_(\d+)\.[a-z]+$", re.I)
 CLIP_TOLERANCE = 0.025   # baisse de fidelite toleree par rapport au debut (similarite cosinus CLIP)
+LEAK_SOME, LEAK_HIGH = 0.30, 0.50   # part de la ressemblance apprise qui deborde sur le prompt temoin
+MIN_GAIN = 3.0                       # ressemblance gagnee (points) en dessous de laquelle le ratio n'a pas de sens
 
 
 def _job_config(job):
@@ -56,18 +58,47 @@ def read_cache(job):
         return {}
 
 
+def control_indexes(job):
+    """Indices des prompts d'apercu sans mot declencheur (prompts temoins)."""
+    cfg = _job_config(job)
+    if not cfg or not cfg["trigger"]:
+        return set()
+    return {i for i, p in enumerate(cfg["prompts"]) if not core._has_word(p, cfg["trigger"])}
+
+
 def summary(job):
-    """[(pas, ressemblance 0-100, fidelite 0-100, nb apercus)] par pas, trie."""
+    """[(pas, ressemblance 0-100, fidelite 0-100, nb apercus, ressemblance du temoin ou None)] par pas.
+    Ressemblance et fidelite : prompts AVEC le mot declencheur ; temoin : prompts sans."""
     data = read_cache(job).get("samples", {})
+    ctl = control_indexes(job)
     by_step = {}
     for v in data.values():
-        by_step.setdefault(v["step"], []).append(v)
+        by_step.setdefault(v["step"], ([], []))[1 if v["prompt"] in ctl else 0].append(v)
     rows = []
     for st in sorted(by_step):
-        vals = by_step[st]
-        rows.append((st, 100 * sum(v["dino"] for v in vals) / len(vals),
-                     100 * sum(v["clip"] for v in vals) / len(vals), len(vals)))
+        main, temo = by_step[st]
+        if not main:
+            continue
+        rows.append((st, 100 * sum(v["dino"] for v in main) / len(main),
+                     100 * sum(v["clip"] for v in main) / len(main), len(main),
+                     100 * sum(v["dino"] for v in temo) / len(temo) if temo else None))
     return rows
+
+
+def leaks(rows):
+    """{pas: ratio} : part de la ressemblance gagnee qui apparait aussi sur le prompt temoin
+    (0 = aucun debordement, 1 = le temoin ressemble autant que les prompts avec le mot)."""
+    base = next((r for r in rows if r[4] is not None), None)
+    if not base:
+        return {}
+    out = {}
+    for r in rows:
+        if r[4] is None or r[0] <= base[0]:
+            continue
+        gain = r[1] - base[1]
+        if gain >= MIN_GAIN:
+            out[r[0]] = max(0.0, min(1.5, (r[4] - base[4]) / gain))
+    return out
 
 
 def ck_steps(job, rows=None):
@@ -86,7 +117,8 @@ def recommend(job, rows=None):
     n'a pas baisse de plus de CLIP_TOLERANCE par rapport au debut. None si pas assez de donnees."""
     rows = rows if rows is not None else summary(job)
     cks = set(ck_steps(job, rows))
-    cand = [r for r in rows if r[0] in cks]
+    lk = leaks(rows)
+    cand = [r for r in rows if r[0] in cks and lk.get(r[0], 0) < LEAK_HIGH]
     if len(rows) < 2 or not cand:
         return None
     ref = max(r[2] for r in rows[:2])          # fidelite du debut (pas 0 = modele sans LoRA)
@@ -122,6 +154,7 @@ class Scorer:
         self.models = None
         self._wake = threading.Event()
         self._thread = None
+        self.alerted = {}        # job -> pas deja signale (une alerte par job)
 
     def enabled(self):
         return bool(core.load_settings().get("likeness_on", True))
@@ -225,6 +258,23 @@ class Scorer:
             self._save(job, cache)
         self.state[job] = ""
 
+    def _check_leak(self, job):
+        """Pendant l'entrainement : alerte (et pause si demande) quand le debordement devient fort."""
+        if not (core.RUN.running() and core.RUN.kind == "train" and core.RUN.job_name == job):
+            return
+        lk = leaks(summary(job))
+        if not lk or job in self.alerted:
+            return
+        step = next((st for st in sorted(lk) if lk[st] >= LEAK_HIGH), None)
+        if step is None:
+            return
+        self.alerted[job] = step
+        msg = (f"Debordement au pas {step} : le personnage apparait aussi sans mot declencheur "
+               f"({lk[step] * 100:.0f} %). Les checkpoints suivants risquent d'etre trop entraines.")
+        core.notify("Debordement detecte", msg)
+        if core.load_settings().get("leak_pause"):
+            core.pause_job(msg)
+
     def _save(self, job, cache):
         path = os.path.join(core.OUTPUT, job, CACHE)
         tmp = path + ".tmp"
@@ -246,6 +296,7 @@ class Scorer:
             for job in sorted(jobs):
                 try:
                     self._process(job)
+                    self._check_leak(job)
                     self.error = None
                 except Exception as exc:  # noqa: BLE001 - jamais bloquant pour l'UI
                     self.error = f"Ressemblance indisponible : {type(exc).__name__}: {str(exc)[:160]}"
