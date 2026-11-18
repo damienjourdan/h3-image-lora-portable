@@ -214,6 +214,15 @@ ENCONTRAR EL LÍMITE DE POTENCIA ADECUADO (pestaña Resultados)
   energía para un mismo trabajo. Para comparar, varíe el límite durante un
   entrenamiento (pestaña Herramientas) o deje actuar al termostato.
 
+ELEGIR EL CHECKPOINT: PARECIDO (pestaña Resultados)
+  La pestaña «Parecido» compara cada vista previa con las imágenes del
+  dataset (modelo DINOv2) y con su prompt sin la palabra clave (modelo CLIP),
+  en el procesador durante el entrenamiento. El parecido por sí solo
+  premiaría el sobreajuste: el checkpoint recomendado es el más parecido
+  entre los que aún siguen el prompt como al principio (paso 0, sin LoRA).
+  Medidas indicativas, a confirmar con Probar un LoRA. Modelos descargados
+  en el primer uso (unos 700 MB); se puede desactivar en Herramientas.
+
 VERSIÓN DE AI-TOOLKIT
   Por defecto: última versión de la rama main. Este paquete se auditó en el
   commit 4a7f285 (10 nov. 2026). Botón «Fijar la versión actual» en la

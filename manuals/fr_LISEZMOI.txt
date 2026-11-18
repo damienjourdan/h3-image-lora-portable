@@ -209,6 +209,15 @@ TROUVER LA BONNE LIMITE DE PUISSANCE (onglet Résultats)
   l'énergie pour un même travail. Pour comparer, faites varier la limite
   pendant un entraînement (onglet Outils) ou laissez le thermostat agir.
 
+CHOISIR LE CHECKPOINT : RESSEMBLANCE (onglet Résultats)
+  L'onglet « Ressemblance » compare chaque aperçu aux images du dataset
+  (modèle DINOv2) et à son prompt sans le mot déclencheur (modèle CLIP),
+  sur le processeur pendant l'entraînement. La ressemblance seule
+  récompenserait le sur-apprentissage : le checkpoint conseillé est le plus
+  ressemblant parmi ceux qui suivent encore le prompt comme au début (pas 0,
+  sans LoRA). Mesures indicatives, à confirmer avec Tester un LoRA. Modèles
+  téléchargés au premier usage (environ 700 Mo) ; désactivable dans Outils.
+
 VERSION D'AI-TOOLKIT
   Par défaut : dernière version de la branche main. Ce paquet a été audité
   sur le commit 4a7f285 (10 nov. 2026). Bouton « Figer la version actuelle »

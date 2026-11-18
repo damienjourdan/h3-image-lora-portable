@@ -221,6 +221,15 @@ DAS RICHTIGE LEISTUNGSLIMIT FINDEN (Tab Ergebnisse)
   Zum Vergleichen das Limit während eines Trainings ändern (Tab Werkzeuge)
   oder das Thermostat arbeiten lassen.
 
+DEN CHECKPOINT WÄHLEN: ÄHNLICHKEIT (Tab Ergebnisse)
+  Der Tab „Ähnlichkeit" vergleicht jede Vorschau mit den Dataset-Bildern
+  (Modell DINOv2) und mit ihrem Prompt ohne Triggerwort (Modell CLIP), auf
+  dem Prozessor während des Trainings. Ähnlichkeit allein würde
+  Überanpassung belohnen: der empfohlene Checkpoint ist der ähnlichste unter
+  denen, die dem Prompt noch wie am Anfang folgen (Schritt 0, ohne LoRA).
+  Richtwerte, mit LoRA testen zu bestätigen. Modelle bei der ersten Nutzung
+  heruntergeladen (etwa 700 MB); in Werkzeuge abschaltbar.
+
 AI-TOOLKIT-VERSION
   Standard: neueste Version des main-Zweigs. Dieses Paket wurde auf Commit
   4a7f285 (10. Nov. 2026) geprüft. Schaltfläche „Aktuelle Version fixieren"

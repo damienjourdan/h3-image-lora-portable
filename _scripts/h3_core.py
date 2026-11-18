@@ -243,7 +243,9 @@ DEFAULT_SETTINGS = {"sound": True, "ntfy_topic": "", "comfy_loras_dir": "", "kee
                     # thermostat : ajuste la limite de puissance pour tenir une temperature cible
                     "thermo_on": False, "thermo_target": 72, "thermo_min_w": 150,
                     # cout de l'electricite consommee par le GPU (0 = kWh seulement ; "" = devise selon la langue)
-                    "kwh_price": 0.0, "currency": ""}
+                    "kwh_price": 0.0, "currency": "",
+                    # ressemblance / fidelite au prompt des apercus (processeur, modeles ~700 Mo)
+                    "likeness_on": True}
 
 # devises des langues de l'interface : code -> (symbole, decimales, symbole devant)
 CURRENCIES = {"EUR": ("€", 2, False), "USD": ("$", 2, True), "GBP": ("£", 2, True),

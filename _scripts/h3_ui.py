@@ -17,6 +17,7 @@ import gradio as gr  # noqa: E402
 import h3_core as core  # noqa: E402
 import h3_crop as crop  # noqa: E402
 import h3_i18n as i18n  # noqa: E402
+import h3_likeness as likeness  # noqa: E402
 from h3_core import MON, ORCH, RUN  # noqa: E402
 
 # ------------------------------------------------------------------ textes d'aide
@@ -615,32 +616,110 @@ def perf_svg(job):
             + table + f"<div style='font-size:13px;margin-top:6px'><b>{verdict}</b></div></div>")
 
 
+def likeness_svg(job):
+    """Ressemblance au dataset et fidelite au prompt des apercus, par pas, et checkpoint conseille."""
+    status = likeness.SCORER.status(job) if job else ""
+    rows = likeness.summary(job) if job else []
+    note = f"<div style='font-size:12px;opacity:.8;margin-top:4px'>{status}</div>" if status else ""
+    if len(rows) < 2:
+        return ("<div style='opacity:.7;font-size:13px'>Ressemblance : pas encore assez d'apercus mesures "
+                "(au moins deux series d'apercus).</div>" + note)
+    steps = [r[0] for r in rows]
+    dino, clip = [r[1] for r in rows], [r[2] for r in rows]
+    W, H, L, R, T, B = 1000, 260, 52, 52, 30, 34
+    x0, x1 = steps[0], max(steps[-1], steps[0] + 1)
+
+    def X(st):
+        return L + (st - x0) / (x1 - x0) * (W - L - R)
+
+    d_lo, d_hi = _axis(min(dino), max(dino))
+    c_lo, c_hi = _axis(min(clip), max(clip))
+
+    def Y(v, lo, hi):
+        return T + (hi - v) / (hi - lo) * (H - T - B)
+
+    rec = likeness.recommend(job, rows)
+    cks = set(likeness.ck_steps(job, rows))
+    out = [f"<svg viewBox='0 0 {W} {H}' style='width:100%;height:auto;font-family:sans-serif' "
+           "xmlns='http://www.w3.org/2000/svg'>"]
+    for lo, hi, color, side in ((d_lo, d_hi, "#2e7d32", "l"), (c_lo, c_hi, "#6a1b9a", "r")):
+        for i in range(4):
+            v = lo + (hi - lo) * i / 3
+            y = Y(v, lo, hi)
+            if side == "l":
+                out.append(f"<line x1='{L}' x2='{W - R}' y1='{y:.1f}' y2='{y:.1f}' stroke='currentColor' "
+                           "stroke-opacity='.12'/>")
+            xt, anchor = (L - 6, "end") if side == "l" else (W - R + 6, "start")
+            out.append(f"<text x='{xt}' y='{y + 4:.1f}' font-size='11' text-anchor='{anchor}' "
+                       f"fill='{color}'>{v:.1f}</text>")
+    if rec:
+        xr = X(rec[0][0])
+        out.append(f"<line x1='{xr:.1f}' x2='{xr:.1f}' y1='{T}' y2='{H - B}' stroke='#f9a825' stroke-width='3' "
+                   "stroke-opacity='.6'/>")
+    for vals, lo, hi, color in ((dino, d_lo, d_hi, "#2e7d32"), (clip, c_lo, c_hi, "#6a1b9a")):
+        pts = " ".join(f"{X(st):.1f},{Y(v, lo, hi):.1f}" for st, v in zip(steps, vals))
+        out.append(f"<polyline points='{pts}' fill='none' stroke='{color}' stroke-width='2.5'/>")
+        for st, v in zip(steps, vals):
+            out.append(f"<circle cx='{X(st):.1f}' cy='{Y(v, lo, hi):.1f}' r='3.5' fill='{color}'/>")
+    for st in steps:
+        out.append(f"<text x='{X(st):.1f}' y='{H - B + 15}' font-size='11' text-anchor='middle' "
+                   f"fill='currentColor'>{st}</text>")
+    out.append(f"<text x='{(L + W - R) / 2}' y='{H - 3}' font-size='11' text-anchor='middle' "
+               "fill='currentColor'>pas</text></svg>")
+    legend = ("<div style='font-size:12px;margin:2px 0 8px'>"
+              "<span style='color:#2e7d32'>&#9472;&#9472;</span> ressemblance au dataset &nbsp; "
+              "<span style='color:#6a1b9a'>&#9472;&#9472;</span> fidelite au prompt &nbsp; "
+              "<span style='color:#f9a825'>&#9474;</span> checkpoint conseille</div>")
+    head = "<tr><th>Pas</th><th>Ressemblance</th><th>Fidelite au prompt</th><th>Checkpoint</th><th></th></tr>"
+    body = []
+    for st, d, c, _n in rows:
+        is_rec = bool(rec) and st == rec[0][0]
+        style = " style='background:rgba(249,168,37,.22);font-weight:600'" if is_rec else ""
+        body.append(f"<tr{style}><td>{st}</td><td>{d:.1f}</td><td>{c:.1f}</td>"
+                    f"<td>{'oui' if st in cks else '-'}</td><td>{'conseille' if is_rec else ''}</td></tr>")
+    table = ("<table style='font-size:12px;border-collapse:collapse;width:100%' cellpadding='4'>"
+             + head + "".join(body) + "</table>")
+    if not rec:
+        verdict = "Pas encore de checkpoint correspondant aux apercus mesures."
+    elif rec[2]:
+        verdict = (f"Checkpoint conseille : pas {rec[0][0]} (meilleur compromis). Tous les checkpoints "
+                   "suivent moins bien le prompt qu'au debut : le LoRA est peut-etre trop entraine.")
+    else:
+        verdict = (f"Checkpoint conseille : pas {rec[0][0]}, le plus ressemblant parmi ceux qui suivent "
+                   "encore le prompt comme au debut.")
+    return ("<div><b style='font-size:13px'>Ressemblance et fidelite au prompt</b>" + "".join(out) + legend
+            + table + f"<div style='font-size:13px;margin-top:6px'><b>{verdict}</b></div>" + note + "</div>")
+
+
 def _results_sig(job):
     files = core.job_samples(job) + core.job_checkpoints(job)
-    for extra in ("pertes.csv", "gpu_perf.csv"):
+    likeness.SCORER.request(job)
+    files_sig = likeness.SCORER.status(job)
+    for extra in ("pertes.csv", "gpu_perf.csv", likeness.CACHE):
         path = os.path.join(core.OUTPUT, job, extra)
         if os.path.isfile(path):
             files.append(path)
-    return "|".join(f"{os.path.basename(p)}:{os.path.getmtime(p):.0f}" for p in files)
+    return files_sig + "|".join(f"{os.path.basename(p)}:{os.path.getmtime(p):.0f}" for p in files)
 
 
 def job_results(job):
     if not job:
-        return [], "", gr.update(choices=[], value=None), loss_svg(""), perf_svg("")
+        return [], "", gr.update(choices=[], value=None), loss_svg(""), perf_svg(""), likeness_svg("")
     cks = core.job_checkpoints(job)
     listing = "\n".join(f"{p}   ({os.path.getsize(p) / 1e6:.0f} Mo)" for p in cks)
     names = [os.path.basename(p) for p in cks]
     return (_thumbs(core.job_samples(job), 1024), listing or "Aucun checkpoint pour l'instant.",
-            gr.update(choices=names, value=names[0] if names else None), loss_svg(job), perf_svg(job))
+            gr.update(choices=names, value=names[0] if names else None), loss_svg(job), perf_svg(job),
+            likeness_svg(job))
 
 
 def auto_results(job, last_sig):
     """Toutes les 5 s : ne recharge que si un fichier du job a change."""
     if not job:
-        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), last_sig
+        return (gr.update(),) * 6 + (last_sig,)
     sig = _results_sig(job)
     if sig == last_sig:
-        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), last_sig
+        return (gr.update(),) * 6 + (last_sig,)
     return (*job_results(job), sig)
 
 
@@ -679,7 +758,7 @@ def auto_test_results(job, last_sig):
 
 # ------------------------------------------------------------------ outils
 def save_tools(sound, topic, comfy, awake, t_alert, t_pause, watts, th_on=False, th_target=72, th_min=150,
-               kwh_price=0, currency=""):
+               kwh_price=0, currency="", likeness_on=True):
     t_alert, t_pause, watts = int(t_alert or 0), int(t_pause or 0), int(watts or 0)
     th_target, th_min = int(th_target or 72), int(th_min or 150)
     if th_on:
@@ -700,7 +779,8 @@ def save_tools(sound, topic, comfy, awake, t_alert, t_pause, watts, th_on=False,
                        comfy_loras_dir=(comfy or "").strip(), keep_awake=bool(awake),
                        temp_alert=t_alert, temp_pause=t_pause, power_limit_w=watts,
                        thermo_on=bool(th_on), thermo_target=th_target, thermo_min_w=th_min,
-                       kwh_price=max(0.0, float(kwh_price or 0)), currency=currency or "")
+                       kwh_price=max(0.0, float(kwh_price or 0)), currency=currency or "",
+                       likeness_on=bool(likeness_on))
     if th_on:
         return ("Reglages enregistres. Thermostat actif : il regule pendant les jobs"
                 + ("." if core.is_admin() else
@@ -965,6 +1045,15 @@ def build(code):
                                 "apportent peu ; comparez les checkpoints reperes en vert dans l'onglet Tester un "
                                 "LoRA. La courbe ne detecte pas le sur-apprentissage : seuls des apercus varies "
                                 "le montrent.*")
+                with gr.Tab("Ressemblance"):
+                    likeness_plot = gr.HTML()
+                    gr.Markdown("*Chaque apercu est compare aux images du dataset (ressemblance, modele DINOv2) et "
+                                "a son prompt sans le mot declencheur (fidelite, modele CLIP), sur le processeur : "
+                                "la carte reste a l'entrainement. La ressemblance seule recompenserait le "
+                                "sur-apprentissage : le checkpoint conseille est le plus ressemblant parmi ceux "
+                                "qui suivent encore le prompt comme au debut. Mesures indicatives : verifiez "
+                                "toujours avec Tester un LoRA. Modeles telecharges au premier usage (environ "
+                                "700 Mo).*")
                 with gr.Tab("Puissance, vitesse et temperature"):
                     perf_plot = gr.HTML()
                     gr.Markdown("*Releve pendant l'entrainement, par tranches de 5 pas (les apercus et sauvegardes "
@@ -1029,6 +1118,10 @@ def build(code):
                 opt_awake = gr.Checkbox(label="Empecher la mise en veille pendant un job", value=_cfg["keep_awake"],
                                         info="Preconise : coche. L'ecran peut s'eteindre, le PC reste actif. "
                                              "Sans effet si vous fermez le capot d'un portable.")
+                opt_like = gr.Checkbox(label="Mesurer la ressemblance des apercus",
+                                       value=lambda: bool(core.load_settings().get("likeness_on", True)),
+                                       info="Onglet Resultats > Ressemblance. Calcul sur le processeur ; modeles "
+                                            "telecharges au premier usage (environ 700 Mo).")
             opt_ntfy = gr.Textbox(label="Notification sur telephone : sujet ntfy.sh (optionnel)",
                                   value=_cfg["ntfy_topic"],
                                   info="Installez l'application ntfy, abonnez-vous a un sujet au nom long et "
@@ -1147,7 +1240,7 @@ def build(code):
         sample_btn.click(core.sample_now, None, msg)
         # resultats
         refresh_btn.click(lambda: gr.update(choices=core.list_jobs()), None, job_sel)
-        job_sel.change(job_results, job_sel, [res_gallery, res_files, ck_sel, loss_plot, perf_plot])
+        job_sel.change(job_results, job_sel, [res_gallery, res_files, ck_sel, loss_plot, perf_plot, likeness_plot])
         open_btn.click(open_job_folder, job_sel, msg)
         comfy_btn.click(copy_to_comfy, [job_sel, ck_sel], msg)
         # tests
@@ -1159,7 +1252,7 @@ def build(code):
         dl_btn.click(core.start_download, dl_choice, msg).then(render_download_panel, None, [dl_panel, dl_log])
         dl_refresh.click(core.models_state, None, dl_state)
         tools_inputs = [opt_sound, opt_ntfy, opt_comfy, opt_awake, opt_talert, opt_tpause, opt_watts,
-                        opt_thermo, opt_thtarget, opt_thmin, opt_price, opt_cur]
+                        opt_thermo, opt_thtarget, opt_thmin, opt_price, opt_cur, opt_like]
         # trois facons d'enregistrer, meme effet : bouton general, bouton de la section, case thermostat
         for trigger_event in (tools_save.click, temp_save.click, opt_thermo.input):
             trigger_event(save_tools, tools_inputs, msg).then(
@@ -1175,7 +1268,7 @@ def build(code):
                           test_panel, test_log, dl_panel, dl_log]
         gr.Timer(1.0).tick(render_status, None, status_outputs)
         gr.Timer(5.0).tick(auto_results, [job_sel, res_sig],
-                           [res_gallery, res_files, ck_sel, loss_plot, perf_plot, res_sig])
+                           [res_gallery, res_files, ck_sel, loss_plot, perf_plot, likeness_plot, res_sig])
         gr.Timer(5.0).tick(auto_test_results, [test_job, test_sig], [test_gallery, test_sig])
         demo.load(render_status, None, status_outputs)
         demo.load(lambda: i18n.save_lang(code), None, None)

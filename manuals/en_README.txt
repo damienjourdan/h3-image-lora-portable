@@ -208,6 +208,15 @@ FINDING THE RIGHT POWER LIMIT (Results tab)
   "Wh per step" column gives the energy for the same work. To compare, vary
   the limit during a training (Tools tab) or let the thermostat act.
 
+CHOOSING THE CHECKPOINT: LIKENESS (Results tab)
+  The "Likeness" tab compares each preview with the dataset images (DINOv2
+  model) and with its prompt without the trigger word (CLIP model), on the
+  processor during training. Likeness alone would reward overfitting: the
+  recommended checkpoint is the most alike among those that still follow
+  the prompt as at the start (step 0, without LoRA). Indicative measurements,
+  to confirm with Test a LoRA. Models downloaded on first use (about
+  700 MB); can be turned off in Tools.
+
 AI-TOOLKIT VERSION
   By default: latest version of the main branch. This package was audited
   on commit 4a7f285 (10 Nov 2026). "Pin current version" button in the
