@@ -295,6 +295,34 @@ VAZAMENTO: AS DUAS PROTEÇÕES
   aprendizado aparece ao lado da velocidade, e um alerta é enviado se ela
   ficar abaixo de 1e-6: pause e reinicie com adamw8bit.
 
+VÁRIAS LEGENDAS POR IMAGEM
+  Um .txt pode conter várias legendas, uma por linha: cada linha é uma
+  variante da mesma imagem (mesmos latentes), e o treinamento vê todas. O
+  LoRA se prende menos a uma formulação: útil com menos de 30 imagens. A
+  legendagem automática escreve 2 ou 3 com "Variantes por imagem". A
+  auditoria, o corretor de legendas e as imagens de regularização tratam
+  cada linha.
+
+REPETIÇÕES POR SUBPASTA
+  As subpastas do dataset são lidas. Uma subpasta de primeiro nível
+  chamada N_nome (ex. 3_costas) é vista N vezes por passagem: útil para
+  vistas raras (costas, perfil) sem duplicar arquivos. O processo Rápido
+  512 conta as repetições nas suas 30 passagens.
+
+PLACAS DE 8 GB (experimental)
+  O preset "8 GB" (RTX 2000 Ada, A2000...) usa a base w4a8, mantém 90 % do
+  transformer na RAM (até 95 %), treina em 512 px e gera as prévias em
+  1024 px. Conte com cerca de 40 GB de RAM no pico (64 GB recomendados,
+  32 GB não bastam) e passos bem mais lentos que numa 3090 (estimativa:
+  10 a 25 s em 512 px): meça com o Teste rápido. Deixe marcada a correção
+  w4a8 em placas anteriores às RTX 40 (A2000).
+
+VERSÕES E ATUALIZAÇÕES
+  A versão da ferramenta aparece ao lado do título; CHANGELOG.md lista as
+  novidades. Ferramentas > Atualizações verifica (no máximo a cada 12 h)
+  se há uma nova versão publicada no GitHub e se o ai-toolkit mudou; uma
+  linha aparece sob o título quando sai uma versão.
+
 VERSÃO DO AI-TOOLKIT
   Padrão: última versão do branch main. Este pacote foi auditado no commit
   4a7f285 (10 nov. 2026). Botão "Fixar a versão atual" na aba Ferramentas:

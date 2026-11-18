@@ -39,8 +39,11 @@ cleaning the dataset, keeping a 24 GB card cool and efficient over a night of tr
 - **Caption fixer**: for a character LoRA, proposes removing the fixed traits (hair, eyes, outfit...)
   from the captions so that they are carried by the trigger word, with a review table, a backup and
   a one-click restore.
-- Automatic captioning (Qwen3-VL) adapted to the LoRA type, and automatic cropping of watermarks and
-  text.
+- **Several captions per image** (one per line of the `.txt`), so the LoRA clings less to one wording;
+  automatic captioning (Qwen3-VL), adapted to the LoRA type, can write 2 or 3 variants.
+- **Repeats per subfolder**: a subfolder named `3_back` is seen three times per pass, to give weight to
+  rare views without duplicating files.
+- Automatic cropping of watermarks and text.
 
 **Against bleeding**
 - One-click **DOP preservation** (ai-toolkit's differential output preservation).
@@ -69,6 +72,8 @@ cleaning the dataset, keeping a 24 GB card cool and efficient over a night of tr
 - Everything is downloaded into the folder (MinGit, uv, Python 3.12, torch, FFmpeg); nothing is
   installed system-wide, no Node.js. Downloads show progress and resume after interruptions.
 - Seven languages for the interface, the `.bat` scripts and the manual.
+- Version shown in the interface, with a check for new releases of the tool and of ai-toolkit
+  ([CHANGELOG](CHANGELOG.md)).
 
 ## Training processes
 
@@ -81,6 +86,8 @@ Checkpoints can be compared side by side (same prompts, same seed) and copied to
 ## Requirements
 
 - Windows 10 or 11, a 24 GB NVIDIA GPU (recent driver: 580 series or later for CUDA 13).
+  8 GB cards (RTX 2000 Ada, A2000...) can try the experimental **8 GB preset**: w4a8 base, 90 % of
+  the transformer in RAM, 512 px, about 40 GB of RAM at peak, and much slower steps.
 - 64 GB of RAM recommended, 80 GB of disk space (environment + model weights).
 - A folder path **without spaces**, for example `D:\AI\H3-LoRA\`.
 - Administrator rights only for the GPU power limit, the thermostat and the power sweep

@@ -208,7 +208,8 @@ def analyze_folder(folder, models_dir, min_keep=0.65, margin_pct=1.5, min_conf=0
     _load_detector(models_dir)
     if _detector["kind"] == "indisponible":
         return "Detection impossible : OpenCV n'est pas installe dans cet environnement.", [], []
-    names = sorted(f for f in os.listdir(folder) if f.lower().endswith(IMG_EXT))
+    import h3_core as core
+    names = core.dataset_images(folder)
     items, gallery = {}, []
     clean = croppable = hopeless = 0
     small_after = []
@@ -261,8 +262,9 @@ def analyze_folder(folder, models_dir, min_keep=0.65, margin_pct=1.5, min_conf=0
 def _drop_latent_cache(folder, name):
     """ai-toolkit met en cache l'image encodee sous <nom>_<hash>.safetensors : le
     hash ne depend pas du contenu, donc une image rognee garderait l'ancien cache."""
-    stem = os.path.splitext(name)[0]
-    for p in glob.glob(os.path.join(folder, "_latent_cache", glob.escape(stem) + "_*.safetensors")):
+    sub, base = os.path.split(name)          # image d'un sous-dossier : cache dans ce sous-dossier
+    stem = os.path.splitext(base)[0]
+    for p in glob.glob(os.path.join(folder, sub, "_latent_cache", glob.escape(stem) + "_*.safetensors")):
         try:
             os.remove(p)
         except OSError:
@@ -291,6 +293,7 @@ def apply_crops(folder, names):
                     skipped.append(name)
                     continue
                 keep = os.path.join(bdir, name)
+                os.makedirs(os.path.dirname(keep), exist_ok=True)
                 if not os.path.exists(keep):      # ne jamais ecraser le tout premier original
                     shutil.copy2(src, keep)
                 out = im.crop(item["crop"])
@@ -318,10 +321,13 @@ def restore_originals(folder):
     if not os.path.isdir(bdir):
         return "Aucune sauvegarde d'originaux pour ce dossier."
     n = 0
-    for name in os.listdir(bdir):
-        if name.lower().endswith(IMG_EXT):
-            shutil.copy2(os.path.join(bdir, name), os.path.join(folder, name))
-            _drop_latent_cache(folder, name)
-            n += 1
+    for root, _dirs, files in os.walk(bdir):
+        for base in files:
+            if base.lower().endswith(IMG_EXT):
+                name = os.path.relpath(os.path.join(root, base), bdir)
+                os.makedirs(os.path.dirname(os.path.join(folder, name)), exist_ok=True)
+                shutil.copy2(os.path.join(root, base), os.path.join(folder, name))
+                _drop_latent_cache(folder, name)
+                n += 1
     _last.update(folder=None, items={})
     return f"{n} original(aux) restaure(s) depuis {bdir}. Relancez l'analyse si besoin."

@@ -241,7 +241,7 @@ class Scorer:
         cache = read_cache(job)
         done = cache.get("samples", {})
         todo = [p for p in samples if os.path.basename(p) not in done]
-        refs = sorted(f for f in os.listdir(cfg["folder"]) if f.lower().endswith(core.IMG_EXT))
+        refs = core.dataset_images(cfg["folder"])
         sig = "|".join(f"{f}:{os.path.getmtime(os.path.join(cfg['folder'], f)):.0f}" for f in refs)
         if not refs or (not todo and cache.get("refs_sig") == sig):
             return

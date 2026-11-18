@@ -295,6 +295,36 @@ DESBORDAMIENTO: LAS DOS PROTECCIONES
   aprendizaje se muestra junto a la velocidad y salta una alerta si se
   queda por debajo de 1e-6: pause y relance con adamw8bit.
 
+VARIAS DESCRIPCIONES POR IMAGEN
+  Un .txt puede contener varias descripciones, una por línea: cada línea
+  es una variante de la misma imagen (mismos latentes) y el entrenamiento
+  las ve todas. El LoRA se ata menos a una formulación: útil con menos de
+  30 imágenes. La descripción automática escribe 2 o 3 con «Variantes por
+  imagen». La auditoría, el corrector de descripciones y las imágenes de
+  regularización tratan cada línea.
+
+REPETICIONES POR SUBCARPETA
+  Se leen las subcarpetas del dataset. Una subcarpeta de primer nivel
+  llamada N_nombre (p. ej. 3_espalda) se ve N veces por pasada: útil para
+  las vistas raras (espalda, perfil) sin duplicar archivos. El proceso
+  Rápido 512 cuenta las repeticiones en sus 30 pasadas.
+
+TARJETAS DE 8 GB (experimental)
+  El preset «8 GB» (RTX 2000 Ada, A2000...) usa la base w4a8, deja el 90 %
+  del transformer en RAM (hasta el 95 %), entrena a 512 px y genera las
+  vistas previas a 1024 px. Cuente con unos 40 GB de RAM en el pico
+  (64 GB recomendados, 32 GB no bastan) y pasos bastante más lentos que
+  en una 3090 (estimación: 10 a 25 s a 512 px): mídalo con la Prueba
+  rápida. Deje marcada la corrección w4a8 en tarjetas anteriores a las
+  RTX 40 (A2000).
+
+VERSIONES Y ACTUALIZACIONES
+  La versión de la herramienta aparece junto al título; CHANGELOG.md
+  lista las novedades. Herramientas > Actualizaciones comprueba (como
+  mucho cada 12 h) si hay una nueva versión publicada en GitHub y si
+  ai-toolkit ha cambiado; aparece una línea bajo el título cuando sale
+  una versión.
+
 VERSIÓN DE AI-TOOLKIT
   Por defecto: última versión de la rama main. Este paquete se auditó en el
   commit 4a7f285 (10 nov. 2026). Botón «Fijar la versión actual» en la

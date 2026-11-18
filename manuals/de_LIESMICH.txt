@@ -303,6 +303,37 @@ DURCHSCHLAGEN: DIE ZWEI SCHUTZFUNKTIONEN
   Lernrate neben dem Tempo angezeigt, und ein Alarm folgt, wenn sie unter
   1e-6 bleibt: pausieren und mit adamw8bit neu starten.
 
+MEHRERE BESCHREIBUNGEN PRO BILD
+  Eine .txt kann mehrere Beschreibungen enthalten, eine pro Zeile: jede
+  Zeile ist eine Variante desselben Bildes (gleiche Latents), und das
+  Training sieht alle. Das LoRA hängt weniger an einer Formulierung:
+  nützlich unter 30 Bildern. Die automatische Beschreibung schreibt 2
+  oder 3 mit „Varianten pro Bild“. Audit, Beschreibungskorrektur und
+  Regularisierungsbilder behandeln jede Zeile.
+
+WIEDERHOLUNGEN PRO UNTERORDNER
+  Unterordner des Datasets werden gelesen. Ein Unterordner der ersten
+  Ebene namens N_name (z. B. 3_ruecken) wird N-mal pro Durchgang gesehen:
+  nützlich für seltene Ansichten (Rücken, Profil), ohne Dateien zu
+  duplizieren. Der Prozess Schnell 512 zählt die Wiederholungen in seinen
+  30 Durchgängen mit.
+
+KARTEN MIT 8 GB (experimentell)
+  Das Preset „8 GB“ (RTX 2000 Ada, A2000...) nutzt die w4a8-Basis, hält
+  90 % des Transformers im RAM (bis 95 %), trainiert mit 512 px und
+  erzeugt Vorschauen mit 1024 px. Rechnen Sie mit etwa 40 GB RAM in der
+  Spitze (64 GB empfohlen, 32 GB reichen nicht) und deutlich langsameren
+  Schritten als auf einer 3090 (Schätzung: 10 bis 25 s bei 512 px): mit
+  dem Schnelltest messen. Den w4a8-Korrektur-Haken bei Karten vor der
+  RTX 40 (A2000) gesetzt lassen.
+
+VERSIONEN UND AKTUALISIERUNGEN
+  Die Version des Tools steht neben dem Titel; CHANGELOG.md listet die
+  Neuerungen. Werkzeuge > Aktualisierungen prüft (höchstens alle 12 h),
+  ob eine neue Version auf GitHub veröffentlicht wurde und ob sich
+  ai-toolkit geändert hat; unter dem Titel erscheint eine Zeile, wenn
+  eine Version erscheint.
+
 AI-TOOLKIT-VERSION
   Standard: neueste Version des main-Zweigs. Dieses Paket wurde auf Commit
   4a7f285 (10. Nov. 2026) geprüft. Schaltfläche „Aktuelle Version fixieren"

@@ -113,18 +113,14 @@ def proposals(folder, lora_type, trigger="", extra_traits=""):
                     "style, les traits du contenu doivent rester decrits.")
     extras = [t.strip() for t in re.split(r"[,;\n]", extra_traits or "") if t.strip()]
     rows = []
-    for f in sorted(os.listdir(folder)):
-        if not f.lower().endswith(".txt"):
+    for img in core.dataset_images(folder):
+        f = os.path.splitext(img)[0] + ".txt"
+        old = core.read_caption(folder, img)
+        if not old:
             continue
-        if not any(os.path.isfile(os.path.join(folder, os.path.splitext(f)[0] + e)) for e in core.IMG_EXT):
-            continue
-        try:
-            with open(os.path.join(folder, f), encoding="utf-8", errors="replace") as fh:
-                old = fh.read().strip()
-        except OSError:
-            continue
-        new = fix_caption(old, extras, trigger)
-        if new and new != old:
+        # une variante par ligne : chacune est corrigee
+        new = "\n".join(x for x in (fix_caption(ln, extras, trigger) for ln in core.caption_lines(old)) if x)
+        if new and new != "\n".join(core.caption_lines(old)):
             rows.append([True, f, old, new])
     if not rows:
         return [], "Aucune legende a corriger : aucune ne decrit de trait permanent reconnu."
@@ -144,14 +140,16 @@ def apply(folder, rows):
         if len(row) < 4:
             continue
         on, name, _old, new = row[0], str(row[1]), row[2], str(row[3] or "").strip()
-        if str(on).lower() not in ("true", "1") or not new or os.sep in name or "/" in name:
+        rel = os.path.normpath(name)
+        if str(on).lower() not in ("true", "1") or not new or os.path.isabs(rel) or rel.startswith(".."):
             continue
-        path = os.path.join(folder, name)
+        path = os.path.join(folder, rel)
         if not os.path.isfile(path):
             continue
-        os.makedirs(bdir, exist_ok=True)
-        if not os.path.isfile(os.path.join(bdir, name)):
-            shutil.copy2(path, os.path.join(bdir, name))
+        keep = os.path.join(bdir, rel)
+        os.makedirs(os.path.dirname(keep), exist_ok=True)
+        if not os.path.isfile(keep):
+            shutil.copy2(path, keep)
         with open(path, "w", encoding="utf-8") as fh:
             fh.write(new)
         done += 1
@@ -163,8 +161,11 @@ def restore(folder):
     if not os.path.isdir(bdir):
         return "Aucune sauvegarde de legendes pour ce dossier."
     n = 0
-    for f in os.listdir(bdir):
-        if f.lower().endswith(".txt"):
-            shutil.copy2(os.path.join(bdir, f), os.path.join(folder, f))
-            n += 1
+    for root, _dirs, files in os.walk(bdir):
+        for f in files:
+            if f.lower().endswith(".txt"):
+                rel = os.path.relpath(os.path.join(root, f), bdir)
+                os.makedirs(os.path.dirname(os.path.join(folder, rel)), exist_ok=True)
+                shutil.copy2(os.path.join(root, f), os.path.join(folder, rel))
+                n += 1
     return f"{n} legende(s) d'origine restauree(s)."

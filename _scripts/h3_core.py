@@ -20,6 +20,7 @@ import subprocess
 import sys
 import threading
 import time
+import urllib.error
 import urllib.request
 
 import yaml
@@ -53,6 +54,13 @@ FILE_INT8 = "diffusion_models/minimax_h3_image_pruned_int8_convrot.safetensors"
 
 PRESET_INT8 = "int8 + offload RAM - defaut, chemin sur pour la 3090"
 PRESET_W4A8 = "w4a8 - EXPERIMENTAL sur 3090 (plus leger, sans offload)"
+PRESET_8GB = "8 Go - EXPERIMENTAL (w4a8, presque tout en RAM)"
+PRESETS = [PRESET_INT8, PRESET_W4A8, PRESET_8GB]
+# reglages appliques quand on choisit le preset : part en RAM, resolutions, taille des apercus
+PRESET_DEFAULTS = {PRESET_INT8: {"offload": 0.35}, PRESET_W4A8: {"offload": 0.0},
+                   PRESET_8GB: {"offload": 0.9, "resolutions": ["512"], "sample_size": 1024}}
+OFFLOAD_MAX = 0.95
+TRANSFORMER_GB = {"convrot8": 20.0, "convrotw4a8": 12.5}   # taille approximative du transformer en RAM
 
 CALIB_NAME = "_calibrage"
 CALIB_STEPS = 20
@@ -92,11 +100,68 @@ SAMPLER_LCM = "LCM (peau plus naturelle selon Fizgig, experimental)"
 SAMPLERS = [SAMPLER_EULER, SAMPLER_LCM]
 
 
-def count_images(folder):
+REPEAT_RE = re.compile(r"^(\d+)_(.+)$")   # sous-dossier "3_dos" : vu 3 fois par passage
+
+
+def dataset_images(folder):
+    """Images du dataset, sous-dossiers compris, comme les lit ai-toolkit (dossiers caches et _controls
+    exclus) : chemins relatifs tries."""
+    out = []
+    if not folder or not os.path.isdir(folder):
+        return out
+    for root, dirs, files in os.walk(folder):
+        dirs[:] = sorted(d for d in dirs if not d.startswith(".") and d != "_controls")
+        for f in files:
+            if f.lower().endswith(IMG_EXT) and not f.startswith("."):
+                out.append(os.path.relpath(os.path.join(root, f), folder))
+    return sorted(out)
+
+
+def caption_file(folder, rel):
+    return os.path.join(folder, os.path.splitext(rel)[0] + ".txt")
+
+
+def caption_lines(text):
+    """Une legende par ligne : plusieurs lignes = plusieurs variantes, une tiree a chaque passage."""
+    return [ln.strip() for ln in (text or "").splitlines() if ln.strip()]
+
+
+def read_caption(folder, rel):
     try:
-        return sum(1 for f in os.listdir(folder) if f.lower().endswith(IMG_EXT))
+        with open(caption_file(folder, rel), encoding="utf-8", errors="replace") as fh:
+            return fh.read().strip()
     except OSError:
-        return 0
+        return None
+
+
+def repeat_of(rel):
+    """Repetitions d'une image : nombre en tete de son sous-dossier de premier niveau (3_dos -> 3)."""
+    parts = re.split(r"[\\/]", rel)
+    if len(parts) > 1:
+        m = REPEAT_RE.match(parts[0])
+        if m and int(m.group(1)) >= 1:
+            return int(m.group(1))
+    return 1
+
+
+def repeat_folders(folder):
+    """{sous-dossier de premier niveau: repetitions} pour ceux nommes N_nom avec N >= 2 et contenant des images."""
+    out = {}
+    for rel in dataset_images(folder):
+        parts = re.split(r"[\\/]", rel)
+        n = repeat_of(rel)
+        if len(parts) > 1 and n >= 2:
+            out[parts[0]] = n
+    return out
+
+
+def effective_count(folder):
+    """Images vues par passage sur le dataset, repetitions comprises."""
+    return sum(repeat_of(r) for r in dataset_images(folder))
+
+
+def count_images(folder):
+    return len(dataset_images(folder))
 
 
 def process_values(process, folder=""):
@@ -104,7 +169,7 @@ def process_values(process, folder=""):
     ou None pour le procede Standard (rien n'est modifie)."""
     if process == PROC_STANDARD:
         return None
-    n = count_images(folder)
+    n = effective_count(folder)                   # repetitions des sous-dossiers N_nom comprises
     steps = max(300, 30 * n) if n else 600        # 30 passages sur le dataset
     every = max(50, int(round(steps / 10 / 10.0)) * 10)
     full = process == PROC_FIZGIG
@@ -173,14 +238,10 @@ def caption_check(folder, lora_type, trigger="", extra_traits=""):
     trigger = (trigger or "").strip()
     extras = [t.strip().lower() for t in re.split(r"[,;\n]", extra_traits or "") if t.strip()]
     caps = {}
-    for f in sorted(os.listdir(folder)):
-        if f.lower().endswith(".txt") and any(
-                os.path.isfile(os.path.join(folder, os.path.splitext(f)[0] + e)) for e in IMG_EXT):
-            try:
-                with open(os.path.join(folder, f), encoding="utf-8", errors="replace") as fh:
-                    caps[f] = fh.read().strip()
-            except OSError:
-                pass
+    for rel in dataset_images(folder):
+        text = read_caption(folder, rel)
+        if text is not None:
+            caps[os.path.splitext(rel)[0] + ".txt"] = text
     if not caps:
         return ""
     lines = ["", f"Legendes ({lora_type}) :"]
@@ -210,7 +271,8 @@ def caption_check(folder, lora_type, trigger="", extra_traits=""):
         else:
             lines.append("- Aucune legende ne decrit de trait permanent du sujet.")
         if trigger:
-            missing = [f for f, c in caps.items() if trigger.lower() not in c.lower()]
+            missing = [f for f, c in caps.items()
+                       if any(trigger.lower() not in ln.lower() for ln in caption_lines(c))]
             if missing:
                 lines.append(f"- {len(missing)} legende(s) sans le mot declencheur '{trigger}' : ai-toolkit "
                              "l'ajoutera au debut, mais une legende qui le nomme comme sujet apprend mieux.")
@@ -1320,10 +1382,16 @@ def job_samples(job, limit=24):
 def dataset_report(folder):
     if not folder or not os.path.isdir(folder):
         return "Dossier introuvable.", []
-    imgs = sorted(f for f in os.listdir(folder) if f.lower().endswith(IMG_EXT))
-    missing = [f for f in imgs
-               if not os.path.isfile(os.path.join(folder, os.path.splitext(f)[0] + ".txt"))]
+    imgs = dataset_images(folder)
+    missing = [f for f in imgs if not os.path.isfile(caption_file(folder, f))]
     msg = f"{len(imgs)} image(s), {len(imgs) - len(missing)} legende(s) .txt."
+    reps = repeat_folders(folder)
+    if reps:
+        msg += ("\nRepetitions : " + ", ".join(f"{d} x{n}" for d, n in sorted(reps.items()))
+                + f" -> {effective_count(folder)} images vues par passage.")
+    multi = sum(1 for f in imgs if len(caption_lines(read_caption(folder, f))) > 1)
+    if multi:
+        msg += f"\nLegendes multiples : {multi} image(s) ont plusieurs variantes (une par ligne)."
     if missing:
         msg += (f"\nSans legende ({len(missing)}) : " + ", ".join(missing[:15])
                 + (" ..." if len(missing) > 15 else ""))
@@ -1342,13 +1410,12 @@ def image_size_report(folder, resolutions):
     if not folder or not os.path.isdir(folder):
         return ""
     sizes = []
-    for f in sorted(os.listdir(folder)):
-        if f.lower().endswith(IMG_EXT):
-            try:
-                with Image.open(os.path.join(folder, f)) as im:
-                    sizes.append((f, im.width, im.height))
-            except Exception:
-                pass
+    for f in dataset_images(folder):
+        try:
+            with Image.open(os.path.join(folder, f)) as im:
+                sizes.append((f, im.width, im.height))
+        except Exception:
+            pass
     if not sizes:
         return ""
     res = sorted(int(r) for r in (resolutions or [])) or [1024]
@@ -1397,9 +1464,9 @@ def checkpoint_steps(job):
 
 def fill_captions(folder, text):
     n = 0
-    for f in os.listdir(folder):
-        if f.lower().endswith(IMG_EXT):
-            p = os.path.join(folder, os.path.splitext(f)[0] + ".txt")
+    for f in dataset_images(folder):
+        if True:
+            p = caption_file(folder, f)
             if not os.path.isfile(p):
                 with open(p, "w", encoding="utf-8") as fh:
                     fh.write(text.strip())
@@ -1442,7 +1509,7 @@ def build_config(P):
         "name_or_path": H3_REPO,
         "arch": "minimax_h3_image",
         "quantize": True,
-        "qtype": "convrotw4a8" if preset == PRESET_W4A8 else "convrot8",
+        "qtype": "convrotw4a8" if preset in (PRESET_W4A8, PRESET_8GB) else "convrot8",
         "quantize_te": True,
         "qtype_te": "nvfp4",
         "low_vram": True,
@@ -1512,6 +1579,11 @@ def build_config(P):
             proc["train"].update({"diff_output_preservation": True,
                                   "diff_output_preservation_class": (P.get("dop_class") or CONTROL_SUBJECT).strip(),
                                   "diff_output_preservation_multiplier": 1.0})
+    # sous-dossiers N_nom : ai-toolkit lit deja le dossier entier une fois (sous-dossiers compris), on
+    # ajoute le sous-dossier comme dataset repete N-1 fois de plus (memes caches, chemins identiques)
+    for sub, n in sorted(repeat_folders(P.get("folder")).items()):
+        extra = dict(ds, folder_path=os.path.join(ds["folder_path"], sub), num_repeats=n - 1)
+        proc["datasets"].append(extra)
     reg_dir = reg_folder(P.get("folder"))
     if P.get("reg") and count_images(reg_dir):
         # images de regularisation (generees par le modele de base) : pas de mot declencheur ajoute
@@ -1546,10 +1618,13 @@ def _job_env(cfg, P=None, start_step=0):
     P = P or {}
     if P.get("likeness"):
         folder = (proc.get("datasets") or [{}])[0].get("folder_path", "")
-        env.update(H3UI_LIKENESS="1", H3UI_EPOCH_STEPS=str(max(1, count_images(folder))),
+        env.update(H3UI_LIKENESS="1", H3UI_EPOCH_STEPS=str(max(1, effective_count(folder))),
                    H3UI_START_STEP=str(int(start_step or 0)))
     if P.get("sampler") == SAMPLER_LCM:
         env["H3UI_LCM"] = "1"
+    folders = [d.get("folder_path", "") for d in proc.get("datasets") or [] if not d.get("is_reg")]
+    if any(len(caption_lines(read_caption(f, r))) > 1 for f in folders for r in dataset_images(f)):
+        env["H3UI_CAPTION_VARIANTS"] = "1"
     return env
 
 
@@ -1640,7 +1715,8 @@ def ram_warning(P):
     if not total:
         return ""
     available = total - used
-    need = 20.0 * float(P.get("offload") or 0) + 14.0
+    qtype = "convrotw4a8" if P.get("preset") in (PRESET_W4A8, PRESET_8GB) else "convrot8"
+    need = TRANSFORMER_GB[qtype] * float(P.get("offload") or 0) + 14.0
     if available < need:
         return (f" ATTENTION : {available:.0f} Go de RAM disponibles pour environ {need:.0f} Go "
                 "necessaires (blocs decharges + marge). Fermez les autres programmes "
@@ -1899,6 +1975,8 @@ class Orchestrator:
     # ---- fin de job
     def _job_finished(self, run):
         kind, name, code = run.kind, run.job_name, run.exit_code
+        # legendage a variantes : nettoyage meme si le job a ete arrete (fichiers deja ecrits)
+        cap_note = finish_caption_variants() if kind == "caption" else ""
         # rend au GPU sa limite de puissance d'origine, sauf si un job suit dans la file
         if self._power_changed and not (self.queue and not self.hold):
             self._power_changed = False
@@ -1928,7 +2006,7 @@ class Orchestrator:
             return
         label = {"train": "Entrainement", "test": "Test de LoRA", "caption": "Legendage"}.get(kind, kind)
         if code == 0:
-            extra = ""
+            extra = cap_note
             if kind == "train" and not pinned_commit():
                 extra = " Pensez a figer la version d'ai-toolkit (onglet Outils)."
             self.last_message = f"{label} termine : {name or run.label}.{extra}"
@@ -2104,7 +2182,7 @@ def build_calibration_report(run, P):
         if run.saw_compile_error:
             lines.append("- Erreur de compilation triton : cochez 'Correctif w4a8', ou repassez au preset int8.")
         elif run.saw_oom:
-            nxt = min(0.8, round(offload + 0.15, 2))
+            nxt = min(OFFLOAD_MAX, round(offload + 0.15, 2))
             lines.append(f"- Memoire GPU insuffisante avec part en RAM = {offload:.2f} et resolutions {res}.")
             lines.append(f"- Essayez part en RAM = {nxt:.2f}, puis la resolution 1024 seule, puis rang 8.")
         else:
@@ -2122,13 +2200,13 @@ def build_calibration_report(run, P):
         margin = total - peak
         lines.append(f"- Pic de VRAM pendant les pas : {peak:.1f} / {total:.1f} Go (marge {margin:.1f} Go).")
         if margin < 1.0:
-            lines.append(f"- Marge trop faible : montez la part en RAM a {min(0.8, offload + 0.1):.2f}, "
+            lines.append(f"- Marge trop faible : montez la part en RAM a {min(OFFLOAD_MAX, offload + 0.1):.2f}, "
                          "ou retirez la plus haute resolution.")
         elif margin > 4.0 and offload > 0:
             lines.append(f"- Marge confortable : essayez une part en RAM de {max(0.0, offload - 0.1):.2f} "
                          "(plus rapide), puis relancez le test.")
         else:
-            lines.append("- Reglage coherent pour 24 Go : vous pouvez lancer l'entrainement.")
+            lines.append(f"- Reglage coherent pour {total:.0f} Go : vous pouvez lancer l'entrainement.")
         lines.append("- Les apercus (surtout en 2048) demandent davantage : s'ils saturent, passez-les en 1536.")
         lines.append("- Repere (mesures Fizgig, base int8 sans dechargement) : ~21,0 Go en 512 px, ~21,7 Go "
                      "en 1024 px. La resolution change surtout la duree d'un pas, tres peu la memoire.")
@@ -2140,7 +2218,52 @@ def build_calibration_report(run, P):
 
 
 # =========================================================== actions : legendage
-def start_captioning(folder, model, recaption, prompt, max_tokens=256):
+CAPTION_VARIANTS_HINT = (" Write {n} different captions for this image, one per line, each complete and "
+                         "following all the rules above, with different wording and a different order of "
+                         "details. No numbering, no titles, no blank lines.")
+PENDING_VARIANTS = {}          # legendage en cours avec variantes : dossier, nombre, heure de depart
+_VARIANT_PREFIX = re.compile(r"^\s*(?:(?:caption|variant|version)\s*\d*\s*[:.)\-]|\d+\s*[.):\-]|[-*\u2022])\s*", re.I)
+
+
+def clean_variants(text, n):
+    """Nettoie une legende a variantes : numeros, puces, guillemets, doublons ; n lignes au plus."""
+    out = []
+    for ln in caption_lines(text):
+        prev = None
+        while prev != ln:                       # "- Caption 3: ..." : plusieurs prefixes
+            prev, ln = ln, _VARIANT_PREFIX.sub("", ln).strip()
+        ln = ln.strip('"\u201c\u201d').strip()
+        if len(ln.split()) >= 3 and ln.lower() not in (x.lower() for x in out):
+            out.append(ln)
+    return "\n".join(out[:max(1, n)])
+
+
+def finish_caption_variants():
+    """Apres un legendage a variantes : nettoie les .txt ecrits pendant ce job."""
+    job = dict(PENDING_VARIANTS)
+    PENDING_VARIANTS.clear()
+    if not job:
+        return ""
+    done = 0
+    for rel in dataset_images(job["folder"]):
+        path = caption_file(job["folder"], rel)
+        try:
+            if os.path.getmtime(path) < job["started"] - 2:
+                continue
+            with open(path, encoding="utf-8", errors="replace") as fh:
+                text = fh.read()
+            clean = clean_variants(text, job["n"])
+            if clean and clean != text.strip():
+                with open(path, "w", encoding="utf-8") as fh:
+                    fh.write(clean)
+            done += len(caption_lines(clean)) > 1
+        except OSError:
+            continue
+    return f" {done} legende(s) a plusieurs variantes."
+
+
+def start_captioning(folder, model, recaption, prompt, max_tokens=256, variants=1):
+    variants = max(1, min(3, int(variants or 1)))
     if RUN.running():
         return f"Un autre job tourne deja ({RUN.label}) : attendez sa fin ou arretez-le."
     if not folder or not os.path.isdir(folder):
@@ -2155,10 +2278,14 @@ def start_captioning(folder, model, recaption, prompt, max_tokens=256):
             "path_to_caption": folder, "recaption": bool(recaption),
             # compile=True passerait par torch.compile : inutilement fragile sous Windows
             "compile": False, "caption_extension": "txt",
-            "caption_prompt": (prompt or CAPTION_PROMPT).strip(),
-            "max_res": 768, "max_new_tokens": int(max_tokens), "batch_size": 1,
+            "caption_prompt": (prompt or CAPTION_PROMPT).strip() + (
+                CAPTION_VARIANTS_HINT.format(n=variants) if variants > 1 else ""),
+            "max_res": 768, "max_new_tokens": int(max_tokens) * max(1, variants), "batch_size": 1,
         }}]}}
     cfg_path = write_config("_legendes", cfg)
+    PENDING_VARIANTS.clear()
+    if variants > 1:
+        PENDING_VARIANTS.update(folder=folder, n=variants, started=time.time())
     ok = RUN.start([PY, RUN_JOB, cfg_path], "caption",
                    f"Legendage automatique ({count_images(folder)} images, {(model or CAPTION_MODELS[0]).split('/')[-1]})",
                    os.path.join(CACHE, "journal_legendes.txt"))
@@ -2242,14 +2369,8 @@ def reg_folder(folder):
 def reg_prompts(folder, trigger, count, subject=CONTROL_SUBJECT):
     """Legendes du dataset, mot declencheur (et variantes proches) remplace par 'a person'."""
     caps = []
-    for f in sorted(os.listdir(folder)):
-        if f.lower().endswith(".txt") and any(
-                os.path.isfile(os.path.join(folder, os.path.splitext(f)[0] + e)) for e in IMG_EXT):
-            try:
-                with open(os.path.join(folder, f), encoding="utf-8", errors="replace") as fh:
-                    text = fh.read().strip()
-            except OSError:
-                continue
+    for f in dataset_images(folder):
+        for text in caption_lines(read_caption(folder, f)):   # chaque variante donne un prompt
             if text:
                 ctl, _auto = control_prompt([text], trigger, subject)
                 caps.append(ctl or text)
@@ -2329,6 +2450,84 @@ def reg_status(folder):
     n = count_images(d) if d and os.path.isdir(d) else 0
     return (f"{n} image(s) de regularisation disponibles dans {d}." if n else
             "Aucune image de regularisation pour ce dataset : generez-les d'abord.")
+
+
+# =========================================================== version de l'outil et mises a jour
+TOOL_REPO = "damienjourdan/h3-image-lora-portable"
+AITK_REMOTE = "https://github.com/ostris/ai-toolkit"
+UPDATE_EVERY_S = 12 * 3600
+UPDATES = {"tool": None, "aitk": None, "checked": 0.0, "error": ""}
+
+
+def tool_version():
+    try:
+        with open(os.path.join(ROOT, "VERSION"), encoding="ascii") as fh:
+            return fh.read().strip() or "?"
+    except OSError:
+        return "?"
+
+
+def _version_tuple(text):
+    return tuple(int(x) for x in re.findall(r"\d+", text or "")[:3]) or (0,)
+
+
+def check_updates(force=False):
+    """Derniere version publiee de l'outil (GitHub Releases) et dernier commit d'ai-toolkit. Au plus une
+    verification toutes les 12 h, sauf demande explicite ; jamais bloquant."""
+    if not force and time.time() - UPDATES["checked"] < UPDATE_EVERY_S:
+        return UPDATES
+    UPDATES.update(checked=time.time(), error="")
+    try:
+        req = urllib.request.Request(f"https://api.github.com/repos/{TOOL_REPO}/releases/latest",
+                                     headers={"Accept": "application/vnd.github+json",
+                                              "User-Agent": "h3-image-lora-portable"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        UPDATES["tool"] = {"tag": data.get("tag_name", ""), "url": data.get("html_url", "")}
+    except urllib.error.HTTPError as exc:
+        UPDATES["tool"] = {"tag": "", "url": ""} if exc.code == 404 else None
+        if exc.code != 404:
+            UPDATES["error"] = f"GitHub : {exc.code}"
+    except Exception as exc:  # noqa: BLE001 - hors ligne
+        UPDATES["tool"] = None
+        UPDATES["error"] = str(exc)[:80]
+    remote = _git("ls-remote", AITK_REMOTE, "refs/heads/main")
+    UPDATES["aitk"] = remote.split()[0] if remote else None
+    return UPDATES
+
+
+def update_text(force=False):
+    u = check_updates(force)
+    lines = [f"Outil : version {tool_version()} installee."]
+    tool = u.get("tool")
+    if tool is None:
+        lines.append("Derniere version publiee : verification impossible (hors ligne ?).")
+    elif not tool["tag"]:
+        lines.append("Aucune version publiee sur GitHub pour l'instant.")
+    elif _version_tuple(tool["tag"]) > _version_tuple(tool_version()):
+        lines.append(f"Nouvelle version {tool['tag']} disponible : {tool['url']} (decompressez-la par-dessus "
+                     "ce dossier).")
+    else:
+        lines.append("L'outil est a jour.")
+    cur, remote = current_commit(), u.get("aitk")
+    if not remote or not cur:
+        lines.append("ai-toolkit : verification impossible.")
+    elif remote == cur:
+        lines.append("ai-toolkit : a jour.")
+    elif pinned_commit():
+        lines.append(f"ai-toolkit : une version plus recente existe ({remote[:10]}), mais la version est figee.")
+    else:
+        lines.append(f"ai-toolkit : une version plus recente existe ({remote[:10]}) : 3_METTRE_A_JOUR.bat.")
+    return "\n".join(lines)
+
+
+def update_banner():
+    """Ligne affichee sous le titre quand une nouvelle version de l'outil est publiee."""
+    tool = check_updates().get("tool")
+    if tool and tool["tag"] and _version_tuple(tool["tag"]) > _version_tuple(tool_version()):
+        return (f"Nouvelle version {tool['tag']} de l'outil disponible : [page de la version]({tool['url']}) "
+                "(details dans Outils).")
+    return ""
 
 
 # =========================================================== version d'ai-toolkit

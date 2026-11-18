@@ -431,7 +431,7 @@ def apply_process(process, folder):
     if values is None:
         return [gr.update()] * len(PROCESS_FIELDS) + [
             "Procede Standard : vos reglages actuels sont conserves."]
-    n = core.count_images(folder)
+    n = core.effective_count(folder)      # repetitions des sous-dossiers N_nom comprises
     note = (f"{values['steps']} pas pour {n} images (30 passages, 300 pas au minimum)." if n else
             "Dossier du dataset introuvable : 600 pas par defaut, a ajuster (30 x nombre d'images).")
     return [values[k] for k in PROCESS_FIELDS] + [
@@ -442,7 +442,7 @@ def load_settings_now(name):
     P = core.load_job_settings(name) if name else None
     if not P:
         return [gr.update()] * len(core.PARAM_KEYS) + ["Aucun reglage enregistre sous ce nom."]
-    if P.get("preset") not in (core.PRESET_INT8, core.PRESET_W4A8):
+    if P.get("preset") not in core.PRESETS:
         P["preset"] = core.PRESET_INT8
     P["resolutions"] = [str(r) for r in P.get("resolutions") or ["1024"]]
     P.setdefault("process", core.PROC_STANDARD)        # reglages enregistres avant ces options
@@ -902,7 +902,9 @@ def build(code):
     with gr.Blocks(title="H3-Image LoRA - RTX 3090") as demo:
         with gr.Row(equal_height=True):
             with gr.Column(scale=6):
-                gr.Markdown("## LoRA MiniMax-H3-Image &nbsp;·&nbsp; ai-toolkit &nbsp;·&nbsp; RTX 3090 24 Go")
+                gr.Markdown("## LoRA MiniMax-H3-Image &nbsp;·&nbsp; ai-toolkit &nbsp;·&nbsp; RTX 3090 24 Go"
+                            f" &nbsp;<small>v{core.tool_version()}</small>")
+                upd_banner = gr.Markdown()
             with gr.Column(scale=1, min_width=150):
                 lang_sel = gr.Dropdown([(name, c) for c, name in i18n.LANGS], value=code,
                                        show_label=False, container=False, interactive=True)
@@ -953,6 +955,11 @@ def build(code):
                                            info="Preconise : 256 (1 a 3 phrases detaillees).")
                     cap_redo = gr.Checkbox(label="Refaire les legendes existantes", value=False,
                                            info="Decoche : seules les images sans .txt sont traitees.")
+                    cap_variants = gr.Slider(1, 3, value=1, step=1, label="Variantes par image",
+                                             info="2 ou 3 : plusieurs legendes par image, une par ligne du "
+                                                  ".txt ; une variante differente est vue a chaque passage, le "
+                                                  "LoRA s'attache moins a une formulation. Utile sous 30 images. "
+                                                  "Legendage plus long d'autant.")
                 cap_prompt = gr.Textbox(label="Consigne donnee au modele (modifiable)",
                                         value=core.caption_prompt(core.LORA_SUBJECT), lines=5,
                                         info="Generee d'apres le type de LoRA, le mot declencheur de l'onglet "
@@ -1085,15 +1092,17 @@ def build(code):
                                      info="Preconise : un mot invente avec des chiffres (ex. m41ne) pour un sujet, "
                                           "jamais un vrai mot ni un nom connu ; vide pour un style. "
                                           "A reutiliser ensuite dans vos prompts.")
-            preset = gr.Radio([core.PRESET_INT8, core.PRESET_W4A8], value=core.PRESET_INT8, label="Preset 3090",
-                              info="Preconise : int8. w4a8 : a essayer avec le Test rapide ; s'il fonctionne "
-                                   "il evite l'aller-retour avec la RAM.")
+            preset = gr.Radio(core.PRESETS, value=core.PRESET_INT8, label="Preset selon la carte",
+                              info="Preconise sur 24 Go : int8. w4a8 : a essayer avec le Test rapide ; s'il "
+                                   "fonctionne il evite l'aller-retour avec la RAM. 8 Go (RTX 2000 Ada, A2000...) : "
+                                   "w4a8, 90 % du transformer en RAM, 512 px ; environ 40 Go de RAM au pic, "
+                                   "64 Go conseilles, et nettement plus lent (mesurez avec le Test rapide).")
             w4a8_fix = gr.Checkbox(label="Correctif w4a8 pour GPU anterieurs aux RTX 40 (experimental)", value=True,
                                    info="Sans effet en int8. En w4a8 sur 3090 : contourne le noyau triton "
                                         "incompatible en decompressant en torch pur. Laissez coche.")
-            offload = gr.Slider(0, 0.8, value=0.35, step=0.05, label="Part du transformer en RAM",
-                                info="Preconise : 0.35 en int8, 0 en w4a8. Erreur memoire -> 0.5 puis 0.7 "
-                                     "(plus lent). Le Test rapide indique s'il y a de la marge.")
+            offload = gr.Slider(0, core.OFFLOAD_MAX, value=0.35, step=0.05, label="Part du transformer en RAM",
+                                info="Preconise : 0.35 en int8, 0 en w4a8, 0.9 en 8 Go. Erreur memoire -> 0.5 "
+                                     "puis 0.7 (plus lent). Le Test rapide indique s'il y a de la marge.")
             resol = gr.CheckboxGroup(["512", "768", "1024", "1536", "2048"], value=["1024", "1536"],
                                      label="Resolutions d'entrainement",
                                      info="512 : le reglage de Fizgig, de loin le plus rapide (la memoire change "
@@ -1343,6 +1352,9 @@ def build(code):
             with gr.Row():
                 tools_save = gr.Button("Enregistrer", variant="primary")
                 tools_test = gr.Button("Tester la notification")
+            gr.Markdown("### Mises a jour")
+            upd_box = gr.Textbox(label="Versions", lines=3, interactive=False)
+            upd_btn = gr.Button("Verifier les mises a jour")
             gr.Markdown("### Version d'ai-toolkit")
             ver_box = gr.Textbox(label="Version", lines=2, interactive=False, value=core.version_text)
             with gr.Row():
@@ -1384,12 +1396,16 @@ def build(code):
             comp.change(prompt_check, [trigger, prompts, no_sample, control], prompt_note)
         cap_btn.click(fill_captions, [ds_folder, cap_text], [ds_msg, ds_gallery])
         # retour immediat : le panneau passe a "Lancement" des le clic, sans attendre le minuteur
-        cap_auto_btn.click(lambda f, m, r, p, t: core.start_captioning(f, m, r, p, t),
-                           [ds_folder, cap_model, cap_redo, cap_prompt, cap_tokens], msg,
+        cap_auto_btn.click(lambda f, m, r, p, t, v: core.start_captioning(f, m, r, p, t, v),
+                           [ds_folder, cap_model, cap_redo, cap_prompt, cap_tokens, cap_variants], msg,
                            show_progress="minimal").then(render_caption_panel, None, [cap_panel, cap_log])
         # entrainement
         # .input : seulement quand l'utilisateur change le preset, pas quand des reglages sont recharges
-        preset.input(lambda p: 0.35 if p == core.PRESET_INT8 else 0.0, preset, offload)
+        def preset_defaults(p):
+            d = core.PRESET_DEFAULTS.get(p, {})
+            return (d.get("offload", 0.0), gr.update(value=d["resolutions"]) if "resolutions" in d else gr.update(),
+                    gr.update(value=d["sample_size"]) if "sample_size" in d else gr.update())
+        preset.input(preset_defaults, preset, [offload, resol, sample_size])
         prev_btn.click(preview, cfg_inputs, yaml_box)
         go_btn.click(start_training, cfg_inputs, [msg, job_sel]).then(
             render_train_panel, None, [train_panel, train_log])
@@ -1440,6 +1456,9 @@ def build(code):
         gr.Timer(5.0).tick(auto_test_results, [test_job, test_sig], [test_gallery, test_sig])
         demo.load(render_status, None, status_outputs)
         demo.load(lambda: i18n.save_lang(code), None, None)
+        # verification en arriere-plan (au plus toutes les 12 h) : la page n'attend pas le reseau
+        demo.load(core.update_banner, None, upd_banner).then(core.update_text, None, upd_box)
+        upd_btn.click(lambda: core.update_text(True), None, upd_box).then(core.update_banner, None, upd_banner)
         demo.load(restore_page, None, cfg_inputs + [preset_sel, job_sel, test_job])
 
     # champs dont le contenu appartient a l'utilisateur (chemins, prompts, legendes, journaux)
@@ -1459,6 +1478,7 @@ def main():
     from fastapi.responses import RedirectResponse
 
     ORCH.start()
+    threading.Thread(target=core.check_updates, daemon=True).start()   # mises a jour, sans bloquer
     app = FastAPI()
 
     @app.get("/")

@@ -15,6 +15,11 @@ s'abstient et le dit dans le journal.
                          H3UI_START_STEP = pas de reprise.
   H3UI_LCM=1             Apercus avec l'echantillonneur LCM (bruit frais a
                          chaque pas, 1,1 -> 0,9) au lieu d'Euler.
+  H3UI_CAPTION_VARIANTS=1
+                         Legendes multiples : un .txt de plusieurs lignes donne
+                         une variante par ligne. Chaque image est dupliquee en
+                         memoire (comme les retournements d'ai-toolkit), une
+                         copie par variante : memes latents, une legende chacune.
   H3UI_FIZGIG_ADAPTER=<fichier de destination>
                          Telecharge l'adaptateur d'entrainement de Fizgig et le
                          convertit du format kohya vers celui d'ai-toolkit.
@@ -33,6 +38,7 @@ import sys
 W4A8_MODULE = os.environ.get("H3UI_FIX_TARGET", "toolkit.util.convrot_w4a8_quant")
 SCHEDULER_MODULE = "toolkit.samplers.custom_flowmatch_sampler"
 PIPELINE_MODULE = "extensions_built_in.diffusion_models.minimax_h3.src.pipeline"
+DATALOADER_MODULE = "toolkit.data_loader"
 
 FIZGIG_REPO = "ShootTheSound/Fizgig-MiniMax-H3-Image-Training-Adapter"
 FIZGIG_FILE = "fizgig_minimax_h3_image_training_adapter.safetensors"
@@ -177,6 +183,57 @@ def exec_pipeline_with_lcm(module, loader, original_exec):
 
 
 # ------------------------------------------------------------------ crochet d'import
+# ------------------------------------------------------------------ legendes multiples
+def caption_variants(path, ext):
+    try:
+        with open(os.path.splitext(path)[0] + ext, encoding="utf-8", errors="replace") as fh:
+            return [ln.strip() for ln in fh.read().splitlines() if ln.strip()]
+    except OSError:
+        return []
+
+
+def patch_dataloader(module):
+    cls = getattr(module, "AiToolkitDataset", None)
+    original = getattr(cls, "_scan_source", None) if cls is not None else None
+    if original is None:
+        say("Legendes multiples : code d'ai-toolkit inattendu, seule la legende entiere sera lue.")
+        return
+    import copy
+
+    def _scan_source(self, dataset_config):
+        start = len(self.file_list)
+        original(self, dataset_config)
+        try:
+            ext = getattr(dataset_config, "caption_ext", "txt") or "txt"
+            ext = ext if ext.startswith(".") else "." + ext
+            out, multi = [], 0
+            for item in self.file_list[start:]:
+                lines = [] if getattr(item, "is_reg", False) else caption_variants(item.path, ext)
+                if len(lines) < 2:
+                    out.append(item)
+                    continue
+                multi += 1
+                for line in lines:
+                    # objets partages (config du dataset, transformations) : gardes communs, pas copies
+                    memo = {id(v): v for k, v in vars(item).items()
+                            if k in ("dataset_config", "dataloader_transforms", "transform", "size_database")}
+                    twin = copy.deepcopy(item, memo)
+                    twin.raw_caption = line
+                    twin.raw_caption_short = None
+                    twin._text_embedding_path = None
+                    twin.load_caption()          # recalcule legende, mot declencheur et DOP
+                    out.append(twin)
+            if multi:
+                self.file_list[start:] = out
+                say("Legendes multiples : %d image(s) a plusieurs variantes -> %d elements dans ce dossier."
+                    % (multi, len(out)))
+        except Exception as exc:  # ne jamais empecher l'entrainement de demarrer
+            say("Legendes multiples non appliquees (%s)." % exc)
+
+    cls._scan_source = _scan_source
+    say("Legendes multiples actives : une copie de chaque image par ligne de sa legende.")
+
+
 class _Hook(importlib.abc.MetaPathFinder):
     def __init__(self, wanted):
         self.wanted = dict(wanted)     # nom du module -> "w4a8" | "scheduler" | "pipeline"
@@ -207,6 +264,8 @@ class _Hook(importlib.abc.MetaPathFinder):
                 patch_w4a8(module)
             elif kind == "scheduler":
                 patch_scheduler(module)
+            elif kind == "dataloader":
+                patch_dataloader(module)
 
         spec.loader.exec_module = exec_module
         return spec
@@ -285,6 +344,8 @@ if __name__ == "__main__":
         wanted[SCHEDULER_MODULE] = "scheduler"
     if os.environ.get("H3UI_LCM") == "1":
         wanted[PIPELINE_MODULE] = "pipeline"
+    if os.environ.get("H3UI_CAPTION_VARIANTS") == "1":
+        wanted[DATALOADER_MODULE] = "dataloader"
     if wanted:
         sys.meta_path.insert(0, _Hook(wanted))
     if os.environ.get("H3UI_FIZGIG_ADAPTER"):

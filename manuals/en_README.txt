@@ -285,6 +285,33 @@ BLEEDING: THE TWO PROTECTIONS
   next to the speed, and an alert is sent if it stays below 1e-6: pause
   and restart with adamw8bit.
 
+SEVERAL CAPTIONS PER IMAGE
+  A .txt can hold several captions, one per line: each line is a variant
+  of the same image (same latents), and training sees all of them. The
+  LoRA clings less to one wording: useful under 30 images. Automatic
+  captioning writes 2 or 3 with "Variants per image". The audit, the
+  caption fixer and the regularization images handle each line.
+
+REPEATS PER SUBFOLDER
+  Subfolders of the dataset are read. A top-level subfolder named N_name
+  (e.g. 3_back) is seen N times per pass: useful for rare views (back,
+  profile) without duplicating files. The Fast 512 process counts the
+  repeats in its 30 passes.
+
+8 GB CARDS (experimental)
+  The "8 GB" preset (RTX 2000 Ada, A2000...) uses the w4a8 base, keeps 90 %
+  of the transformer in RAM (up to 95 %), trains at 512 px and renders
+  previews at 1024 px. Expect about 40 GB of RAM at peak (64 GB
+  recommended, 32 GB is not enough) and much slower steps than a 3090
+  (estimate: 10 to 25 s at 512 px): measure with the Quick test. Keep the
+  w4a8 fix ticked on cards older than the RTX 40 (A2000).
+
+VERSIONS AND UPDATES
+  The tool version is shown next to the title; CHANGELOG.md lists what is
+  new. Tools > Updates checks (at most every 12 h) whether a new version
+  is published on GitHub and whether ai-toolkit has changed; a line
+  appears under the title when a version is released.
+
 AI-TOOLKIT VERSION
   By default: latest version of the main branch. This package was audited
   on commit 4a7f285 (10 Nov 2026). "Pin current version" button in the

@@ -79,7 +79,7 @@ def audit(folder, progress=None):
     """Rend (rapport texte, paires a afficher [(chemin, legende)], corrections [(image, fond)])."""
     if not folder or not os.path.isdir(folder):
         return "Dossier introuvable.", [], []
-    imgs = sorted(f for f in os.listdir(folder) if f.lower().endswith(core.IMG_EXT))
+    imgs = core.dataset_images(folder)
     if len(imgs) < 2:
         return "Pas assez d'images a comparer.", [], []
     lines = [f"Audit de {len(imgs)} images :"]
@@ -190,11 +190,12 @@ def add_background(folder, fixes):
         path = os.path.join(folder, os.path.splitext(img)[0] + ".txt")
         try:
             with open(path, encoding="utf-8") as f:
-                text = f.read().strip()
-            if BG_WORDS.search(text):
+                lines = core.caption_lines(f.read())
+            new = [ln if BG_WORDS.search(ln) else f"{ln.rstrip(' ,.')}, {kind}" for ln in lines]
+            if new == lines:
                 continue
             with open(path, "w", encoding="utf-8") as f:
-                f.write(f"{text.rstrip(' ,.')}, {kind}")
+                f.write("\n".join(new))       # chaque variante recoit le fond
             done += 1
         except OSError:
             continue

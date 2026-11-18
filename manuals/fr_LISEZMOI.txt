@@ -290,6 +290,35 @@ DÉBORDEMENT : LES DEUX PROTECTIONS
   d'apprentissage est affiché à côté de la vitesse et une alerte part
   s'il reste sous 1e-6 : mettez en pause et relancez avec adamw8bit.
 
+PLUSIEURS LÉGENDES PAR IMAGE
+  Un .txt peut contenir plusieurs légendes, une par ligne : chaque ligne
+  est une variante de la même image (mêmes latents), et l'entraînement
+  les voit toutes. Le LoRA s'attache moins à une formulation : utile sous
+  30 images. Le légendage automatique en écrit 2 ou 3 avec « Variantes par
+  image ». L'audit, le correcteur de légendes et les images de
+  régularisation traitent chaque ligne.
+
+RÉPÉTITIONS PAR SOUS-DOSSIER
+  Les sous-dossiers du dataset sont lus. Un sous-dossier de premier
+  niveau nommé N_nom (ex. 3_dos) est vu N fois par passage : utile pour
+  les vues rares (dos, profil) sans dupliquer les fichiers. Le procédé
+  Rapide 512 compte les répétitions dans ses 30 passages.
+
+CARTES DE 8 GO (expérimental)
+  Le preset « 8 Go » (RTX 2000 Ada, A2000...) utilise la base w4a8, garde
+  90 % du transformer en RAM (jusqu'à 95 %), entraîne en 512 px et fait
+  les aperçus en 1024 px. Comptez environ 40 Go de RAM au pic (64 Go
+  conseillés, 32 Go ne suffisent pas) et des pas nettement plus lents
+  qu'une 3090 (estimation : 10 à 25 s en 512 px) : mesurez avec le Test
+  rapide. Laissez coché le correctif w4a8 sur les cartes antérieures aux
+  RTX 40 (A2000).
+
+VERSIONS ET MISES À JOUR
+  La version de l'outil est affichée à côté du titre ; CHANGELOG.md liste
+  les nouveautés. Outils > Mises à jour vérifie (au plus toutes les 12 h)
+  si une nouvelle version est publiée sur GitHub et si ai-toolkit a
+  évolué ; une ligne s'affiche sous le titre quand une version sort.
+
 VERSION D'AI-TOOLKIT
   Par défaut : dernière version de la branche main. Ce paquet a été audité
   sur le commit 4a7f285 (10 nov. 2026). Bouton « Figer la version actuelle »
