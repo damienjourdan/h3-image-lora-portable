@@ -82,6 +82,22 @@ DIE UI (Tabs)
                     Versionen. Schaltfläche Speichern oben.
   Jeder Tab hat seinen eigenen Verlauf; Protokolle sind eingeklappt.
 
+EINE AUFGABE ABBRECHEN
+  Jede Aufgabe hat neben ihrer Startschaltfläche eine Schaltfläche
+  Abbrechen: Beschreibung, Audit, Zuschnitt, Regularisierungsbilder,
+  LoRA-Tests, Download (Teildateien werden beim nächsten Start
+  fortgesetzt). Training und Schnelltest haben Pause (mit Speichern) und
+  Stoppen in der rechten Spalte. Abbrechen entfernt auch Elemente gleicher
+  Art aus der Warteschlange und hält den Rest an.
+
+BESCHREIBUNG: NAME DES MOTIVS
+  „Name des Motivs in den Beschreibungen“ ist der Name, den das Modell an
+  den Anfang jeder Beschreibung schreibt; die Anweisung wird sofort
+  angepasst. Er muss das Triggerwort des Tabs Training sein: ist eines
+  leer, wird es mit dem anderen gefüllt. Auf einer 24-GB-Karte wird das
+  8B-Modell ohne Quantisierung geladen (schnellerer Start und schnellere
+  Beschreibung); quantisiert wird nur bei Speichermangel.
+
 TRAININGSVERFAHREN (Tab Training)
   Die Wahl eines Verfahrens füllt die Felder aus; alles bleibt änderbar.
   - ai-toolkit Standard: Ihre Einstellungen, unverändert.

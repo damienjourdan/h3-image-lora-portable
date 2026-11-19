@@ -3,6 +3,17 @@
 Versions follow `MAJOR.MINOR.PATCH`. The installed version is shown next to the title of the interface
 and in **Tools > Updates**, which also tells when a newer version is published.
 
+## 0.10.1 — 2026-11-19
+
+- Every task can be stopped from its own panel: captioning, audit, cropping analysis, regularization
+  images, LoRA tests, download; Pause and Stop next to Start in the Training tab. Stopping a task also
+  removes queued items of the same type and puts the rest of the queue on hold.
+- Captioning: new "Subject name in the captions" field, used in the instruction (updated at once) and
+  kept in sync with the trigger word when one of them is empty.
+- Captioning: the 8B model is no longer quantized on cards with enough memory (24 GB), which should
+  shorten the start and the time per image; quantization is kept for smaller cards.
+- Stop buttons shown in red.
+
 ## 0.10.0 — 2026-11-18
 
 ### Interface

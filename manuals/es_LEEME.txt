@@ -82,6 +82,22 @@ LA UI (pestañas)
                     previa), Versiones. Botón Guardar arriba.
   Cada pestaña tiene su propio seguimiento; los registros están plegados.
 
+INTERRUMPIR UNA TAREA
+  Cada tarea tiene su botón Interrumpir junto a su botón de inicio:
+  descripción, auditoría, recorte, imágenes de regularización, pruebas de
+  LoRA, descarga (los archivos parciales se reanudan la próxima vez). El
+  entrenamiento y la Prueba rápida tienen Pausa (con guardado) y Detener en
+  la columna derecha. Interrumpir también retira de la cola los elementos
+  del mismo tipo y suspende el resto de la cola.
+
+DESCRIPCIÓN: NOMBRE DEL SUJETO
+  «Nombre del sujeto en las descripciones» es el nombre que el modelo
+  escribe al principio de cada descripción; la consigna se actualiza al
+  instante. Debe ser la palabra clave de la pestaña Entrenamiento: si una
+  está vacía, se rellena con la otra. En una tarjeta de 24 GB el modelo 8B
+  se carga sin cuantización (arranque y descripción más rápidos); solo se
+  cuantiza si falta memoria.
+
 PROCESOS DE ENTRENAMIENTO (pestaña Entrenamiento)
   Elegir un proceso rellena los campos; todo sigue siendo modificable.
   - Estándar ai-toolkit: sus ajustes, sin cambios.

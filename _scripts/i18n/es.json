@@ -654,5 +654,21 @@
 "Rognage": "Recorte",
 "Version d'ai-toolkit": "Versión de ai-toolkit",
 "YAML": "YAML",
-"Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son cout et le cout projete a la fin s'affichent a cote du temps ecoule, du temps restant et de la vitesse. Seule la carte graphique est comptee : processeur, ecran et reste du PC s'y ajoutent. Enregistrez avec le bouton Enregistrer en haut de l'onglet.": "Durante un job, el consumo de la GPU (leído por nvidia-smi cada 2 s), su coste y el coste previsto al final se muestran junto al tiempo transcurrido, el tiempo restante y la velocidad. Solo se cuenta la tarjeta gráfica: el procesador, la pantalla y el resto del PC se suman. Guarde con el botón Guardar de la parte superior de la pestaña."
+"Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son cout et le cout projete a la fin s'affichent a cote du temps ecoule, du temps restant et de la vitesse. Seule la carte graphique est comptee : processeur, ecran et reste du PC s'y ajoutent. Enregistrez avec le bouton Enregistrer en haut de l'onglet.": "Durante un job, el consumo de la GPU (leído por nvidia-smi cada 2 s), su coste y el coste previsto al final se muestran junto al tiempo transcurrido, el tiempo restante y la velocidad. Solo se cuenta la tarjeta gráfica: el procesador, la pantalla y el resto del PC se suman. Guarde con el botón Guardar de la parte superior de la pestaña.",
+"Nom du sujet dans les legendes": "Nombre del sujeto en las descripciones",
+"Le nom que le modele ecrit au debut de chaque legende et dans la consigne ci-dessous. Doit etre le mot declencheur de l'onglet Entrainement (rempli de l'un a l'autre s'il est vide). Vide : le sujet est decrit par 'a man', 'a woman'...": "El nombre que el modelo escribe al principio de cada descripción y en la consigna de abajo. Debe ser la palabra clave de la pestaña Entrenamiento (una rellena la otra si está vacía). Vacío: el sujeto se describe como 'a man', 'a woman'...",
+"Interrompre": "Interrumpir",
+"Generation des images de regularisation": "Generación de las imágenes de regularización",
+"Test rapide": "Prueba rápida",
+"{0} : rien en cours.": "{0}: nada en curso.",
+"Interrompu : {0}.": "Interrumpido: {0}.",
+"Retire de la file : {0}.": "Retirado de la cola: {0}.",
+"{0} element(s) retire(s) de la file.": "{0} elemento(s) retirado(s) de la cola.",
+"Le reste de la file est suspendu (Reprendre la file).": "El resto de la cola queda suspendido (Reanudar la cola).",
+"Relancez le telechargement pour reprendre les fichiers partiels.": "Relance la descarga para reanudar los archivos parciales.",
+"Interrompu par l'utilisateur": "Interrumpido por el usuario",
+"Interrompu : les fichiers partiels seront repris": "Interrumpido: los archivos parciales se reanudarán",
+"Interruption demandee : l'analyse s'arrete a l'image suivante.": "Interrupción solicitada: el análisis se detiene en la siguiente imagen.",
+"Audit interrompu.": "Auditoría interrumpida.",
+"Analyse interrompue.": "Análisis interrumpido."
 }

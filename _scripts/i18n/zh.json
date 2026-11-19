@@ -654,5 +654,21 @@
 "Rognage": "裁剪",
 "Version d'ai-toolkit": "ai-toolkit 版本",
 "YAML": "YAML",
-"Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son cout et le cout projete a la fin s'affichent a cote du temps ecoule, du temps restant et de la vitesse. Seule la carte graphique est comptee : processeur, ecran et reste du PC s'y ajoutent. Enregistrez avec le bouton Enregistrer en haut de l'onglet.": "任务期间，GPU 的耗电量（nvidia-smi 每 2 秒读取一次）、对应电费以及预计结束时的总电费，会显示在已用时间、剩余时间和速度旁边。只统计显卡：处理器、显示器和电脑其他部分的耗电不计入。请用标签页顶部的“保存”按钮保存。"
+"Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son cout et le cout projete a la fin s'affichent a cote du temps ecoule, du temps restant et de la vitesse. Seule la carte graphique est comptee : processeur, ecran et reste du PC s'y ajoutent. Enregistrez avec le bouton Enregistrer en haut de l'onglet.": "任务期间，GPU 的耗电量（nvidia-smi 每 2 秒读取一次）、对应电费以及预计结束时的总电费，会显示在已用时间、剩余时间和速度旁边。只统计显卡：处理器、显示器和电脑其他部分的耗电不计入。请用标签页顶部的“保存”按钮保存。",
+"Nom du sujet dans les legendes": "描述中的主体名称",
+"Le nom que le modele ecrit au debut de chaque legende et dans la consigne ci-dessous. Doit etre le mot declencheur de l'onglet Entrainement (rempli de l'un a l'autre s'il est vide). Vide : le sujet est decrit par 'a man', 'a woman'...": "模型写在每条描述开头和下方指令中的名称。应与“训练”标签页的触发词相同（一方为空时自动互相填写）。为空：主体被描述为 'a man'、'a woman' 等。",
+"Interrompre": "中断",
+"Generation des images de regularisation": "正则化图片生成",
+"Test rapide": "快速测试",
+"{0} : rien en cours.": "{0}：没有正在运行的任务。",
+"Interrompu : {0}.": "已中断：{0}。",
+"Retire de la file : {0}.": "已从队列移除：{0}。",
+"{0} element(s) retire(s) de la file.": "已从队列移除 {0} 项。",
+"Le reste de la file est suspendu (Reprendre la file).": "队列其余部分已暂停（继续队列）。",
+"Relancez le telechargement pour reprendre les fichiers partiels.": "请重新开始下载以续传部分文件。",
+"Interrompu par l'utilisateur": "用户中断",
+"Interrompu : les fichiers partiels seront repris": "已中断：部分文件将续传",
+"Interruption demandee : l'analyse s'arrete a l'image suivante.": "已请求中断：分析将在下一张图片处停止。",
+"Audit interrompu.": "审核已中断。",
+"Analyse interrompue.": "分析已中断。"
 }

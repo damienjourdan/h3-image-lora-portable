@@ -78,6 +78,21 @@ THE UI (tabs)
                     Save button at the top.
   Each tab has its own tracking; logs are folded ("Log").
 
+STOPPING A TASK
+  Each task has its own Stop button next to its start button: captioning,
+  audit, cropping, regularization images, LoRA tests, download (partial
+  files are resumed next time). Training and the Quick test have Pause
+  (with saving) and Stop in the right column. Stopping also removes queued
+  items of the same type and puts the rest of the queue on hold.
+
+CAPTIONING: SUBJECT NAME
+  "Subject name in the captions" is the name the model writes at the start
+  of each caption; the instruction updates at once. It must be the trigger
+  word of the Training tab: if either is empty, it is filled with the
+  other. On a 24 GB card the 8B model is loaded without quantization
+  (faster start and captioning); it is only quantized when memory is
+  short.
+
 TRAINING PROCESSES (Training tab)
   Choosing a process fills in the fields; everything stays editable.
   - ai-toolkit standard: your settings, unchanged.

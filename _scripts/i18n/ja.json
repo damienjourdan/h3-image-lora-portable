@@ -654,5 +654,21 @@
 "Rognage": "トリミング",
 "Version d'ai-toolkit": "ai-toolkit のバージョン",
 "YAML": "YAML",
-"Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son cout et le cout projete a la fin s'affichent a cote du temps ecoule, du temps restant et de la vitesse. Seule la carte graphique est comptee : processeur, ecran et reste du PC s'y ajoutent. Enregistrez avec le bouton Enregistrer en haut de l'onglet.": "ジョブ中は、GPU の消費電力量（nvidia-smi で 2 秒ごとに取得）、その料金、終了時の予想料金が、経過時間・残り時間・速度の横に表示されます。数えるのはグラフィックカードだけで、CPU、画面、PC の他の部分の消費は含みません。タブ上部の「保存」ボタンで保存してください。"
+"Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son cout et le cout projete a la fin s'affichent a cote du temps ecoule, du temps restant et de la vitesse. Seule la carte graphique est comptee : processeur, ecran et reste du PC s'y ajoutent. Enregistrez avec le bouton Enregistrer en haut de l'onglet.": "ジョブ中は、GPU の消費電力量（nvidia-smi で 2 秒ごとに取得）、その料金、終了時の予想料金が、経過時間・残り時間・速度の横に表示されます。数えるのはグラフィックカードだけで、CPU、画面、PC の他の部分の消費は含みません。タブ上部の「保存」ボタンで保存してください。",
+"Nom du sujet dans les legendes": "キャプション内の被写体名",
+"Le nom que le modele ecrit au debut de chaque legende et dans la consigne ci-dessous. Doit etre le mot declencheur de l'onglet Entrainement (rempli de l'un a l'autre s'il est vide). Vide : le sujet est decrit par 'a man', 'a woman'...": "モデルが各キャプションの先頭と下の指示文に書く名前。「学習」タブのトリガーワードと同じにしてください（空なら一方からもう一方へ自動入力）。空欄：被写体は 'a man'、'a woman' などと記述されます。",
+"Interrompre": "中断",
+"Generation des images de regularisation": "正則化画像の生成",
+"Test rapide": "クイックテスト",
+"{0} : rien en cours.": "{0}：実行中のものはありません。",
+"Interrompu : {0}.": "中断しました：{0}。",
+"Retire de la file : {0}.": "キューから削除：{0}。",
+"{0} element(s) retire(s) de la file.": "キューから {0} 件削除しました。",
+"Le reste de la file est suspendu (Reprendre la file).": "残りのキューは保留中です（キューを再開）。",
+"Relancez le telechargement pour reprendre les fichiers partiels.": "部分ファイルを再開するにはダウンロードをもう一度開始してください。",
+"Interrompu par l'utilisateur": "ユーザーが中断",
+"Interrompu : les fichiers partiels seront repris": "中断：部分ファイルは再開されます",
+"Interruption demandee : l'analyse s'arrete a l'image suivante.": "中断を要求しました：次の画像で分析を停止します。",
+"Audit interrompu.": "監査を中断しました。",
+"Analyse interrompue.": "分析を中断しました。"
 }

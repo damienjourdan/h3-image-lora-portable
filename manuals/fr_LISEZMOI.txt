@@ -79,6 +79,22 @@ L'UI (onglets)
                     (pré-téléchargement), Versions. Bouton Enregistrer en haut.
   Chaque onglet a son propre suivi ; les journaux sont repliés (« Journal »).
 
+INTERROMPRE UN TRAITEMENT
+  Chaque traitement a son bouton Interrompre à côté de son bouton de
+  lancement : légendage, audit, rognage, images de régularisation, tests de
+  LoRA, téléchargement (les fichiers partiels sont repris au lancement
+  suivant). L'entraînement et le Test rapide ont Pause (avec sauvegarde) et
+  Arrêter dans la colonne de droite. Interrompre retire aussi de la file
+  les éléments du même type et suspend le reste de la file.
+
+LÉGENDAGE : NOM DU SUJET
+  « Nom du sujet dans les légendes » est le nom que le modèle écrit au
+  début de chaque légende ; la consigne se met à jour aussitôt. Il doit
+  être le mot déclencheur de l'onglet Entraînement : si l'un des deux est
+  vide, il est rempli avec l'autre. Sur une carte de 24 Go, le modèle 8B
+  est chargé sans quantification (démarrage et légendage plus rapides) ;
+  il n'est quantifié que si la mémoire manque.
+
 PROCÉDÉS D'ENTRAÎNEMENT (onglet Entraînement)
   Choisir un procédé remplit les champs ; tout reste modifiable ensuite.
   - Standard ai-toolkit : vos réglages, inchangés.

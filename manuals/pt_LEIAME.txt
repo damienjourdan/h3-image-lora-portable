@@ -83,6 +83,21 @@ A UI (abas)
                     Botão Salvar no alto.
   Cada aba tem seu próprio acompanhamento; os registros ficam recolhidos.
 
+INTERROMPER UMA TAREFA
+  Cada tarefa tem seu botão Interromper ao lado do botão de início:
+  legendagem, auditoria, recorte, imagens de regularização, testes de LoRA,
+  download (os arquivos parciais são retomados na próxima vez). O
+  treinamento e o Teste rápido têm Pausa (com salvamento) e Parar na coluna
+  da direita. Interromper também retira da fila os itens do mesmo tipo e
+  suspende o resto da fila.
+
+LEGENDAGEM: NOME DO SUJEITO
+  "Nome do sujeito nas legendas" é o nome que o modelo escreve no início de
+  cada legenda; a instrução é atualizada na hora. Deve ser a palavra-gatilho
+  da aba Treinamento: se uma estiver vazia, é preenchida com a outra. Numa
+  placa de 24 GB o modelo 8B é carregado sem quantização (início e
+  legendagem mais rápidos); só é quantizado se faltar memória.
+
 PROCESSOS DE TREINAMENTO (aba Treinamento)
   Escolher um processo preenche os campos; tudo continua editável.
   - Padrão ai-toolkit: seus ajustes, inalterados.

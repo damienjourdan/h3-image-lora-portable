@@ -505,5 +505,22 @@
 "Rognage": "Rognage",
 "Version d'ai-toolkit": "Version d'ai-toolkit",
 "YAML": "YAML",
-"Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son cout et le cout projete a la fin s'affichent a cote du temps ecoule, du temps restant et de la vitesse. Seule la carte graphique est comptee : processeur, ecran et reste du PC s'y ajoutent. Enregistrez avec le bouton Enregistrer en haut de l'onglet.": "Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son coût et le coût projeté à la fin s'affichent à côté du temps écoulé, du temps restant et de la vitesse. Seule la carte graphique est comptée : processeur, écran et reste du PC s'y ajoutent. Enregistrez avec le bouton Enregistrer en haut de l'onglet."
+"Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son cout et le cout projete a la fin s'affichent a cote du temps ecoule, du temps restant et de la vitesse. Seule la carte graphique est comptee : processeur, ecran et reste du PC s'y ajoutent. Enregistrez avec le bouton Enregistrer en haut de l'onglet.": "Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son coût et le coût projeté à la fin s'affichent à côté du temps écoulé, du temps restant et de la vitesse. Seule la carte graphique est comptée : processeur, écran et reste du PC s'y ajoutent. Enregistrez avec le bouton Enregistrer en haut de l'onglet.",
+"Nom du sujet dans les legendes": "Nom du sujet dans les légendes",
+"Le nom que le modele ecrit au debut de chaque legende et dans la consigne ci-dessous. Doit etre le mot declencheur de l'onglet Entrainement (rempli de l'un a l'autre s'il est vide). Vide : le sujet est decrit par 'a man', 'a woman'...": "Le nom que le modèle écrit au début de chaque légende et dans la consigne ci-dessous. Doit être le mot déclencheur de l'onglet Entraînement (rempli de l'un à l'autre s'il est vide). Vide : le sujet est décrit par « a man », « a woman »...",
+"Interrompre": "Interrompre",
+"Generation des images de regularisation": "Génération des images de régularisation",
+"Test rapide": "Test rapide",
+"Test de LoRA": "Test de LoRA",
+"{0} : rien en cours.": "{0} : rien en cours.",
+"Interrompu : {0}.": "Interrompu : {0}.",
+"Retire de la file : {0}.": "Retiré de la file : {0}.",
+"{0} element(s) retire(s) de la file.": "{0} élément(s) retiré(s) de la file.",
+"Le reste de la file est suspendu (Reprendre la file).": "Le reste de la file est suspendu (Reprendre la file).",
+"Relancez le telechargement pour reprendre les fichiers partiels.": "Relancez le téléchargement pour reprendre les fichiers partiels.",
+"Interrompu par l'utilisateur": "Interrompu par l'utilisateur",
+"Interrompu : les fichiers partiels seront repris": "Interrompu : les fichiers partiels seront repris",
+"Interruption demandee : l'analyse s'arrete a l'image suivante.": "Interruption demandée : l'analyse s'arrête à l'image suivante.",
+"Audit interrompu.": "Audit interrompu.",
+"Analyse interrompue.": "Analyse interrompue."
 }

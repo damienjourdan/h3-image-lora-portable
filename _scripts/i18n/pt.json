@@ -654,5 +654,21 @@
 "Rognage": "Recorte",
 "Version d'ai-toolkit": "Versão do ai-toolkit",
 "YAML": "YAML",
-"Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son cout et le cout projete a la fin s'affichent a cote du temps ecoule, du temps restant et de la vitesse. Seule la carte graphique est comptee : processeur, ecran et reste du PC s'y ajoutent. Enregistrez avec le bouton Enregistrer en haut de l'onglet.": "Durante um job, o consumo da GPU (lido pelo nvidia-smi a cada 2 s), seu custo e o custo projetado no fim aparecem ao lado do tempo decorrido, do tempo restante e da velocidade. Só a placa de vídeo é contada: o processador, a tela e o resto do PC se somam. Salve com o botão Salvar no alto da aba."
+"Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son cout et le cout projete a la fin s'affichent a cote du temps ecoule, du temps restant et de la vitesse. Seule la carte graphique est comptee : processeur, ecran et reste du PC s'y ajoutent. Enregistrez avec le bouton Enregistrer en haut de l'onglet.": "Durante um job, o consumo da GPU (lido pelo nvidia-smi a cada 2 s), seu custo e o custo projetado no fim aparecem ao lado do tempo decorrido, do tempo restante e da velocidade. Só a placa de vídeo é contada: o processador, a tela e o resto do PC se somam. Salve com o botão Salvar no alto da aba.",
+"Nom du sujet dans les legendes": "Nome do sujeito nas legendas",
+"Le nom que le modele ecrit au debut de chaque legende et dans la consigne ci-dessous. Doit etre le mot declencheur de l'onglet Entrainement (rempli de l'un a l'autre s'il est vide). Vide : le sujet est decrit par 'a man', 'a woman'...": "O nome que o modelo escreve no início de cada legenda e na instrução abaixo. Deve ser a palavra-gatilho da aba Treinamento (uma preenche a outra se estiver vazia). Vazio: o sujeito é descrito como 'a man', 'a woman'...",
+"Interrompre": "Interromper",
+"Generation des images de regularisation": "Geração das imagens de regularização",
+"Test rapide": "Teste rápido",
+"{0} : rien en cours.": "{0}: nada em andamento.",
+"Interrompu : {0}.": "Interrompido: {0}.",
+"Retire de la file : {0}.": "Retirado da fila: {0}.",
+"{0} element(s) retire(s) de la file.": "{0} item(ns) retirado(s) da fila.",
+"Le reste de la file est suspendu (Reprendre la file).": "O resto da fila fica suspenso (Retomar a fila).",
+"Relancez le telechargement pour reprendre les fichiers partiels.": "Inicie o download de novo para retomar os arquivos parciais.",
+"Interrompu par l'utilisateur": "Interrompido pelo usuário",
+"Interrompu : les fichiers partiels seront repris": "Interrompido: os arquivos parciais serão retomados",
+"Interruption demandee : l'analyse s'arrete a l'image suivante.": "Interrupção pedida: a análise para na próxima imagem.",
+"Audit interrompu.": "Auditoria interrompida.",
+"Analyse interrompue.": "Análise interrompida."
 }

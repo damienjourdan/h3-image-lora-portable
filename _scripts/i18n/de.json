@@ -654,5 +654,21 @@
 "Rognage": "Zuschnitt",
 "Version d'ai-toolkit": "ai-toolkit-Version",
 "YAML": "YAML",
-"Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son cout et le cout projete a la fin s'affichent a cote du temps ecoule, du temps restant et de la vitesse. Seule la carte graphique est comptee : processeur, ecran et reste du PC s'y ajoutent. Enregistrez avec le bouton Enregistrer en haut de l'onglet.": "Während eines Jobs werden der Verbrauch der GPU (alle 2 s von nvidia-smi gelesen), seine Kosten und die voraussichtlichen Kosten am Ende neben vergangener Zeit, Restzeit und Tempo angezeigt. Nur die Grafikkarte wird gezählt: Prozessor, Bildschirm und der Rest des PCs kommen hinzu. Mit der Schaltfläche Speichern oben im Tab speichern."
+"Pendant un job, la consommation du GPU (lue par nvidia-smi toutes les 2 s), son cout et le cout projete a la fin s'affichent a cote du temps ecoule, du temps restant et de la vitesse. Seule la carte graphique est comptee : processeur, ecran et reste du PC s'y ajoutent. Enregistrez avec le bouton Enregistrer en haut de l'onglet.": "Während eines Jobs werden der Verbrauch der GPU (alle 2 s von nvidia-smi gelesen), seine Kosten und die voraussichtlichen Kosten am Ende neben vergangener Zeit, Restzeit und Tempo angezeigt. Nur die Grafikkarte wird gezählt: Prozessor, Bildschirm und der Rest des PCs kommen hinzu. Mit der Schaltfläche Speichern oben im Tab speichern.",
+"Nom du sujet dans les legendes": "Name des Motivs in den Beschreibungen",
+"Le nom que le modele ecrit au debut de chaque legende et dans la consigne ci-dessous. Doit etre le mot declencheur de l'onglet Entrainement (rempli de l'un a l'autre s'il est vide). Vide : le sujet est decrit par 'a man', 'a woman'...": "Der Name, den das Modell an den Anfang jeder Beschreibung und in die Anweisung unten schreibt. Muss das Triggerwort des Tabs Training sein (eines füllt das andere, wenn leer). Leer: das Motiv wird als 'a man', 'a woman'... beschrieben.",
+"Interrompre": "Abbrechen",
+"Generation des images de regularisation": "Erzeugung der Regularisierungsbilder",
+"Test rapide": "Schnelltest",
+"{0} : rien en cours.": "{0}: nichts läuft.",
+"Interrompu : {0}.": "Abgebrochen: {0}.",
+"Retire de la file : {0}.": "Aus der Warteschlange entfernt: {0}.",
+"{0} element(s) retire(s) de la file.": "{0} Element(e) aus der Warteschlange entfernt.",
+"Le reste de la file est suspendu (Reprendre la file).": "Der Rest der Warteschlange ist angehalten (Warteschlange fortsetzen).",
+"Relancez le telechargement pour reprendre les fichiers partiels.": "Starten Sie den Download erneut, um die Teildateien fortzusetzen.",
+"Interrompu par l'utilisateur": "Vom Benutzer abgebrochen",
+"Interrompu : les fichiers partiels seront repris": "Abgebrochen: Teildateien werden fortgesetzt",
+"Interruption demandee : l'analyse s'arrete a l'image suivante.": "Abbruch angefordert: die Analyse stoppt beim nächsten Bild.",
+"Audit interrompu.": "Audit abgebrochen.",
+"Analyse interrompue.": "Analyse abgebrochen."
 }

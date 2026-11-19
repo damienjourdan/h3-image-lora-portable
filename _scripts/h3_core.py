@@ -2075,6 +2075,43 @@ def stop_job():
             "Utilisez Pause pour sauvegarder l'etat exact.")
 
 
+INTERRUPT_KINDS = {
+    "caption": ("Legendage", lambda k, n: k == "caption"),
+    "test": ("Test de LoRA", lambda k, n: k == "test" and not str(n or "").startswith(REG_PREFIX)),
+    "reg": ("Generation des images de regularisation",
+            lambda k, n: k == "test" and str(n or "").startswith(REG_PREFIX)),
+    "download": ("Telechargement", lambda k, n: k == "download"),
+    "calib": ("Test rapide", lambda k, n: k == "calib"),
+}
+
+
+def interrupt(what):
+    """Interrompt un traitement precis (et retire de la file ceux du meme type). Le reste de la file est
+    suspendu, comme pour Arreter."""
+    label, match = INTERRUPT_KINDS[what]
+    dropped = [q for q in ORCH.queue if match(q.get("kind"), q.get("name"))]
+    for q in dropped:
+        ORCH.queue.remove(q)
+    running = RUN.running() and match(RUN.kind, RUN.job_name)
+    if not running and not dropped:
+        return f"{label} : rien en cours."
+    if running:
+        if ORCH.queue:
+            ORCH.hold = True
+        if what == "download":
+            RUN.stop("Interrompu : les fichiers partiels seront repris")
+        else:
+            RUN.stop("Interrompu par l'utilisateur")
+    lines = [f"Interrompu : {label}." if running else f"Retire de la file : {label}."]
+    if dropped:
+        lines.append(f"{len(dropped)} element(s) retire(s) de la file.")
+    if running and ORCH.queue:
+        lines.append("Le reste de la file est suspendu (Reprendre la file).")
+    if what == "download" and running:
+        lines.append("Relancez le telechargement pour reprendre les fichiers partiels.")
+    return "\n".join(lines)
+
+
 def _pause_worker(job, job_dir, t0, reason):
     try:
         # 1. ai-toolkit prend la demande a la fin du pas en cours
@@ -2262,6 +2299,14 @@ def finish_caption_variants():
     return f" {done} legende(s) a plusieurs variantes."
 
 
+def caption_needs_quant(model):
+    """Quantifier le modele de legendage seulement si la carte manque de memoire pour le bf16."""
+    size = {"8B": 18.0, "4B": 9.5, "2B": 5.0}
+    need = next((v for k, v in size.items() if k in (model or CAPTION_MODELS[0])), 18.0)
+    total = MON.vram_total or 0
+    return not total or total < need + 4
+
+
 def start_captioning(folder, model, recaption, prompt, max_tokens=256, variants=1):
     variants = max(1, min(3, int(variants or 1)))
     if RUN.running():
@@ -2273,7 +2318,9 @@ def start_captioning(folder, model, recaption, prompt, max_tokens=256, variants=
         "device": "cuda",
         "caption": {
             "model_name_or_path": model or CAPTION_MODELS[0],
-            "dtype": "bf16", "quantize": True, "qtype": "convrot8", "low_vram": False,
+            # 8B en bf16 (~17 Go) tient sur 24 Go : la quantification ralentit le chargement et la
+            # generation, on ne la garde que pour les petites cartes
+            "dtype": "bf16", "quantize": caption_needs_quant(model), "qtype": "convrot8", "low_vram": False,
             "extensions": ["jpg", "jpeg", "png", "webp"],
             "path_to_caption": folder, "recaption": bool(recaption),
             # compile=True passerait par torch.compile : inutilement fragile sous Windows

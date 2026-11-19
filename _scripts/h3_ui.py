@@ -320,11 +320,29 @@ def fill_captions(folder, text):
 
 
 # ------------------------------------------------------------------ audit du dataset
+CANCEL = {"audit": False, "crop": False}   # analyses dans l'interface : interruption a l'image suivante
+
+
+class Interrupted(Exception):
+    pass
+
+
+def cancel(what):
+    CANCEL[what] = True
+    return "Interruption demandee : l'analyse s'arrete a l'image suivante."
+
+
 def audit_run(folder, progress=gr.Progress()):
+    CANCEL["audit"] = False
+
     def cb(i, n, name):
+        if CANCEL["audit"]:
+            raise Interrupted()
         progress((i, max(1, n)), desc=i18n.tr(f"Analyse : {name}"), unit="images")
     try:
         report, gallery, fixes = audit.audit(folder, cb)
+    except Interrupted:
+        return "Audit interrompu.", [], [], gr.update(visible=False)
     except Exception as exc:  # noqa: BLE001 - modele absent, image illisible...
         return f"Audit impossible : {type(exc).__name__}: {str(exc)[:200]}", [], [], gr.update(visible=False)
     return report, gallery, fixes, gr.update(visible=bool(fixes))
@@ -356,11 +374,19 @@ def capfix_apply(folder, table):
 
 # ------------------------------------------------------------------ rognage des textes
 def crop_scan(folder, keep, margin, conf, progress=gr.Progress()):
+    CANCEL["crop"] = False
+
     def step(i, n, name):
+        if CANCEL["crop"]:
+            raise Interrupted()
         progress((i, max(1, n)), desc=i18n.tr(f"Analyse : {name}"), unit="images")
 
-    report, gallery, names = crop.analyze_folder(folder, core.MODELS, min_keep=float(keep) / 100,
-                                                 margin_pct=float(margin), min_conf=float(conf), progress=step)
+    try:
+        report, gallery, names = crop.analyze_folder(folder, core.MODELS, min_keep=float(keep) / 100,
+                                                     margin_pct=float(margin), min_conf=float(conf),
+                                                     progress=step)
+    except Interrupted:
+        return "Analyse interrompue.", [], gr.update(choices=[], value=[])
     return report, gallery, gr.update(choices=names, value=names)
 
 
@@ -973,6 +999,8 @@ footer{display:none!important}
 .h3-note p{margin:2px 0 6px}
 .h3-group{border-radius:10px!important}
 .h3-toolbar{align-items:center}
+button.stop{background:var(--h3-bad)!important;color:#fff!important;border-color:var(--h3-bad)!important}
+button.stop:hover{filter:brightness(.92)}
 .h3-inline{align-items:flex-end!important}
 .h3-inline > button{margin-bottom:10px}
 #h3-statusbar{flex-wrap:nowrap!important}
@@ -1041,6 +1069,13 @@ def build(code):
                                 gr.Markdown("Un modele de vision decrit chaque image et ecrit le .txt correspondant. "
                                             "A lancer **avant** l'entrainement (un seul job GPU a la fois). "
                                             "Le modele est telecharge au premier usage.", elem_classes="h3-note")
+                                cap_name = gr.Textbox(label="Nom du sujet dans les legendes",
+                                                      placeholder="m41ne",
+                                                      info="Le nom que le modele ecrit au debut de chaque legende "
+                                                           "et dans la consigne ci-dessous. Doit etre le mot "
+                                                           "declencheur de l'onglet Entrainement (rempli de l'un a "
+                                                           "l'autre s'il est vide). Vide : le sujet est decrit "
+                                                           "par 'a man', 'a woman'...")
                                 with gr.Row():
                                     lora_type = gr.Radio(core.LORA_TYPES, value=core.LORA_SUBJECT,
                                                          label="Type de LoRA",
@@ -1080,7 +1115,10 @@ def build(code):
                                                                  "toujours une interdiction : relancez 'Analyser le "
                                                                  "dossier' apres le legendage pour reperer les "
                                                                  "ecarts.")
-                                cap_auto_btn = gr.Button("Lancer le legendage automatique", variant="primary")
+                                with gr.Row():
+                                    cap_auto_btn = gr.Button("Lancer le legendage automatique", variant="primary",
+                                                             scale=3)
+                                    cap_stop_btn = gr.Button("Interrompre", variant="stop", scale=1)
                                 cap_panel = gr.HTML()
                                 with gr.Accordion("Journal", open=False):
                                     cap_log = gr.Textbox(label="Journal du legendage", show_label=False, lines=8,
@@ -1109,7 +1147,9 @@ def build(code):
                                             "d'images au meme cadrage (surappris). Fonds : analyse des bords de "
                                             "l'image. Doublons : modele DINOv2 sur le processeur (~90 Mo, telecharge "
                                             "au premier usage).", elem_classes="h3-note")
-                                audit_btn = gr.Button("Auditer le dataset", variant="primary")
+                                with gr.Row():
+                                    audit_btn = gr.Button("Auditer le dataset", variant="primary", scale=3)
+                                    audit_stop_btn = gr.Button("Interrompre", variant="stop", scale=1)
                                 audit_report = gr.Textbox(label="Rapport d'audit", lines=7, interactive=False)
                                 audit_fix_btn = gr.Button("Ajouter le fond aux legendes", visible=False,
                                                           variant="primary")
@@ -1135,7 +1175,9 @@ def build(code):
                                     crop_conf = gr.Slider(0.3, 0.9, value=0.5, step=0.05, label="Seuil de detection",
                                                           info="Preconise : 0,5. Plus bas : detecte les filigranes "
                                                                "pales, mais aussi plus de faux textes.")
-                                crop_scan_btn = gr.Button("Analyser les images", variant="primary")
+                                with gr.Row():
+                                    crop_scan_btn = gr.Button("Analyser les images", variant="primary", scale=3)
+                                    crop_stop_btn = gr.Button("Interrompre", variant="stop", scale=1)
                                 crop_report = gr.Textbox(label="Resultat", lines=5, interactive=False)
                                 crop_gallery = gr.Gallery(label="Texte detecte en rouge, cadrage propose en vert, "
                                                                 "zone retiree assombrie", columns=4, height=300)
@@ -1310,6 +1352,8 @@ def build(code):
                                                           info="0 = autant que d'images dans le dataset (60 au "
                                                                "plus).")
                                     reg_btn = gr.Button("Generer les images de regularisation", size="sm")
+                                    reg_stop_btn = gr.Button("Interrompre", variant="stop", size="sm", scale=0,
+                                                             min_width=110)
                                 reg_msg = gr.Textbox(label="Images de regularisation", interactive=False, lines=2)
                             with gr.Tab("Pause et file"):
                                 with gr.Row(elem_classes="h3-inline"):
@@ -1336,6 +1380,9 @@ def build(code):
                                 gr.Markdown(AIDE_REGLAGES)
                     with gr.Column(scale=4, min_width=320, elem_classes="h3-sticky"):
                         go_btn = gr.Button("Lancer / Reprendre", variant="primary", size="lg")
+                        with gr.Row():
+                            tr_pause_btn = gr.Button("Pause (sauvegarder l'etat)", size="sm")
+                            tr_stop_btn = gr.Button("Arreter sans sauvegarder", variant="stop", size="sm")
                         with gr.Row():
                             calib_btn = gr.Button("Test rapide (20 pas : vitesse + memoire)", size="sm")
                             queue_btn = gr.Button("Ajouter a la file d'attente", size="sm")
@@ -1421,7 +1468,9 @@ def build(code):
                             test_seed = gr.Number(label="Graine", value=42, precision=0,
                                                   info="Identique pour tous les checkpoints : seules les differences "
                                                        "dues au LoRA restent visibles.")
-                        test_btn = gr.Button("Lancer les tests", variant="primary")
+                        with gr.Row():
+                            test_btn = gr.Button("Lancer les tests", variant="primary", scale=3)
+                            test_stop_btn = gr.Button("Interrompre", variant="stop", scale=1)
                         test_panel = gr.HTML(elem_classes="h3-card")
                         with gr.Accordion("Journal", open=False):
                             test_log = gr.Textbox(label="Journal des tests", show_label=False, lines=8, max_lines=8,
@@ -1559,6 +1608,7 @@ def build(code):
                                                  info="Preconise : int8 (correspond au preset par defaut). "
                                                       "Prevoir 35 a 50 Go libres selon le choix.")
                             dl_btn = gr.Button("Telecharger", variant="primary", size="sm", scale=1)
+                            dl_stop_btn = gr.Button("Interrompre", variant="stop", size="sm", scale=1)
                         dl_panel = gr.HTML(elem_classes="h3-card")
                         with gr.Accordion("Journal", open=False):
                             dl_log = gr.Textbox(label="Journal du telechargement", show_label=False, lines=8,
@@ -1600,8 +1650,8 @@ def build(code):
             dataset_info, [ds_folder] + ds_extra, [ds_msg, ds_gallery])
         crop_restore_btn.click(crop_restore, ds_folder, [crop_report, crop_pick, crop_gallery]).then(
             dataset_info, [ds_folder] + ds_extra, [ds_msg, ds_gallery])
-        for comp in (lora_type, trigger, cap_extra):
-            comp.change(core.caption_prompt, [lora_type, trigger, cap_extra], cap_prompt)
+        for comp in (lora_type, cap_name, cap_extra):
+            comp.change(core.caption_prompt, [lora_type, cap_name, cap_extra], cap_prompt)
         audit_btn.click(audit_run, ds_folder, [audit_report, audit_gallery, audit_state, audit_fix_btn])
         capfix_btn.click(capfix_propose, [ds_folder, lora_type, trigger, cap_extra],
                          [capfix_table, capfix_msg, capfix_apply_btn])
@@ -1637,6 +1687,20 @@ def build(code):
         queue_clear.click(core.clear_queue, None, queue_box)
         # commandes
         stop_btn.click(core.stop_job, None, msg)
+        tr_stop_btn.click(core.stop_job, None, msg)
+        tr_pause_btn.click(lambda: core.pause_job(), None, msg)
+        # interruptions par traitement
+        cap_stop_btn.click(lambda: core.interrupt("caption"), None, msg)
+        test_stop_btn.click(lambda: core.interrupt("test"), None, msg)
+        reg_stop_btn.click(lambda: core.interrupt("reg"), None, reg_msg)
+        dl_stop_btn.click(lambda: core.interrupt("download"), None, msg)
+        audit_stop_btn.click(lambda: cancel("audit"), None, msg)
+        crop_stop_btn.click(lambda: cancel("crop"), None, msg)
+        # nom du sujet des legendes <-> mot declencheur : l'un remplit l'autre s'il est vide
+        trigger.change(lambda t, n: gr.update(value=t) if t and not (n or "").strip() else gr.update(),
+                       [trigger, cap_name], cap_name)
+        cap_name.change(lambda n, t: gr.update(value=n) if n and not (t or "").strip() else gr.update(),
+                        [cap_name, trigger], trigger)
         pause_btn.click(lambda: core.pause_job(), None, msg)
         sample_btn.click(core.sample_now, None, msg)
         # resultats
@@ -1680,7 +1744,8 @@ def build(code):
         demo.load(restore_page, None, cfg_inputs + [preset_sel, job_sel, test_job])
 
     # champs dont le contenu appartient a l'utilisateur (chemins, prompts, legendes, journaux)
-    keep = [ds_folder, cap_text, cap_extra, cap_prompt, cap_log, job_name, trigger, ctrl, prompts, dop_class,
+    keep = [ds_folder, cap_text, cap_extra, cap_name, cap_prompt, cap_log, job_name, trigger, ctrl, prompts,
+            dop_class,
             train_log, pause_time, test_prompts, test_log, dl_log, opt_ntfy, opt_comfy]
     i18n.localize_blocks(demo, code, keep_values=keep)
     i18n.wrap_events(demo, code, keep_values=keep)
